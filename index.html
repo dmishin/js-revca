@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en"> 
+  <head> 
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="icons.css">
+    <title>Reversible cellular automata</title> 
+  </head> 
+
+  <body> 
+    <div class="heading">Reversible cellular automata simulator. | <a href="">Sources</a> | <a href="">Author</a> | <a href="help.html">Help</a>
+    </div>
+    <div class="toolbar" id="toolbar-parameters">
+      Rule: <select id="select-rule"></select> 
+      Step: 
+      <select id="speed-show-every">
+	<option value="1">1</option>
+	<option value="2">2</option>
+	<option value="4">4</option>
+	<option value="8" selected="selected">8</option>
+	<option value="16">16</option>
+	<option value="32">32</option>
+	<option value="64">64</option>
+	<option value="128">128</option>
+	<option value="256">256</option>
+	<option value="512">512</option>
+	<option value="1024">1024</option>
+      </select> generations.
+      Delay:
+      <select id="speed-frame-delay">
+	<option value="10">10ms</option>
+	<option value="50">50ms</option>
+	<option value="100" selected="selected">100ms</option>
+	<option value="200">200ms</option>
+	<option value="1000">1s</option>
+      </select>.
+      Cell size: <select id="select-style">
+	<option value="8">8</option>
+	<option value="6">6</option>
+	<option value="4">4</option>
+	<option value="3">3</option>
+	<option value="2">2</option>
+	<option value="1">1</option>
+      </select>
+      <label for="show-grid">Grid:</label><input type="checkbox" name="show-grid" id="show-grid"></input>
+      Field size: <select id="select-size">
+	<option value="[64,64]">64 x 64</option>
+	<option value="[128,128]">128 x 128</option>
+	<option value="[256,256]">256 x 256</option>
+	<option value="[600,200]">600 x 200</option>
+      </select> cells.
+    </div>
+    <div id="main-window" class="panel"> <!-- window that contains tools etc -->
+    <div class="toolbar" id="toolbar-main">
+      <a href="#" class="button" id="go-back" title="Step backwards"><span class="icon icon-rstep">|&lt;</span></a>
+      <a href="#" class="button" id="go-next" title="Step forward"><span class="icon icon-step">&gt;|</span></a>
+      <span class="separator"></span>
+      <a href="#" class="button" id="rplay" title="Play backwards"><span class="icon icon-rplay">&lt;|</span></a>
+      <a href="#" class="button" id="stop" title="Stop"><span class="icon icon-pause">||</span></a>
+      <a href="#" class="button" id="play" title="Play forward"><span class="icon icon-play">|&gt;</span></a>
+      <span class="separator"></span>
+      <a href="#" class="button" id="clear_field" title="Clear field"><span class="icon icon-clearall">C</span></a>
+      <span class="separator"></span>
+      <a href="#" class="button" id="clear-selection" title="Clear selected"><span class="icon icon-clearsel">CS</span></a>
+      <a href="#" class="button" id="clear-nonselection" title="Clear not selected"><span class="icon icon-clearnsel">CN</span></a>
+      <a href="#" class="button" id="selection-random" title="Random fill selection"><span class="icon icon-rndsel1">R</span></a>
+      <span class="separator"></span>
+      <a href="#" class="button" id="selection-analyse" title="Analyse selection"><span class="icon icon-analyse">Analyse</span></a>
+      <span class="separator"></span>
+      <a href="" class="button" id="toggle-catcher" title="Spaceship catcher: when enabled, all spaceships, flying through the border of the field, are removed and added to library"><span class="icon icon-catcher">Catcher</span></a>
+    </div>
+
+    <div class="vertical-toolbar" id="toolbar-editing">
+      <span id="btn-group-tools">
+      <a class="button" href="#" id="btn-tool-draw" title="Draw cells"><span class="icon icon-draw">Draw</span></a>
+      <a class="button" href="#" id="btn-tool-select" title="Select"><span class="icon icon-select">Select</span></a>
+      <a class="button" href="#" id="btn-tool-stamp" title="Paste figure from buffer"><span class="icon icon-stamp">Stamp</span></a>    
+      <a class="button" href="#" id="btn-tool-erase" title="Eraser"><span class="icon icon-erase">Erase</span></a>    
+      </span>
+      <a class="button" href="#" id="figure-from-selection" title="Copy from selection"><span class="icon icon-copy">Copy</span></a>
+    </div>
+
+    <div id="cells-widget">
+      <!-- Styles are important part here, so put them inside HTML-->
+      <div id="overlay-container" 
+	   style="position:relative;
+		  width:40px; height:30px" >
+	<canvas id="canvas" width="40px" height="30px" 
+		style="position:absolute;left:0px;right:0px;z-index:1"></canvas>
+	<canvas id="overlay" width="40px" height="30px"
+		style="position:absolute;left:0px;right:0px;z-index:2;visibility:hidden"></canvas>
+      </div>
+    </div>
+      Generation: <span id="time">0</span> (<button id="reset-timer">reset</button>)
+    </div>
+    <div id="current-figure-pane" class="panel">
+      <h2>Buffer</h2>
+      <div class="vertical-toolbar">
+	<a class="button" href="#" id="figure-rotate-cw" title="Rotate clockwise"><span class="icon icon-rotate-cw">Rotate cw</span></a>
+	<a class="button" href="#" id="figure-rotate-ccw" title="Rotate counter-clockwise"><span class="icon icon-rotate-ccw">Rotate ccw</span></a>
+	<a class="button" href="#" id="figure-flip-h" title="Flip horizontally"><span class="icon icon-flip-h">Flip H</span></a>
+	<a class="button" href="#" id="figure-flip-v" title="Flip vertically"><span class="icon icon-flip-v">Flip V</span></a>
+	<a class="button" href="#" id="figure-toggle-phase" title="Toggle phase: shift figure by 1 by x and y"><span class="icon icon-toggle-phase">Toggle phase</span></a>
+      </div>
+      <div id="buffer-bg" class="figure-background">
+	<canvas id="active-figure-canvas" width="16px" height="16px"></canvas>
+      </div>
+
+      <div id="buffer-rle-block">
+	RLE:<br/>
+	<textarea id="rle-encoded" class="text-io" spellcheck="false"></textarea>
+	<div id="rle-decode-box" class="warning-background" style="visibility:hidden;">RLE decoding error: <span id="rle-decode-message" ></span></div>
+      </div>
+
+    </div>
+    
+    <div id="feature-pane" class="panel">
+      <span id="btn-group-features">
+	<a class="button" href="#" id="feature-rule-details" title="View and edit rule details">Rule details</a>
+	<a class="button" href="#" id="feature-gif-recorder" title="Record GIF animations">GIF recorder</a>
+	<a class="button" href="#" id="feature-library" title="Library of figures">Library (<span id="library-size">0</span> figures)</a>
+	<a class="button" href="#" id="feature-settings" title="Edit settings">Settings</a>
+      </span>
+    </div>
+    <div id="rule-info-pane" class="panel">
+      <h2>Rule</h2>
+      Edit rule: <input id="rule"/> <button id="set_rule">(Set)</button>
+      <p>
+	Transformation table:
+	<div id="function_display"></div>
+	<div id="function_properties"></div>
+      </p>
+    </div>
+    <div id="gif-recorder-pane" class="panel">
+      <h2>GIF recorder</h2>
+      <div class="vertical-toolbar">
+	<a href="#" class="button" id="gif-start" title="Start recording GIF animation"><span class="icon icon-recordgif">GS</span></a>
+	<a href="#" class="button" id="gif-stop" title="Stop recording and show GIF image"><span class="icon icon-stopgif">GIF Stop</span></a>
+	<a href="#" class="button" id="gif-clear" title="Remove GIF image"><span class="icon icon-clearall">Clear</span></a>
+      </div>
+      GIF file size: <span id="gif-size">0 Kb</span>
+      <br/>
+      <div class="figure-background"><span id="gif-output"></span></div>
+    </div>
+</div>
+<div id="settings-pane" class="panel">
+  <h3>Figure analyser</h3>
+  <ul>
+    <li>Stop analysys after <input id="analysys-max-steps" value="2048"/> steps.
+    </li>
+  </ul>
+  <h3>Spaceship catcher</h3>
+  <ul>
+    <li>Reseed every:<input id="catcher-reseed-period" value="30000"/>steps.
+    </li>
+    <li>Maximal spaceship size: <input id="catcher-max-spaceship-size" value="20"/> cells.
+    </li>
+  </ul>
+  <!--
+  <h3>Colors</h3>
+  <ul>
+    <li>Empty cells: <input id="color-cell0" class="input-color"></input></li>
+    <li>Active cells: <input id="color-cell1" class="input-color"></input></li>
+    <li>Grid #1: <input id="color-grid0" class="input-color"></input></li>
+    <li>Grid #2: <input id="color-grid1" class="input-color"></input></li>
+  </ul>
+  -->
+  
+  </div>
+
+<div id="library-pane" class="panel">
+  <h2>Library: <span id="library-name">New Library</span><span id="library-modified-elem" title="modified">*</span></h2>
+  Load library from local storage: <select id="list-libraries"></select>
+  <div>
+    <button id="lib-load-default" title="Load default library for this rule">Load default</button>
+    <button id="lib-new" title="Create new library">New</button>
+    <button id="lib-save" title="Save library to local storage">Save</button>
+    <button id="lib-save-as" title="Save library with new name">Save as...</button>
+    :
+    <button id="lib-remove-composites" title="Remove composite figures from the library">Remove composites</button>
+    :
+    <button id="lib-erase" title="Delete saved lirary data">Delete</button>
+  </div>
+  <div id="figure-report">
+  </div>
+  <div>
+    <div>
+      <button id="lib-export-json">Export to JSON</button>
+      <button id="lib-import-json">Import from JSON</button>
+    </div>
+    <textarea id="library-json-data" class="text-io"></textarea>
+  </div>
+</div>
+
+<div id="analysis-result" class="popup-dialog">
+  <h2>Analysys result</h2>
+  <div id="analysys-report-area">
+  </div>
+  <div>
+    <button id="analysis-result-close">Close</button>
+    <button id="analysis-result-to-library">Add to library</button>
+  </div>
+</div>
+
+</body> 
+
+<script type="text/javascript" src="scripts/math_util.js"/></script> 
+<script type="text/javascript" src="scripts/rle.js"/></script> 
+<script type="text/javascript" src="scripts/rules.js"/></script> 
+<script type="text/javascript" src="scripts/reversible_ca.js"/></script> 
+<script type="text/javascript" src="scripts/cells.js"/></script> 
+<script type="text/javascript" src="scripts/canvas_util.js"/></script> 
+<script type="text/javascript" src="scripts/field_view.js"></script> 
+<script type="text/javascript" src="scripts/parseuri.js"></script> 
+<script type="text/javascript" src="scripts/dom-builder.js"></script> 
+<script type="text/javascript" src="scripts/application.js"></script> 
+<!-- Antimatter GIF encoder -->
+<script type="text/javascript" src="scripts/ext/LZWEncoder.js"></script>
+<script type="text/javascript" src="scripts/ext/FixedPaletteQuant.js"></script> 
+<script type="text/javascript" src="scripts/ext/ExactPaletteQuant.js"></script>
+<script type="text/javascript" src="scripts/ext/WritableStream.js"></script> 
+<script type="text/javascript" src="scripts/ext/GIFEncoder.js"></script> 
+</html>

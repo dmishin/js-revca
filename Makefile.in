@@ -1,0 +1,18 @@
+COFFEE = coffee
+COFFEE_FLAGS = -m 
+
+all: compile
+
+test:
+	mocha tests/test*.coffee --compilers coffee:coffee-script
+
+#compile:
+#	coffee -m -b -c -o scripts scripts-src
+#	ln -f scripts-src/ext/*.js scripts/ext/
+
+compile: everything
+
+
+
+scripts/minified.js: $(ALL_OUTPUTS)
+	cat $(ALL_OUTPUTS) |closure --compilation_level ADVANCED_OPTIMIZATIONS > scripts/minified.js

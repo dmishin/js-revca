@@ -1,0 +1,48 @@
+* Features to implement
+
+** UI features
+*** DONE Edit cells
+*** DONE Load RLE from URL
+*** DONE Edit blocks:
+**** DONE Select
+**** DONE PARTIALLY Copy/Paste
+     DOne export to RLE and import
+     Done: rotate
+**** DONE Clear
+**** DONE Clear outside
+**** DONE Random fill
+**** DONE Disable selection layer, when it is not used (it slows down output)
+**** DONE Eraser tool
+*** TODO ? Scrolling, continuous player
+
+** DONE Change field size
+*** DONE SEt field size from URL parameters
+*** DONE Set size from UI
+** DONE Load page parameters:
+*** DONE Load RLE from page parameters
+*** TODO Load field and simulation parameters:
+    - Size DONE
+    - rule DONE
+    - timings
+    - cell size DONE
+** DONE Predefined rules
+   Many rules
+** WONTDO Rule editor
+   
+** Simulation features
+*** WONTDO? Flashing rules.
+*** DONE Rule analysis
+    - Invertibility 
+    - SYmmetries
+    - Invariants (population)
+    - Dula transform
+** DONE Glider analyser
+   Select a glider and then find its canonical form, period and speed
+   
+** DONE Make key modules work both in browser and in Node.js
+
+* Bugs
+** DONE Cell icons-9 wrong  
+** TODO When field is big, scroll bar appears
+   Why? What limits its size?
+   

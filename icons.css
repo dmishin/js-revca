@@ -1,0 +1,96 @@
+/*  
+    ICON stypes
+*/
+.icon {
+     background-image: url("images/icons.svg");
+     background-repeat: no-repeat;
+     width: 25px;
+     height: 25px;
+     /*text-indent: -10000px;  hides the text */
+     display: inline-block; 
+
+     text-indent: 100%;
+     white-space: nowrap;
+     overflow: hidden;
+}
+
+.icon-step  { background-position: 0px 0px; }
+.icon-rstep { background-position: 0px -25px; }
+.icon-pause { background-position: 0px -50px; }
+
+.icon-rarrow  { background-position: 0px -75px; }
+.icon-play    { background-position: 0px -100px; }
+.icon-rplay    { background-position: 0px -125px; }
+
+.icon-draw      { background-position: 0px -150px; }
+.icon-select    { background-position: 0px -175px; }
+
+.icon-clearall    { background-position: 0px -200px; }
+.icon-clearsel    { background-position: 0px -225px; }
+.icon-clearnsel   { background-position: 0px -250px; }
+.icon-rndsel   { background-position: 0px -275px; }
+
+
+.icon-recordgif   { background-position: 0px -300px; }
+.icon-stopgif   { background-position: 0px -325px; }
+
+.icon-rndsel1   { background-position: 0px -350px; }
+.icon-analyse   { background-position: 0px -375px; }
+
+.icon-rotate-ccw   { background-position: 0px -400px; }
+.icon-rotate-cw   { background-position: 0px -425px; }
+.icon-toggle-phase   { background-position: 0px -450px; }
+.icon-toggle-phase1   { background-position: 0px -475px; }
+.icon-flip-v   { background-position: 0px -500px; }
+.icon-flip-h   { background-position: 0px -525px; }
+.icon-copy   { background-position: 0px -550px; }
+.icon-stamp   { background-position: 0px -575px; }
+.icon-erase   { background-position: 0px -600px; }
+.icon-catcher   { background-position: 0px -625px; }
+
+/*
+ for i in range(16): print(".icon-cells_%x { background-position: 0px %dpx; }"%(i, -75-25*i))
+*/
+.cellicon {
+     background-image: url("images/cell-icons.svg");
+     background-repeat: no-repeat;
+     width: 25px;
+     height: 25px;
+     text-indent: -10000px; /* hides the text */
+     display: inline-block; 
+}
+
+.icon-cells_0 { background-position: 0px 0px; }
+.icon-cells_1 { background-position: 0px -25px; }
+.icon-cells_2 { background-position: 0px -50px; }
+.icon-cells_3 { background-position: 0px -75px; }
+.icon-cells_4 { background-position: 0px -100px; }
+.icon-cells_5 { background-position: 0px -125px; }
+.icon-cells_6 { background-position: 0px -150px; }
+.icon-cells_7 { background-position: 0px -175px; }
+.icon-cells_8 { background-position: 0px -200px; }
+.icon-cells_9 { background-position: 0px -225px; }
+.icon-cells_a { background-position: 0px -250px; }
+.icon-cells_b { background-position: 0px -275px; }
+.icon-cells_c { background-position: 0px -300px; }
+.icon-cells_d { background-position: 0px -325px; }
+.icon-cells_e { background-position: 0px -350px; }
+.icon-cells_f { background-position: 0px -375px; }
+
+.icon-separator { 
+    background-image: none;
+    background-color: none;
+    width: 7px;
+}
+
+
+/*.icon:hover { background-position: 0 25px; }*/
+
+.icon-wait {
+     background-image: url("images/icon-wait.gif");
+     background-repeat: no-repeat;
+     width: 64px;
+     height: 64px;
+     text-indent: -10000px; /* hides the text */
+     display: inline-block; 
+}
