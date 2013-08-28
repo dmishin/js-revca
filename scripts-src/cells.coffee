@@ -1,5 +1,5 @@
 #//////////////////////////////////////////////////////////////////////////////
-# Configuration analysys
+# Configuration analysis
 #//////////////////////////////////////////////////////////////////////////////
 ((exports)->
   #Import section
@@ -183,7 +183,7 @@
 
       vacuum_period = Rules.vacuum_period rule
       unless vacuum_period?
-        throw new Error "Empty field is not periodic for this rule. Analysys impossible"
+        throw new Error "Empty field is not periodic for this rule. Analysis impossible"
 
       figure = @normalize figure
       #prepare original field
@@ -221,7 +221,7 @@
 
        #Return results
        result = {
-        analysed_generations: max_iters
+        analyzed_generations: max_iters
        }
        cells_best = bestFigureSearch.getArg() 
        if cycle_found

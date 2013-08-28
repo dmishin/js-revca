@@ -407,17 +407,17 @@
             @updateCanvas()
 
 
-      _getAnalyserMaxSteps: ->
-        maxSteps = parseInt E("analysys-max-steps").value, 10
+      _getAnalyzerMaxSteps: ->
+        maxSteps = parseInt E("analysis-max-steps").value, 10
         if isNaN maxSteps
           maxSteps = 2048
-          alert "Incorrect value of the analysys depth, will use #{maxSteps}"
+          alert "Incorrect value of the analysis depth, will use #{maxSteps}"
         maxSteps
       enable_spaceship_catcher: ->
         if @spaceship_catcher is null
-          maxSteps = @_getAnalyserMaxSteps()
+          maxSteps = @_getAnalyzerMaxSteps()
           on_spaceship = (figure, rule)  =>
-            if result=Cells.analyse(figure, rule, maxSteps)
+            if result=Cells.analyze(figure, rule, maxSteps)
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
                   @library.put result
@@ -472,17 +472,17 @@
       ##Remove the recorded GIF image
       gifRecorderClear: -> E("gif-output").innerHTML = ""
     
-      analyseSelection: ->
+      analyzeSelection: ->
         cells = @getSelectedCells()
         return if cells.length is 0
 
-        root = E "analysys-report-area"
+        root = E "analysis-report-area"
         root.innerHTML = "<div style='text-align:center'><span class='icon-wait'>Analysing...</span></div>"
         E("analysis-result").style.display = "block"
 
-        #Delay analysys
+        #Delay analysis
         window.setTimeout (=>
-          @analysys_result = result = Cells.analyse(cells, @gol.rule, @_getAnalyserMaxSteps())
+          @analysis_result = result = Cells.analyze(cells, @gol.rule, @_getAnalyzerMaxSteps())
 
           makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
           canv = drawFigureOnCanvas makeCanvas, result.cells, [128, 96], [1, 24], 1
@@ -505,12 +505,12 @@
         ),1 #Fast timeout
         
         
-      analysysResultToLibrary: ->
-        if @analysys_result?
-          @library.put @analysys_result
+      analysisResultToLibrary: ->
+        if @analysis_result?
+          @library.put @analysis_result
           
       copyToBuffer: ->
-        @analysys_result = null
+        @analysis_result = null
         @buffer.set Cells.normalize @getSelectedCells()
         
       getSelectedCells: ->
@@ -792,7 +792,7 @@
     opts[opts.length] = new Option("(User Defined)", "")
     
   #//////////////////////////////////////////////////////////////////////////////
-  # Rule analysys
+  # Rule analysis
   #//////////////////////////////////////////////////////////////////////////////
   show_rule_diagram = (rule, element) ->
       cells_icon = (value) -> "cellicon icon-cells_#{ value.toString(16) }"
@@ -826,7 +826,7 @@
       element.appendChild dom.finalize()
 
   show_rule_properties = (rule, element) ->
-    ######## Analysys part #########
+    ######## Analysis part #########
     symmetries = Rules.find_symmetries rule
     population_invariance = Rules.invariance_type rule
     invertible = Rules.is_invertible rule
@@ -953,7 +953,7 @@
       sRule = Rules.stringify rule
       Rule2Name[ Rules.stringify rule ] ? "Default:[#{sRule}]"
       
-    #True, if the library already have this analysys result
+    #True, if the library already have this analysis result
     has: (result)->
       rle = Cells.to_rle result.cells
       return (rle of @key2result)
@@ -1119,7 +1119,7 @@
       @modified = true
       @updateLibrarySize()
 
-    ##Filter library by a predicate, that takes "result": object, returned by the analysys function
+    ##Filter library by a predicate, that takes "result": object, returned by the analysis function
     filter: (predicate) ->
       to_remove = []
       for key of @key2result
@@ -1195,7 +1195,7 @@
     E("clear-selection").onclick = nodefault -> golApp.clear_selection()
     E("clear-nonselection").onclick = nodefault -> golApp.clear_nonselection()
     E("selection-random").onclick = nodefault -> golApp.random_fill_selection 0.5
-    E("selection-analyse").onclick = nodefault -> golApp.analyseSelection()
+    E("selection-analyze").onclick = nodefault -> golApp.analyzeSelection()
 
      
     E("speed-show-every").onchange = ->
@@ -1292,7 +1292,7 @@
     E("rle-encoded").onfocus = ->
       window.setTimeout (=>@select()), 100
 
-    E("analysis-result-to-library").onclick = -> golApp.analysysResultToLibrary()
+    E("analysis-result-to-library").onclick = -> golApp.analysisResultToLibrary()
     E("analysis-result-close").onclick= ->
       E("analysis-result").style.display="none"
 

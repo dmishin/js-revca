@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"> 
+  <head> 
+    <meta charset="utf-8">
+    <title>Playground for script development</title> 
+  </head> 
+
+  
+  <body> 
+    <div id="output"></div>
+  </body> 
+
+<script type="text/javascript" src="scripts/math_util.js"/></script> 
+<script type="text/javascript" src="scripts/rle.js"/></script> 
+<script type="text/javascript" src="scripts/rules.js"/></script> 
+<script type="text/javascript" src="scripts/reversible_ca.js"/></script> 
+<script type="text/javascript" src="scripts/cells.js"/></script> 
+<script type="text/javascript" src="scripts/canvas_util.js"/></script> 
+<script type="text/javascript" src="scripts/field_view.js"></script> 
+<script type="text/javascript" src="scripts/parseuri.js"></script> 
+<script type="text/javascript" src="scripts/dom-builder.js"></script> 
+<script type="text/javascript">
+
+  var dom = new dom_builder.DomBuilder();
+  var module_cells = this.cells;
+  var cells = cells.Cells.from_rle("7b2o$9bo$bo6bo$2b2o$3bo5$6b2o$7bo$8bo");
+  var steps = 100;
+  var rule = rules.NamedRules.singleRotate;
+
+  dom.text("Source cell list:").tag("br").end();
+  dom.text(JSON.stringify(cells)).tag("br").end();
+  
+  var groups = module_cells.splitFigure(rule, cells, steps);
+
+  dom.text("Splitting result:").tag("br").end();
+  dom.tag("ul")
+  for(var i=0; i<groups.length;++i){
+    var f = groups[i], t=JSON.stringify(f);
+    module_cells.Cells.normalize(f);
+    dom.tag("li").text(module_cells.Cells.to_rle(f)).text(" "+t).end();
+  }
+  dom.end();
+  
+  document.getElementById("output").appendChild(dom.finalize());
+</script>
+
+</html>

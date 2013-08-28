@@ -46,3 +46,12 @@
 ** TODO When field is big, scroll bar appears
    Why? What limits its size?
    
+
+* Publishing
+** TODO Automatic publishing on github?
+   git checkout master
+   make test && make
+   git checkout gh-pages
+   git add images *.html scripts scripts-src *.css LICENSE README.md
+   git commit -m "Automatically generated commit"
+
