@@ -374,7 +374,7 @@
                 r = Rules.parse keys.rule, ","
               @gol.rule = r
             catch e
-              alert "No rule " + keys.rule
+              alert "Incorrect rule: #{keys.rule}"
           if keys.frame_delay?
             try
               @setDelay parseInt keys.frame_delay, 10
@@ -1305,8 +1305,8 @@
 
     golApp.step_size = parseInt E("speed-show-every").value
     golApp.step_delay = parseInt E("speed-frame-delay").value
-    golApp.initialize()
     golApp.set_rule E("select-rule").value
+    golApp.initialize()
     E("rule").value = Rules.stringify golApp.gol.rule
     
     selectOrAddOption E("speed-show-every"), golApp.step_size
