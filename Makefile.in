@@ -1,5 +1,5 @@
 COFFEE = coffee
-COFFEE_FLAGS = -m 
+COFFEE_FLAGS = -m -b
 
 all: compile
 
@@ -12,7 +12,8 @@ test:
 
 compile: everything
 
-
+clean:
+	rm $(ALL_OUTPUTS)
 
 scripts/minified.js: $(ALL_OUTPUTS)
 	cat $(ALL_OUTPUTS) |closure --compilation_level ADVANCED_OPTIMIZATIONS > scripts/minified.js
