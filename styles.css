@@ -146,7 +146,7 @@ body {
 }
 
 #current-figure-pane {
-    float: left;
+    float: right;
     width: 18em;
 }
 
@@ -248,4 +248,74 @@ body {
 .menu li a{
     display:block;
     width: 100%;
+}
+
+/********************Help page text styles********************/
+
+article{
+    background-color: white;
+    max-width: 60em;
+    text-align:justify;
+    margin-left: 3em;
+}
+
+.formula{
+    text-align: center;
+    font-size: 120%;
+    //font-weight: bold;
+}
+dt{
+    font-weight: bold;
+}
+figure{
+    text-align: center;
+}
+
+figure img{
+    padding: 0.5em 0.8em;
+    box-shadow: 1px 1px 0.4em rgba(0, 0, 0, 0.3);
+    background-color: white;
+}
+figcaption{
+    font-size: 83%;
+}
+
+blockquote {
+    border: 1px solid rgb(170, 170, 170);
+    background-color: rgb(249, 249, 249);
+    padding: 1em;
+}
+blockquote .quote-title{
+    float: right;
+    color: gray;
+    font-size: 200%;
+}
+.rule {
+    background-color: #fafaff;
+    color: #110;
+    letter-spacing:-1px;
+}
+/********************/
+figure table{
+    border-collapse:collapse;
+    margin-left: auto;
+    margin-right: auto;
+}
+figure table{
+    border: 1px solid black;
+}
+figure td,
+figure th{
+    border: 1px solid rgb(170, 170, 170);
+}
+
+figure th{
+    background-color: rgb(249, 249, 249);
+}
+figure td, figure th{
+    padding: 0.5em 0.8em;
+}
+
+figure td{
+    text-align: left;
 }
