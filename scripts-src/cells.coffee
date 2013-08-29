@@ -176,8 +176,8 @@
       throw new Error "Impossible to rotate vector (#{dx},#{dy}) to the positive direction"
 
 
-    analyze: (figure, rule, max_iters = 2048, stop_on_border_hit=true) ->
-      throw new Error ("Figure undefined")  unless figure
+    analyze: (pattern, rule, max_iters = 2048, stop_on_border_hit=true) ->
+      throw new Error ("Pattern undefined")  unless pattern
       throw new Error ("Rule undefined")  unless rule
       #sort cells by Y, then by X
 
@@ -185,17 +185,17 @@
       unless vacuum_period?
         throw new Error "Empty field is not periodic for this rule. Analysis impossible"
 
-      figure = @normalize figure
+      pattern = @normalize pattern
       #prepare original field
-      [xrange, yrange] = @extent figure
-      sandbox_size = 64 + 2 * Math.max(xrange + yrange, figure.length) #some heuristics here.
+      [xrange, yrange] = @extent pattern
+      sandbox_size = 64 + 2 * Math.max(xrange + yrange, pattern.length) #some heuristics here.
       sandbox = new MargolusNeighborehoodField(new Array2d(sandbox_size, sandbox_size), rule)
       x0 = sandbox.snap_below div(sandbox_size - xrange, 2)
       y0 = sandbox.snap_below div(sandbox_size - yrange, 2)
-      sandbox.field.put_cells figure, x0, y0
+      sandbox.field.put_cells pattern, x0, y0
 
-      bestFigureSearch = new Maximizer @energy
-      bestFigureSearch.put figure
+      bestPatternSearch = new Maximizer @energy
+      bestPatternSearch.put pattern
       
       #start search
       cycle_found = false
@@ -208,22 +208,22 @@
              sandbox.field.is_nonempty(0, 0, 1, sandbox_size)
             break
           
-        curFigure = sandbox.field.get_cells 0, 0, sandbox_size, sandbox_size
-        [x1, y1] = @bounds curFigure
+        curPattern = sandbox.field.get_cells 0, 0, sandbox_size, sandbox_size
+        [x1, y1] = @bounds curPattern
         x1 = sandbox.snap_below x1
         y1 = sandbox.snap_below y1
-        @offset curFigure, -x1, -y1
+        @offset curPattern, -x1, -y1
         
-        if @areEqual figure, curFigure
+        if @areEqual pattern, curPattern
           cycle_found = true
           break
-        bestFigureSearch.put curFigure
+        bestPatternSearch.put curPattern
 
        #Return results
        result = {
         analyzed_generations: max_iters
        }
-       cells_best = bestFigureSearch.getArg() 
+       cells_best = bestPatternSearch.getArg() 
        if cycle_found
           [cells_best, result.dx, result.dy] =
             @canonicalize_spaceship cells_best, rule, (x1 - x0), (y1 - y0)
@@ -233,23 +233,23 @@
       
     #Given a spaceship and its direction,
     # Rotate it, if rule is invariant in relation to rotation
-    canonicalize_spaceship: (figure, rule, dx, dy) ->
+    canonicalize_spaceship: (pattern, rule, dx, dy) ->
       if dx isnt 0 or dy isnt 0 #If it is a spaceship
         if Rules.is_transposable_with rule, Bits.rotate #And if the rule allows rotation by 90
           [dx, dy, t] = @_find_normalizing_rotation dx, dy
-          figure = @transform figure, t
-      [figure, dx, dy]
+          pattern = @transform pattern, t
+      [pattern, dx, dy]
       
     #For the given spaceship, returns its dual, if rule has duality transform
     #Returned spaceship is rotated to have positive direction, if rule has rotation symmetry
-    # Return value: [figure, dx1, dy1]
-    getDualSpaceship: (figure, rule, dx, dy) ->
+    # Return value: [pattern, dx1, dy1]
+    getDualSpaceship: (pattern, rule, dx, dy) ->
       [name,tfm,_] = getDualTransform rule
       if name is null then return [null] #No duality transform
-      dualFigure = Cells.togglePhase Cells.transform figure, tfm
+      dualPattern = Cells.togglePhase Cells.transform pattern, tfm
       dx1 = -(dx * tfm[0] + dy * tfm[1])
       dy1 = -(dx * tfm[2] + dy * tfm[3])
-      Cells.canonicalize_spaceship dualFigure, rule, dx1, dy1
+      Cells.canonicalize_spaceship dualPattern, rule, dx1, dy1
 
   #Operations over 2d points
   exports.Point = Point =
@@ -421,20 +421,20 @@
     arr
 
   ####
-  # Splits figure into several parts, that do not interact.
+  # Splits pattern into several parts, that do not interact.
   # 
-  exports.splitFigure = (rule, figure, steps) ->
+  exports.splitPattern = (rule, pattern, steps) ->
     label2group = {}
     group2labels = {}
-    labelled_figure = []
+    labelled_pattern = []
     #First, add label to each cell,
     #  and create individual group for each label.
-    for [x,y], i in figure
+    for [x,y], i in pattern
       label = i+1
-      labelled_figure.push [x,y,label]
+      labelled_pattern.push [x,y,label]
       label2group[label] = label
       group2labels[label] = [label]
-    number_of_groups = figure.length
+    number_of_groups = pattern.length
 
       
     #Merge two labels, marking that they belong to the same group
@@ -458,16 +458,16 @@
         number_of_groups -= 1
       null
     
-    #Evaluate figure for the given number of steps,
+    #Evaluate pattern for the given number of steps,
     # or until it merges completely.
     for iter in [0..steps] by 1
-      labelled_figure = evaluateLabelledCellList rule, labelled_figure, (iter%2), merge_labels
+      labelled_pattern = evaluateLabelledCellList rule, labelled_pattern, (iter%2), merge_labels
       if number_of_groups <= 1 #Reached total merge before complete evaluation
         break
-    #Now just construct the result: list of figures (list of lists)
+    #Now just construct the result: list of patterns (list of lists)
     return (
       for grp_key, labels of group2labels
         grp = parseInt grp_key, 10
         for label in labels
-          figure[ parseInt(label,10)-1 ])
+          pattern[ parseInt(label,10)-1 ])
 )(exports ? this["cells"]={} )

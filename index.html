@@ -77,7 +77,7 @@
       <a class="button" href="#" id="btn-tool-stamp" title="Paste pattern from buffer"><span class="icon icon-stamp">Stamp</span></a>    
       <a class="button" href="#" id="btn-tool-erase" title="Eraser"><span class="icon icon-erase">Erase</span></a>    
       </span>
-      <a class="button" href="#" id="figure-from-selection" title="Copy from selection"><span class="icon icon-copy">Copy</span></a>
+      <a class="button" href="#" id="pattern-from-selection" title="Copy from selection"><span class="icon icon-copy">Copy</span></a>
     </div>
 
     <div id="cells-widget">
@@ -93,17 +93,17 @@
     </div>
       Generation: <span id="time">0</span> (<button id="reset-timer">reset</button>)
     </div>
-    <div id="current-figure-pane" class="panel">
+    <div id="current-pattern-pane" class="panel">
       <h2>Buffer</h2>
       <div class="vertical-toolbar">
-	<a class="button" href="#" id="figure-rotate-cw" title="Rotate clockwise"><span class="icon icon-rotate-cw">Rotate cw</span></a>
-	<a class="button" href="#" id="figure-rotate-ccw" title="Rotate counter-clockwise"><span class="icon icon-rotate-ccw">Rotate ccw</span></a>
-	<a class="button" href="#" id="figure-flip-h" title="Flip horizontally"><span class="icon icon-flip-h">Flip H</span></a>
-	<a class="button" href="#" id="figure-flip-v" title="Flip vertically"><span class="icon icon-flip-v">Flip V</span></a>
-	<a class="button" href="#" id="figure-toggle-phase" title="Toggle phase: shift pattern by 1 by x and y"><span class="icon icon-toggle-phase">Toggle phase</span></a>
+	<a class="button" href="#" id="pattern-rotate-cw" title="Rotate clockwise"><span class="icon icon-rotate-cw">Rotate cw</span></a>
+	<a class="button" href="#" id="pattern-rotate-ccw" title="Rotate counter-clockwise"><span class="icon icon-rotate-ccw">Rotate ccw</span></a>
+	<a class="button" href="#" id="pattern-flip-h" title="Flip horizontally"><span class="icon icon-flip-h">Flip H</span></a>
+	<a class="button" href="#" id="pattern-flip-v" title="Flip vertically"><span class="icon icon-flip-v">Flip V</span></a>
+	<a class="button" href="#" id="pattern-toggle-phase" title="Toggle phase: shift pattern by 1 by x and y"><span class="icon icon-toggle-phase">Toggle phase</span></a>
       </div>
-      <div id="buffer-bg" class="figure-background">
-	<canvas id="active-figure-canvas" width="16px" height="16px"></canvas>
+      <div id="buffer-bg" class="pattern-background">
+	<canvas id="active-pattern-canvas" width="16px" height="16px"></canvas>
       </div>
 
       <div id="buffer-rle-block">
@@ -140,7 +140,7 @@
       </div>
       GIF file size: <span id="gif-size">0 Kb</span>
       <br/>
-      <div class="figure-background"><span id="gif-output"></span></div>
+      <div class="pattern-background"><span id="gif-output"></span></div>
     </div>
 </div>
 <div id="settings-pane" class="panel">
@@ -181,7 +181,7 @@
     :
     <button id="lib-erase" title="Delete saved library data">Delete</button>
   </div>
-  <div id="figure-report">
+  <div id="pattern-report">
   </div>
   <div>
     <div>

@@ -70,7 +70,7 @@ body {
     text-align:right;
     background-color:white;
 }
-.figure-background{
+.pattern-background{
     min-width: 3em;
     min-height: 2em;
     text-align:center;
@@ -78,7 +78,7 @@ body {
     padding: 1em 1em;
     overflow:hidden;
 }
-.lib-figure-background{
+.lib-pattern-background{
     paddind: 0.2em 0.2em;
     text-align:center;
     background-color: rgb(220,220,220);
@@ -163,7 +163,7 @@ body {
     min-height: 12em;
 }
 
-#current-figure-pane {
+#current-pattern-pane {
     float: left;
     width: 18em;
 }

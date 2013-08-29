@@ -27,14 +27,14 @@ filterComposites = (records, rule) ->
   filtered = []
   for rec in consolidated
     {result, count, key} = rec
-    grps = cells.splitFigure rule, result.cells, result.period
+    grps = cells.splitPattern rule, result.cells, result.period
     if grps.length == 1
       filtered.push rec
   filtered
 
 makeDualGlider = (glider, dx, dy) ->
   #Create dual glider, which is mirrored and phase-shifted.
-  #For the rotational-1 rule, this dual glider is also a figure, that evolutes in reverse direction.
+  #For the rotational-1 rule, this dual glider is also a pattern, that evolutes in reverse direction.
 
   g1 = Cells.transform (Cells.togglePhase glider), [-1, 0, 0, 1]
   dx1 = dx #phase shift reveses dx,dy; 
@@ -86,7 +86,7 @@ mergeNonUniqueNormalizations = (report, rule, mk_dual) ->
   return [filtered_report, merged]
 
 
-_figureEvolutions = (cells, rule, period) ->
+_patternEvolutions = (cells, rule, period) ->
   cells = ([x,y,1] for [x,y] in cells)
   evols = [cells]
   if mk_dual?
@@ -112,8 +112,8 @@ _doMergeNonUnique = (records, rule, mk_dual, report) -> #report is output!
       merged += 1
     else
       report.push record
-      #process.stdout.write "    Figure:\n"
-      for fig in _figureEvolutions result.cells, rule, result.period
+      #process.stdout.write "    Pattern:\n"
+      for fig in _patternEvolutions result.cells, rule, result.period
         rle = Cells.to_rle Cells.normalize fig
         #process.stdout.write "      register RLE: #{rle}\n"
         key2record[rle] = record
@@ -140,4 +140,4 @@ process.stderr.write "   merged #{merges} records; new size: #{consolidated.leng
 
 fs.writeFileSync "consolidated-singlerot.json", JSON.stringify consolidated
 
-process.stdout.write "Consolidation of results complete, #{consolidated.length} figures found\n"
+process.stdout.write "Consolidation of results complete, #{consolidated.length} patterns found\n"

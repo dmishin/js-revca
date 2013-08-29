@@ -114,7 +114,7 @@
       null
 
     #Returns list of cells in the given region
-    pick_figure_at: (x, y, x0, y0, erase=false, range = 4) -> #[(int,int)]
+    pick_pattern_at: (x, y, x0, y0, erase=false, range = 4) -> #[(int,int)]
       self = this
       w = @width
       h = @height

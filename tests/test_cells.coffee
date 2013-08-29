@@ -1,6 +1,6 @@
 assert = require "assert"
 module_cells = require "../scripts-src/cells"
-{Cells, evaluateCellList, evaluateLabelledCellList, splitFigure} = module_cells
+{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = module_cells
 module_rules = require "../scripts-src/rules"
 {Bits} = module_rules
 # mocha tests/test-math-utils.coffee --compilers coffee:coffee-script
@@ -89,7 +89,7 @@ describe "Cells.parse_rle( rle_string ) parse standard RLE string into list of c
     rle = "o$"
     assert.deepEqual (Cells.from_rle rle), [[0,0]]
 
-  it "must decode a glider figure", ->
+  it "must decode a glider pattern", ->
     rle = "2o$obo$o"
     glider = [[0,0],[1,0],[0,1],[2,1],[0,2]]
     assert.deepEqual (Cells.from_rle rle), glider
@@ -178,10 +178,10 @@ describe "getDualTransform( rule )", ->
 describe "Cells.getDualSpaceship( sship, rule, dx, dy) -> (sship', dx', dy')", ->
   it "must work for the single-rotation rule", ->
     rule = module_rules.NamedRules.singleRotate
-    figure = Cells.from_rle "3o$o$bo" #Conway glider
+    pattern = Cells.from_rle "3o$o$bo" #Conway glider
     expectedDualRle = "2bo$obo$b2o"
     dx = dy = 1
-    [dualFigure, dx1, dy1] = Cells.getDualSpaceship figure, rule, dx, dy
+    [dualPattern, dx1, dy1] = Cells.getDualSpaceship pattern, rule, dx, dy
     assert.equal dx1, 1
     assert.equal dy1, 1
-    assert.equal Cells.to_rle(dualFigure), expectedDualRle
+    assert.equal Cells.to_rle(dualPattern), expectedDualRle

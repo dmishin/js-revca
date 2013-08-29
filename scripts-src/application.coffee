@@ -4,7 +4,7 @@
 (->
   ##### Imports #####
   {Rules, NamedRules, Rule2Name} = this.rules
-  {Cells, Point, splitFigure, getDualTransform} = this.cells
+  {Cells, Point, splitPattern, getDualTransform} = this.cells
   {MargolusNeighborehoodField, Array2d} = this.reversible_ca
   {div, mod, line_pixels, rational2str, getReadableFileSizeString, cap} = this.math_util
   {FieldView} = this.field_view
@@ -165,8 +165,8 @@
         @encoder = null
         @spaceship_catcher = null
 
-        @library = new LibraryPane(E("figure-report"), E("library-size"), this)
-        @buffer = new BufferPane(E("active-figure-canvas"))
+        @library = new LibraryPane(E("pattern-report"), E("library-size"), this)
+        @buffer = new BufferPane(E("active-pattern-canvas"))
         
       setSize: (cols, rows) ->
         RECOMMENDED_WIDTH = 800
@@ -416,8 +416,8 @@
       enable_spaceship_catcher: ->
         if @spaceship_catcher is null
           maxSteps = @_getAnalyzerMaxSteps()
-          on_spaceship = (figure, rule)  =>
-            if result=Cells.analyze(figure, rule, maxSteps)
+          on_spaceship = (pattern, rule)  =>
+            if result=Cells.analyze(pattern, rule, maxSteps)
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
                   @library.put result
@@ -485,13 +485,13 @@
           @analysis_result = result = Cells.analyze(cells, @gol.rule, @_getAnalyzerMaxSteps())
 
           makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
-          canv = drawFigureOnCanvas makeCanvas, result.cells, [128, 96], [1, 24], 1
+          canv = drawPatternOnCanvas makeCanvas, result.cells, [128, 96], [1, 24], 1
           in_library = (@library.has result) or (@library.hasDual result, @gol.rule)
           
           dom = new DomBuilder
-          dom.tag("div").CLASS("figure-background").append(canv).end()
+          dom.tag("div").CLASS("pattern-background").append(canv).end()
           dom.tag("ul")
-          dom.tag("li").text("Figure type: ").text(spaceshipType result.dx, result.dy).end()
+          dom.tag("li").text("Pattern type: ").text(spaceshipType result.dx, result.dy).end()
           dom.tag("li").text("Population: #{cells.length} cells").end()
           dom.tag("li").text("Period: ").text(result.period ? "unknown").end()
           if result.dx? and (result.dx or result.dy)
@@ -634,7 +634,7 @@
       
     on_click_cell: (e, xy) -> @_erase_at xy
   ###
-  #Mouse tool that draws given figure
+  #Mouse tool that draws given pattern
   ###
   class ToolStamp extends BaseMouseTool
     constructor: (golApp) ->
@@ -642,10 +642,10 @@
       @preview_color = "rgba(255,255,0,0.4)"
 
     _drawPreview: ([x0,y0])->
-      fig = @golApp.buffer.figure
+      fig = @golApp.buffer.pattern
       return if fig.length is 0
       size = @golApp.view.cell_size
-      [dx,dy]=@golApp.buffer.figureExtent
+      [dx,dy]=@golApp.buffer.patternExtent
       x0-=dx
       y0-=dy
       ctx = @getOverlayContext()
@@ -664,7 +664,7 @@
     on_click_cell: (e, xy) ->
       app = @golApp
       buffer = app.buffer
-      app.gol.field.put_cells buffer.figure, (Point.subtract xy, buffer.figureExtent) ...
+      app.gol.field.put_cells buffer.pattern, (Point.subtract xy, buffer.patternExtent) ...
       app.updateCanvas()
     
   ###
@@ -740,35 +740,35 @@
       ctx.fillRect x0 * size, y0 * size, (x1 - x0 + 1) * size, (y1-y0+ 1) * size
 
   #////////////////////////////
-  # Figure pane
+  # Buffer pane
   #////////////////////////////
   class BufferPane
-    constructor: (@canvas, figure=[], @desiredSize=[64, 64]) ->
+    constructor: (@canvas, pattern=[], @desiredSize=[64, 64]) ->
       throw new Error "Not a canvas" unless @canvas.getContext?
       @_bindEvents()
       @oldRleValue = null
-      @set figure
-    #Update image of the current figure
-    updateFigure: ->
+      @set pattern
+    #Update image of the current pattern
+    updatePattern: ->
       canv = @canvas
       getCanvas = (w, h)->
         canv.width = w
         canv.height = h
         return canv
-      canv = drawFigureOnCanvas getCanvas, @figure, @desiredSize, [1, 24], 1
+      canv = drawPatternOnCanvas getCanvas, @pattern, @desiredSize, [1, 24], 1
     
-    #Set and show current figure
-    set: (figure, update_rle=true)->
-      @figure = figure
-      [ex, ey] = Cells.extent figure
-      @figureExtent = [ex+(ex&1), ey+(ey&1)]
-      @updateFigure()
+    #Set and show current pattern
+    set: (pattern, update_rle=true)->
+      @pattern = pattern
+      [ex, ey] = Cells.extent pattern
+      @patternExtent = [ex+(ex&1), ey+(ey&1)]
+      @updatePattern()
       @toRle() if update_rle
 
-    #Rotate or flip current figure
-    transform: (tfm) -> @set Cells.transform @figure, tfm
-    togglePhase: -> @set Cells.togglePhase @figure
-    toRle: -> E("rle-encoded").value = @oldRleValue = Cells.to_rle @figure
+    #Rotate or flip current pattern
+    transform: (tfm) -> @set Cells.transform @pattern, tfm
+    togglePhase: -> @set Cells.togglePhase @pattern
+    toRle: -> E("rle-encoded").value = @oldRleValue = Cells.to_rle @pattern
     fromRle: ->
       messageElt = E("rle-decode-message")
       messageBoxElt = E("rle-decode-box")
@@ -888,10 +888,10 @@
       else
         throw new Error "Unknown identity transform name: #{name}"
     
-  #Function for drawing a single figure on a canvas
+  #Function for drawing a single pattern on a canvas
   #Arguemnts:
   # canvasGetter: (w, h) -> canvas   Return Canvas instance, taking in account given width and height.
-  drawFigureOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, cell_spacing) ->
+  drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, cell_spacing) ->
         [DESIRED_W, DESIRED_H] = desired_size
         [cell_min, cell_max] = cell_size_limits
         [x0, y0, cols, rows] = Cells.bounds cells
@@ -930,7 +930,7 @@
       dom = new DomBuilder "table"
       dom.a("class", "library-table")
          .tag("thead").tag("tr")
-      for hdr in ["Figure", "Pop", "Period", "Offset", "V", "RLE", "Count", ""]
+      for hdr in ["Pattern", "Population", "Period", "Offset", "V", "RLE", "Count", ""]
         dom.tag("th").text(hdr).end()
       dom.end().end() #/tr/th
          .tag("tbody").store("library_body")
@@ -1072,7 +1072,7 @@
         
         makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
         
-        canv = drawFigureOnCanvas makeCanvas, result.cells, @desired_size, [1, 24], 1
+        canv = drawPatternOnCanvas makeCanvas, result.cells, @desired_size, [1, 24], 1
         #if canv.toDataURL? #Convert to static image, is supported
         #  canv = makeElement "img", [["src", canv.toDataURL()]]
         v_str =
@@ -1081,11 +1081,11 @@
           else
             "?"
 
-        #["Figure", "Pop", "Per", "dX", "V", "RLE", "CNt", "Close"]
+        #["Pattern", "Pop", "Per", "dX", "V", "RLE", "CNt", "Close"]
         dom = new DomBuilder "tr"
-        dom.CLASS("figure-report")
-          .tag("td").tag("div").CLASS("lib-figure-background")
-            .tag("a").store("aSelect").a("href","#").a("title", "Click to select figure")
+        dom.CLASS("pattern-report")
+          .tag("td").tag("div").CLASS("lib-pattern-background")
+            .tag("a").store("aSelect").a("href","#").a("title", "Click to select pattern")
               .append(canv)                                        #image
           .end().end().end()
           .tag("td").text(result.cells.length).end()              #population
@@ -1132,7 +1132,7 @@
   # Spaceship catcher
   #//////////////////////////////////////////////////////////////////////////////
   class SpaceshipCatcher
-    constructor: (@on_figure, @max_size=20, @reseed_period=300000) ->
+    constructor: (@on_pattern, @max_size=20, @reseed_period=300000) ->
       @search_area=1
       @spaceships_found = []
       
@@ -1143,9 +1143,9 @@
       pick = (x,y) =>
         x0 = gol.snap_below x
         y0 = gol.snap_below y
-        fig = f.pick_figure_at x, y, x0, y0, true #pick and erase
+        fig = f.pick_pattern_at x, y, x0, y0, true #pick and erase
         if fig.length <= @max_size
-          @on_figure fig, rule
+          @on_pattern fig, rule
       for y in [0...@search_area] by 1
         for x in [0...f.width] by 1
           if f.get(x,y) isnt 0 then pick x, y
@@ -1263,8 +1263,7 @@
           alert e
     E("lib-remove-composites").onclick = ->
       isnt_composite = (record) ->
-        groups = splitFigure(golApp.gol.rule, record.result.cells, record.result.period)
-        #alert "Figure: #{record.key} groups: #{groups.length}"
+        groups = splitPattern(golApp.gol.rule, record.result.cells, record.result.period)
         groups.length <= 1
       try
         golApp.library.filter isnt_composite
@@ -1297,12 +1296,12 @@
     E("analysis-result").onclick = E("analysis-result-close").onclick = ->
       E("analysis-result").style.display="none"
 
-    E("figure-rotate-cw").onclick  = nodefault -> golApp.buffer.transform [0,-1,1,0]
-    E("figure-rotate-ccw").onclick = nodefault -> golApp.buffer.transform [0,1,-1,0]
-    E("figure-flip-h").onclick = nodefault -> golApp.buffer.transform [-1,0,0,1]
-    E("figure-flip-v").onclick = nodefault -> golApp.buffer.transform [1,0,0,-1]
-    E("figure-toggle-phase").onclick = nodefault -> golApp.buffer.togglePhase()
-    E("figure-from-selection").onclick = nodefault -> golApp.copyToBuffer()
+    E("pattern-rotate-cw").onclick  = nodefault -> golApp.buffer.transform [0,-1,1,0]
+    E("pattern-rotate-ccw").onclick = nodefault -> golApp.buffer.transform [0,1,-1,0]
+    E("pattern-flip-h").onclick = nodefault -> golApp.buffer.transform [-1,0,0,1]
+    E("pattern-flip-v").onclick = nodefault -> golApp.buffer.transform [1,0,0,-1]
+    E("pattern-toggle-phase").onclick = nodefault -> golApp.buffer.togglePhase()
+    E("pattern-from-selection").onclick = nodefault -> golApp.copyToBuffer()
 
     golApp.step_size = parseInt E("speed-show-every").value
     golApp.step_delay = parseInt E("speed-frame-delay").value

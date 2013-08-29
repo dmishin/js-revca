@@ -1,15 +1,15 @@
 assert = require "assert"
 module_cells = require "../scripts-src/cells"
-{Cells, evaluateCellList, evaluateLabelledCellList, splitFigure} = module_cells
+{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = module_cells
 
 
 
-describe "splitFigure( rule, figure, steps): separate non-interacting sub-figures", ->
+describe "splitPattern( rule, pattern, steps): separate non-interacting sub-patterns", ->
   #Single rotation rule.
   rule = [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
   it "must work with simple P12 glider o$obo$o", ->
     fig = Cells.from_rle "o$obo$o"
-    groups = splitFigure rule, fig, 12
+    groups = splitPattern rule, fig, 12
     assert.equal groups.length, 1, "Must have single group"
 
     grp0 = Cells.normalize groups[0]
@@ -17,7 +17,7 @@ describe "splitFigure( rule, figure, steps): separate non-interacting sub-figure
 
   it "must separate a triple of P12 gliders: $bobo$bo5b2o$2bo$7b2o2$3bo2$3b2o$3bo", ->
     fig = Cells.from_rle "$bobo$bo5b2o$2bo$7b2o2$3bo2$3b2o$3bo"
-    groups = splitFigure rule, fig, 12
+    groups = splitPattern rule, fig, 12
     assert.equal groups.length, 3, "Must have 3 sub-group"
     rles = ((Cells.to_rle Cells.normalize g) for g in groups)
 
@@ -31,7 +31,7 @@ describe "splitFigure( rule, figure, steps): separate non-interacting sub-figure
     assert.ok (expected3 in rles), "Bottom glider must be present in #{rles_text}"
 
 
-describe "evalueateCellList( rule, figure, phase ): evaluate figure, given by a cell list", ->
+describe "evalueateCellList( rule, pattern, phase ): evaluate pattern, given by a cell list", ->
   #Single rotation rule.
   rule = [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
   it "must tolerate empty list", ->
@@ -58,7 +58,7 @@ describe "evalueateCellList( rule, figure, phase ): evaluate figure, given by a 
     glider1 = Cells.sortXY fig
     assert.deepEqual( Cells.offset(glider, 2, 0), glider1 )
     
-describe "evaluateLabelledCellList( rule, figure, phase ): evaluate figure, given by a cell list", ->
+describe "evaluateLabelledCellList( rule, pattern, phase ): evaluate pattern, given by a cell list", ->
   #Single rotation rule.
   rule = [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
   it "must tolerate empty list", ->
