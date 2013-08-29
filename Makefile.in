@@ -23,6 +23,4 @@ scripts/minified.js: $(ALL_OUTPUTS)
 	git checkout master
 
 publish: .must-be-master test all
-	git checkout gh-pages
-	git add images *.html scripts scripts-src *.css LICENSE README.md
-	git commit -m "Automatically generated commit"
+	sh deploy.sh
