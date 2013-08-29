@@ -1019,17 +1019,18 @@
           @_putRecord rec
       @updateLibrarySize()
       null
-      
+    _libraryKey: (name) -> "library-"+name
+    
     load: (storage, name) ->
+      unless (@_libraryKey name) of storage
+        alert "Library \"#{name}\" is not present in the storage."
+        return
       if @modified
         unless confirm "Current library has unsaved modifications. Do you want to discard them?"
           return
-      unless ("library-"+name) of storage
-        alert "Library \"#{name}\" is not present in storage."
-        return
       @clear()
       @name = name
-      @_importData JSON.parse storage["library-"+name]
+      @_importData JSON.parse storage[ @_libraryKey name]
       @modified = false
       @updateLibrarySize()
       @updateLibraryName()
@@ -1041,19 +1042,19 @@
       if newName or (name is "")
         name = prompt "Please enter library name", @defaultLibraryForRule @golApp.gol.rule
         if not name then return
-        if ("library-" + name) of storage
+        if (@_libraryKey name) of storage
           unless confirm "Library #{name} already exists in the storage. Do you want to overwrite it?"
             return
         @name = name
         @updateLibraryName()
-      storage["library-" + name] = @data2string()
+      storage[@_libraryKey name] = @data2string()
       @modified = false
       @updateLibrarySize()
     deleteCurrent: (storage)->
       unless @name
         alert "Library is not saved"
         return
-      delete storage["library-"+@name]
+      delete storage[@_libraryKey @name]
       @clear()
       
     addRecord: (record)->
