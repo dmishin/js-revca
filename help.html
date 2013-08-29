@@ -8,7 +8,7 @@
   </head> 
 
   <body> 
-    <div class="heading">Reversible cellular automata simulator help page | <a href="">Sources</a> | <a href="">Author</a> | <a href="index.html">Simulator</a>
+    <Div class="heading">Reversible cellular automata simulator help page | <a href="">Sources</a> | <a href="">Author</a> | <a href="index.html">Simulator</a>
     </div>
 
     <article id="main-text">
@@ -28,23 +28,25 @@
       </ul>
       </p>
       <p>
-	The simplest partitioning scheme is probably the Margolus neighborhood, named after <a href="http://en.wikipedia.org/wiki/Norman_Margolus">Norman Margolus<a>, who first studied block cellular automata using this neighborhood structure. In the Margolus neighborhood, the lattice is divided into 2-cell blocks (or 2 × 2 squares in two dimensions, or 2 × 2 × 2 cubes in three dimensions, etc.) which are shifted by one cell (along each dimension) on alternate timesteps.
+	The simplest partitioning scheme is probably the Margolus neighborhood, named after <a href="http://en.wikipedia.org/wiki/Norman_Margolus">Norman Margolus</a>, who first studied block cellular automata using this neighborhood structure. In the Margolus neighborhood, the lattice is divided into 2-cell blocks (or 2 × 2 squares in two dimensions, or 2 × 2 × 2 cubes in three dimensions, etc.) which are shifted by one cell (along each dimension) on alternate timesteps.
 
-      <figure>
-	<img src="images/240px-Margolus_block_neighborhood.svg.png" alt="Margolus neighborhood"/>
-	<figcaption>The Margolus neighborhood for a two-dimensional block cellular automaton. The partition of the cells alternates between the set of 2 × 2 blocks indicated by the solid blue lines, and the set of blocks indicated by the dashed red lines.
-	</figcaption>
-      </figure>
-      
+	<figure>
+	  <img src="images/240px-Margolus_block_neighborhood.svg.png" alt="Margolus neighborhood"/>
+	  <figcaption>The Margolus neighborhood for a two-dimensional block cellular automaton. The partition of the cells alternates between the set of 2 × 2 blocks indicated by the solid blue lines, and the set of blocks indicated by the dashed red lines.
+	  </figcaption>
+	</figure>
       </p>
-
     </blockquote>
 
-    <div id="toc"></div>
+    <h1>The field</h1>
+    <p>The field of the simulator is a rectangular lattice of cells, where each cell can be either dead or alive. The field is toroidal, that is: opposite edges of the field are &ldquo;glued&rdquo; together.
+
+      In the Margolus neighborhood, the lattice is divided into square blocks 2×2 cells. There are 2 partitioning schemes: in one scheme, top-left corner of each block has even coordinates, and in the another both coordinates are odd. These 2 schemes are alternated on each generation, first scheme is applied to the even generations, and second to the odd ones. Consequently, complete state of the field must also include the <b>phase</b> which is the oddity of the current generation.
+    </p>
 
     <h1>Rules</h1>
     <h2>Transition rule encoding</h2>
-    <p>For block cellular automata rule is a transfer function that calculates next state of the block from the current state. For <a href="http://en.wikipedia.org/wiki/Reversible_cellular_automaton">cellular automaton to be reversible</a>, such function should, indeed, be <a href="http://en.wikipedia.org/wiki/Inverse_function">invertible</a>.
+    <p>The <b>transition rule</b> is a function that calculated the next state of a block from the current state. For a <a href="http://en.wikipedia.org/wiki/Reversible_cellular_automaton">cellular automaton to be reversible</a>, such function should, indeed, be <a href="http://en.wikipedia.org/wiki/Inverse_function">invertible</a>.
       Since in the Margolus neighborhood block consists of 4 cells and there are 2 possible cell states, 2<sup>4</sup> = 16 possible blocks exist:
       <figure> 
 	<table>
@@ -66,29 +68,29 @@
       </figure>
     </p>
     <p>
-      A transition rule must assign a descendant state for each of the 16 original states. If the rule is invertible, the assignment must be a one-to-one relation; in other words - it must be a <a href="http://en.wikipedia.org/wiki/Permutation">permutation</a> of 16 elements.
+      A transition rule must assign a descendant state for each of the 16 original states. If the rule is invertible, this correspondence must be a one-to-one relation; in other words - it must be a <a href="http://en.wikipedia.org/wiki/Permutation">permutation</a> of 16 elements.
       In the simulator, rules are represented as arrays of 16 integers from 0 to 15. 
-
-      For example, <span class="rule">(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)</span> is the identity rule that does not changes any cells. The cellular automaton with this rule is rather boring though: under this rule, any configuration of cells remains unchanged forever. It is easy to see that such rule is, indeed, reversible.
     </p>
     <p>
-      More interesting rule is the &ldquo;Billiard Ball Machine&rdquo;, described by the permutation: <span class="rule">(0,8,4,3,2,5,9,7,1,6,10,11,12,13,14,15)</span>. It is hard see from the numbers themselves, but this automaton exhibits behavior, resembling bouncing billiard balls and walls:
+      For example, <span class="rule">(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)</span> is the identity rule that does not changes any cells. The cellular automaton with this rule is rather boring though: in this rule, any pattern remains unchanged forever. This rule is, indeed, reversible.
+    </p>
+    <p>
+      More interesting example is the rule called &ldquo;Billiard Ball Machine&rdquo;. It is described by the permutation: <span class="rule">(0,8,4,3,2,5,9,7,1,6,10,11,12,13,14,15)</span>. It is hard see from the numbers themselves, but this automaton exhibits behavior, resembling bouncing billiard balls and walls:
       <figure>
 	<img src="images/bbm-demo.gif" alt="BBM cellular automaton"/>
 	<figcaption>Behavior of the BBM cellular automaton resembles bouncing billiard balls.</figcaption>
       </figure>
-      This and some other rules are listed <a href="">here</a> (all rules from this list are present as predefined rules in the simulator program).
     </p>
 
     <h2>Rule invariants</h2>
     <p>
-      Contrary to the well-known <a href="http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Life</a> cellular automaton, block automata with Margolus neighborhood has no (1,0) and (0,1) translation symmetry. Instead, they only have the (2,0) and (0,2) symmetries. This means that shift by 1 cell turns a figure into completely different one.
+      Contrary to the well-known <a href="http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Life</a> cellular automaton, block automata with Margolus neighborhood has no (1,0) and (0,1) translation symmetry. This means that shift by 1 cell (or any other odd number of them) turns a pattern into completely different one. Only translation by a whole block (2 cells) in any direction leaves behavior of a pattern unchanged - it is guaranteed by construction. 
       <figure>
 	<img src="images/ss-and-osc.png"/>
-	<figcaption>Top: P4 orthogonal spaceship. Bottom: P8 oscillator. (Under the &ldquo;Critters&rdquo; rule)</figcaption>
+	<figcaption>Top: P4 orthogonal spaceship. Bottom: P8 oscillator. The rule is &ldquo;Critters&rdquo.</figcaption>
       </figure>
-      For example, under the &ldquo;Critters&rdquo; the top figure is a spaceship, and the bottom is an oscillator.
-      Only translation by a whole block (2 cells) in any direction leaves behavior of the configuration unchanged - it is guaranteed by construction.
+      For example, in the &ldquo;Critters&rdquo; the top pattern is a spaceship, and the bottom is an oscillator.
+      
     </p>
 
     <p>
@@ -105,14 +107,14 @@
 	     
 	<dt>Horizontal / Vertical / Diagonal flip</dt>
 	<dd>The rule has mirror symmetry with axis, oriented horizontally, vertically or diagonally.
-	  The &ldquo;Critters&rdquo; rule has mirror symmetry; mirrored configuration will evolve in the same way as original.
+	  The &ldquo;Critters&rdquo; rule has mirror symmetry; mirrored pattern will evolve in the same way as original.
 	  The &ldquo;Rotations&rdquo; rule <span class="rule">(0,2,8,12,1,10,9,11,4,6,5,14,3,7,13,15)</span> has no such symmetry. For example:
 	  <figure> <img src="images/no-mirror-invariance.png"/>
-	    <figcaption>Left: P270 orthogonal c/135 spaceship. Right: P664 oscillator. (Under the &ldquo;Rotations&rdquo; rule)</figcaption>
+	    <figcaption>Left: P270 orthogonal c/135 spaceship. Right: P664 oscillator. (In the &ldquo;Rotations&rdquo; rule)</figcaption>
 	  </figure>
 	</dd>
 	<dt>Negation</dt>
-	<dd>Under the rules with negation symmetry, evolution of the figure will be the same, if every alive cell is replaced with dead and back.
+	<dd>In the rules with negation symmetry, evolution of the pattern will be the same, if every alive cell is replaced with dead and back.
 	  The &ldquo;Rotations&rdquo; rule is negation-invariant.
 	  <figure>
 	    <img src="images/inverse-glider-rotations.gif"/>
@@ -131,13 +133,13 @@
 	<li>Number of alive cells varies. <br/>
 	  &ldquo;Tron&rdquo; rule, <span class="rule">(15,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0)</span> is an example of such behavior.
 	  <figure>
-	    <img src="images/tron-original.png" alt="Initial configuration"/>
+	    <img src="images/tron-original.png" alt="Initial pattern"/>
 	    <img src="images/tron-12-steps.png" alt="After 12 steps"/>
 	    <img src="images/tron-1200-steps.png" alt="After 1200 steps"/>
-	    <figcaption>Evolution of the initial 3-cell configuration under the &ldquo;Tron&rdquo; rule on toroidal 64x64 field: initial configuration, after 12 steps, after 1200 steps
+	    <figcaption>Evolution of the initial 3-cell pattern in the &ldquo;Tron&rdquo; rule on toroidal 64x64 field: initial pattern, after 12 steps, after 1200 steps
 	    </figcaption>
 	  </figure>
-	  Usually, almost any initial configuration tends to grow chaotically in such automata. Numbers of dead and alive cells tending to become nearly equal. Often, resulting pattern is visually indistinguishable from the random noise, though the &ldquo;Tron&rdquo; rule is a counter-example.
+	  Usually, almost any initial pattern tends to grow chaotically in such automata. Numbers of dead and alive cells tending to become nearly equal. Often, resulting pattern is visually indistinguishable from the random noise, though the &ldquo;Tron&rdquo; rule is a counter-example.
 	</li>
 	<li>Number of alive cells is constant.<br/>
 	  &ldquo;Billiard Ball Machine&rdquo; rule is an example. 
@@ -155,67 +157,37 @@
     However, there is one more difference: in time-inverted cellular automata, order of phases of the lattice is also inverted. This can be obtained by translating whole field by 1 cell along both axes. In the simulator program, this is called <b>phase shift</b>; buffer content can be phase-shifted with button <span class="button"><span class="icon icon-toggle-phase">(Phase)</span></span>.
     </p>
     <p>
-      In a general case, the inverse rule is completely different from the direct. But for some rules, a simple geometrical relation between direct and inverse rules is present. For example, in the &ldquo;Rotations&rdquo; rule <span class="rule">(0,2,8,12,1,10,9,11,4,6,5,14,3,7,13,15)</span> inverse rule is a mirror image of the direct. In other words, to inverse-transform a configuration, one could first mirror it, then transform it directly, and finally mirror it again. It can be written as:
-      <div class="formula">F<sup>-1</sup> = H<sup>-1</sup>&#8728;F&#8728;H</div>
-      Where <b>F</b> is a cellular automaton transition function, and <b>H</b> is a horizontal flip transform. 
+      In a general case, the inverse rule is completely different from the direct. But for some rules, a simple geometrical relation between direct and inverse rules is present. For example, in the &ldquo;Rotations&rdquo; rule <span class="rule">(0,2,8,12,1,10,9,11,4,6,5,14,3,7,13,15)</span> inverse rule is a mirror image of the direct. In other words, to inverse-transform a pattern, one could first mirror it, then transform it directly, and finally mirror it again. It can be written down as:
+      <div class="formula">F<sup>-1</sup>(x) = H<sup>-1</sup>(F(H(x))) = (H<sup>-1</sup>&#8728;F&#8728;H)(x),</div>
+      or:
+      <div class="formula">F<sup>-1</sup> = H<sup>-1</sup>&#8728;F&#8728;H,</div>
+
+      where <b>F</b> is a cellular automaton transition function; <b>H</b> is some geometrical transform, horizontal flip in this case; <b>x</b> is a field state and &#8728; designates composition of functions. I call the transform <b>H</b>, satisfying the above relation, a <b>dual</b> transform for the rule <b>F</b>.
     </p>
+    <p>
+      If dual transform exists for a rule, then for every pattern it is possible to construct a <b>dual</b> pattern that evolved back in time.
+      It can be constructed in following 2 steps:
+      <ul>
+	<li>apply dual transform to the pattern,</li>
+	<li>offset transformed pattern by the vector (1,1) (&ldquo;phase shift&rdquo;).</li>
+      </ul>
+      Example:
+      <figure>
+	<img src="images/rotations-dual-spaceships.png"/>
+	<img src="images/rotations-dual-spaceships-anim.gif"/>
+	<figcaption>A P9, c/9 spaceship (left) and its dual (right), in the &ldquo;Rotations&rdquo; rule. Dual transform is mirror flip.
+	</figcaption>
+      </figure>
+      Note the direction of the dual (left) spaceship. It moves in a direction, opposite to the flipped direction of the original spaceship, because it evolves back in time.
+    </p>
+   
+    <p>
+      For some rules, dual transform is identity. I call such rules <b>self-dual</b>, example is the &ldquo;Critters&rdquo; rule. In such rules, it is enough to phase-shift a pattern to construct its dual.
+    </p>
+
     <h2>Rule vacuum period</h2>
     <p>
       Number of generations, after which empty field (vacuum) returns to its original state. For the population-preserving rules, vacuum period is 1; for the &ldquo;flashing&rdquo; rules it is 2. Some irregular rules can have bigger vacuum periods. For example, asymmetric rule <span class="rule">(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0)</span> has vacuum period of 7.
-    </p>
-
-    <h2>RLE encoding</h2>
-    <p>
-      For textual representation of configurations, the simplified RLE format is used.
-      See details <a href="http://conwaylife.com/wiki/Run_Length_Encoded">here</a>. Only &ldquo;b&rdquo; (dead cell), &ldquo;o&rdquo; (alive cell) and &ldquo;$&rdquo; (newline) characters and digits are supported; space characters are ignored. Example:
-      <figure>
-	<img src="images/gol-glider.png"/>
-	<figcaption> Conway GOL glider. RLE encoding is <span class="rle">2o$obo$o</span>.</figcaption>
-      </figure>
-      Comments, offset and other features of RLE are not supported.
-    </p>
-    <h1>Features</h1>
-    <h2>Figure analyzer</h2>
-    <p>
-      Some rules (such as Rotations, Rotations II, III, IV) support spaceships and oscillators with extremely large periods.
-      For example, The following spaceship in the &ldquo;Rotations II&rdquo; rule <span class="rule">(0,2,8,12,1,10,9,13,4,6,5,7,3,14,11,15)</span> has period 10896 generations.
-      <figure>
-	<img src="images/large-period-ss.png"/>
-	<figcaption>A spaceship with period 10896. Rule is &ldquo;Rotations II&rdquo;</figcaption>
-      </figure>
-      Manual classification of such configuraions is therefore nearly impossible. To simplify the work, simulator has the figure analyser feature, enabled by the <span class="button"><span class="icon icon-analyse">(AS)</span></span> button. To use it, select some area on the field and then press the button. Application will try to detect the following information:
-      <ul>
-	<li>Type of the figure: oscillator, diagonal, orthogonal or slant spaceship.
-	</li>
-	<li>Period (for spaceships and oscillators).
-	</li>
-	<li>Offset: how far spaceship travels per one period.
-	</li>
-
-	<li>Canonical form of the figure: the most &ldquo;compact&rdquo; of all evolution steps of the figure. Sometimes it is not unique.
-	</li>
-      </ul>
-      Analyzer only tries to evaluate given configuration for a limited number of generations. If this number is exceeded, but cycle is not found, figure type and period will be &ldquo;unknown&rdquo;. By default, limit is 2048 steps, this can be changed on the &ldquo;Settings&rdquo; panel.
-    </p>
-
-    <h2>Spaceship Catcher</h2>
-    <p>
-      Enabled by the button: <span class="button"><span class="icon icon-catcher">(Catcher)</span></span>.
-      Spaceship catcher is a tool that automatically :
-      <ul>
-	<li>finds all figures touching the borders of the field,</li>
-	<li>removes them from the field,</li>
-	<li>analyses and adds canonical form to the current library.</li>
-      </ul>
-      When enabled, spaceship catcher <b>reseeds</b> the field periodically: the field is cleared and currently selected area is filled randomly. By default, reseed period is 30'000 generations, it can be changed in the &ldquo;Settings&rdquo; panel.
-
-      Spaceship catcher can be used to quickly find naturally occurring gliders for the given rule.
-    </p>
-
-
-    <h2>GIF Recorder</h2>
-    <p>
-      The application can record GIF animations. To start record, press the <span class="button"><span class="icon icon-recordgif">R</span></span>. This will start the recorder. Then let the field evolve for several generations, using play buttons. Each new frame will be added to the GIF image. You will see, how the size of the file in Kb grows. To stop record and get the produced image, press the <span class="button"><span class="icon icon-stopgif">S</span></span> button. Image can be saved using right-click.
     </p>
 
     <h2>Predefined Rules</h2>
@@ -229,9 +201,9 @@
 	</thread>
 	<tbody>
 	  <tr><td>BBM</td><td>8,4,3,2,5,9,7,1,6,10,11,12,13,14,15</td><td>Famous Billiard Ball Machine - from Cellular Automata Machines. A rule by Edward Fredkin.</td></tr>
-	  <tr><td>Bounce&nbsp;Gas </td><td>8,4,3,2,5,9,14,1,6,10,13,12,11,7,15 </td><td>An uniform "gas". A rule by Tim Tyler.</td></tr>
-	  <tr><td>Bounce&nbsp;Gas&nbsp;II </td><td>8,4,12,2,10,9,7,1,6,5,11,3,13,14,15 </td><td>Another uniform "gas". A rule by Tim Tyler.</td></tr>
-	  <tr><td>Critters</td><td>15,14,13,3,11,5,6,1,7,9,10,2,12,4,8,0 </td><td>This rule supports "gliders" - as described in Cellular Automata Machines. A rule by Margolus/Toffoli.</td></tr>
+	  <tr><td>Bounce&nbsp;Gas </td><td>8,4,3,2,5,9,14,1,6,10,13,12,11,7,15 </td><td>An uniform &ldquo;gas&rdquo;. A rule by Tim Tyler.</td></tr>
+	  <tr><td>Bounce&nbsp;Gas&nbsp;II </td><td>8,4,12,2,10,9,7,1,6,5,11,3,13,14,15 </td><td>Another uniform &ldquo;gas&rdquo;. A rule by Tim Tyler.</td></tr>
+	  <tr><td>Critters</td><td>15,14,13,3,11,5,6,1,7,9,10,2,12,4,8,0 </td><td>This rule supports &ldquo;gliders&rdquo; - as described in Cellular Automata Machines. A rule by Margolus/Toffoli.</td></tr>
 	  <tr><td>HPP&nbsp;Gas </td><td>8,4,12,2,10,9,14,1,6,5,13,3,11,7,15 </td><td>HPP (Hardy/Pazzis/Pomeau) lattice gas - as described in Cellular Automata Machines. A rule by Hardy, Pazzis, and Pomeau.</td></tr>
 	  <tr><td>Rotations </td><td>2,8,12,1,10,9,11,4,6,5,14,3,7,13,15 </td><td>Limited diffusion. A rule by Tim Tyler.</td></tr>
 	  <tr><td>Rotations&nbsp;II </td><td>2,8,12,1,10,9,13,4,6,5,7,3,14,11,15 </td><td>Limited diffusion. A rule by Tim Tyler.</td></tr>
@@ -241,11 +213,72 @@
 	  <tr><td>String&nbsp;Thing </td><td>1,2,12,4,10,9,7,8,6,5,11,3,13,14,15 </td><td>String shaped patterns. A rule by Tim Tyler.</td></tr>
 	  <tr><td>String&nbsp;Thing&nbsp;II </td><td>1,2,12,4,10,6,7,8,9,5,11,3,13,14,15 </td><td>More string shaped patterns. A rule by Tim Tyler.</td></tr>
 	  <tr><td>Swap&nbsp;On&nbsp;Diag </td><td>8,4,12,2,10,6,14,1,9,5,13,3,11,7,15 </td><td>A gas with no particle interactions - as described in Cellular Automata Machines. A rule by Margolus/Toffoli.</td></tr>
-	  <tr><td>Tron</td><td>15,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0 </td><td>A "trip-a-tron" - from the pages of Cellular Automata Machines. A rule by Margolus/Toffoli.</td></tr>
+	  <tr><td>Tron</td><td>15,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0 </td><td>A &ldquo;trip-a-tron&rdquo; - from the pages of Cellular Automata Machines. A rule by Margolus/Toffoli.</td></tr>
 
 	</tbody>
       </table>
       </figure>
+    </p>
+
+    <h2>RLE encoding</h2>
+    <p>
+      For textual representation of the patterns, the simplified RLE format is used. RLE string consists of decimal numbers and characters &ldquo;b&rdquo;, &ldquo;o&rdquo; and &ldquo;$&rdquo;, designating dead cell, alive cell and new line correspondingly. Decimal numbers designate repeat count of the next character.
+      
+      See details <a href="http://conwaylife.com/wiki/Run_Length_Encoded">here</a>. Only &ldquo;b&rdquo; (dead cell), &ldquo;o&rdquo; (alive cell) and &ldquo;$&rdquo; (newline) characters and digits are supported; space characters are ignored. Example:
+      <figure>
+	<img src="images/gol-glider.png"/>
+	<figcaption> Conway GOL glider. RLE encoding is <span class="rle">2o$obo$o</span>.</figcaption>
+      </figure>
+      Comments, offset and other features of RLE are not supported.
+    </p>
+    <h1>Features</h1>
+    <h2>Pattern analyzer</h2>
+    <p>
+      Some rules (such as Rotations, Rotations II, III, IV) support spaceships and oscillators with extremely large periods.
+      For example, The following spaceship in the &ldquo;Rotations II&rdquo; rule <span class="rule">(0,2,8,12,1,10,9,13,4,6,5,7,3,14,11,15)</span> has period 10896 generations.
+      <figure>
+	<img src="images/large-period-ss.png"/>
+	<figcaption>A spaceship with period 10896. Rule is &ldquo;Rotations II&rdquo;</figcaption>
+      </figure>
+      Manual classification of such patterns is nearly impossible. To simplify this task, the simulator has the pattern analyser feature, enabled by the <span class="button"><span class="icon icon-analyse">(AS)</span></span> button. To use it, select some area on the field and then press the button. Application will try to detect the following information:
+      <ul>
+	<li>
+	  <b>Type of the pattern</b>: oscillator, diagonal, orthogonal or slant spaceship.
+	  </dl>
+	</li>
+	<li>
+	  <b>Period</b> (for the spaceships and oscillators).
+	</li>
+	<li><b>Offset</b> (for the spaceships): how far the spaceship travels per one period.
+	</li>
+	<li>Canonical form of the pattern: the most &ldquo;compact&rdquo; of all evolution steps of the pattern. Sometimes it is not unique.
+	</li>
+      </ul>
+      Analyzer only tries to evaluate a pattern for a limited number of generations. If this number is exceeded before the cycle is found, pattern type and period will be shown as &ldquo;unknown&rdquo;. By default, limit is 2048 steps, this value can be changed on the &ldquo;Settings&rdquo; panel.
+    </p>
+
+    <h2>Spaceship Catcher</h2>
+    <p>
+      Enabled by the button: <span class="button"><span class="icon icon-catcher">(Catcher)</span></span>.
+      Spaceship catcher is a tool that automatically :
+      <ul>
+	<li>finds all patterns touching the borders of the field,</li>
+	<li>removes them from the field,</li>
+	<li>analyses and adds canonical form to the current library.</li>
+      </ul>
+      When enabled, spaceship catcher <b>reseeds</b> the field periodically: the field is cleared and currently selected area is filled randomly. By default, reseed period is 30'000 generations, it can be changed in the &ldquo;Settings&rdquo; panel.
+
+      Spaceship catcher can be used to quickly find naturally occurring gliders for the given rule.
+    </p>
+
+    <h2>GIF Recorder</h2>
+    <p>
+      The application can record GIF animations. To start record, press the <span class="button"><span class="icon icon-recordgif">R</span></span>. This will start the recorder. Then let the field evolve for several generations, using play buttons. Each new frame will be added to the GIF image. You will see, how the size of the file in Kb grows. To stop record and get the produced image, press the <span class="button"><span class="icon icon-stopgif">S</span></span> button. Image can be saved using right-click.
+    </p>
+
+    <h2>Patterns Library</h2>
+    <p>
+      The simulator support simple management of pattern libraries: catalogs of patterns. Libraries are stored in the <a href="http://en.wikipedia.org/wiki/Web_storage#Local_and_session_storage">Local Storage</a> of the browser, and will remain there even after restart of the browser. To move library between browsers, or to analyze library data with another application, <a href="http://en.wikipedia.org/wiki/JSON">JSON</a> import/export feature is available.
     </p>
     </article>
     

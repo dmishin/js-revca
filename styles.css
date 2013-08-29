@@ -301,9 +301,7 @@ figure table{
     margin-left: auto;
     margin-right: auto;
 }
-figure table{
-    border: 1px solid black;
-}
+figure table,
 figure td,
 figure th{
     border: 1px solid rgb(170, 170, 170);
