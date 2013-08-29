@@ -2,24 +2,20 @@ body {
    background: none repeat scroll 0% 0% rgb(250,250,250);
 }
 .heading {
-    background: black;
-    color: gold;
-    //font-size: 70%;
-    //font-weight: light;
+    color: gray;
+
     text-align: right;
     padding: 0.1em 0.1em;
     margin-bottom: 0.5em;
+    float: right;
 }
 .heading a{
-    color: #D7EAFF;
 }
 .heading a:visited{
-    color: white;
 }
 .panel {
     background: none repeat scroll 0% 0% white;
     box-shadow: 1px 1px 0.4em rgba(0, 0, 0, 0.2);
-    //border: 1px solid gray;
     padding: 0.5em;
     margin: 0.5em;
 }
@@ -45,7 +41,7 @@ body {
 }
 .rle-box {
     font-size: 70%;
-    background-color: rgb(249, 249, 249);;
+    background-color: rgb(249, 249, 249);
     max-width: 20em;
     word-wrap: break-word;
     overflow-y: auto;
