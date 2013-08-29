@@ -1,6 +1,9 @@
 #!/usr/bin/env coffee
 fs = require "fs"
 path = require "path"
+os = require "os"
+
+isWin = !!os.platform().match(/^win/);
 
 walkDir = (dir, cb) ->
   for fname in fs.readdirSync dir
@@ -31,7 +34,12 @@ makeJsSource = (dir, fname)->
   opath = path.join(odir, fname)
     
   fs.writeSync makefile, "#{opath}: #{ipath}\n"
-  fs.writeSync makefile, "\tln -f #{ipath} #{opath}\n"
+  fs.writeSync makefile,
+    if isWin
+      "\tcopy /Y #{ipath} #{opath}\n"
+    else
+      "\tln -f #{ipath} #{opath}\n"
+    
   js_sources.push ipath
   js_outputs.push opath
 

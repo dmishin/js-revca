@@ -176,7 +176,7 @@
       throw new Error "Impossible to rotate vector (#{dx},#{dy}) to the positive direction"
 
 
-    analyse: (figure, rule, max_iters = 2048, stop_on_border_hit=true) ->
+    analyze: (figure, rule, max_iters = 2048, stop_on_border_hit=true) ->
       throw new Error ("Figure undefined")  unless figure
       throw new Error ("Rule undefined")  unless rule
       #sort cells by Y, then by X
