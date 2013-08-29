@@ -74,7 +74,7 @@
       <span id="btn-group-tools">
       <a class="button" href="#" id="btn-tool-draw" title="Draw cells"><span class="icon icon-draw">Draw</span></a>
       <a class="button" href="#" id="btn-tool-select" title="Select"><span class="icon icon-select">Select</span></a>
-      <a class="button" href="#" id="btn-tool-stamp" title="Paste figure from buffer"><span class="icon icon-stamp">Stamp</span></a>    
+      <a class="button" href="#" id="btn-tool-stamp" title="Paste pattern from buffer"><span class="icon icon-stamp">Stamp</span></a>    
       <a class="button" href="#" id="btn-tool-erase" title="Eraser"><span class="icon icon-erase">Erase</span></a>    
       </span>
       <a class="button" href="#" id="figure-from-selection" title="Copy from selection"><span class="icon icon-copy">Copy</span></a>
@@ -100,7 +100,7 @@
 	<a class="button" href="#" id="figure-rotate-ccw" title="Rotate counter-clockwise"><span class="icon icon-rotate-ccw">Rotate ccw</span></a>
 	<a class="button" href="#" id="figure-flip-h" title="Flip horizontally"><span class="icon icon-flip-h">Flip H</span></a>
 	<a class="button" href="#" id="figure-flip-v" title="Flip vertically"><span class="icon icon-flip-v">Flip V</span></a>
-	<a class="button" href="#" id="figure-toggle-phase" title="Toggle phase: shift figure by 1 by x and y"><span class="icon icon-toggle-phase">Toggle phase</span></a>
+	<a class="button" href="#" id="figure-toggle-phase" title="Toggle phase: shift pattern by 1 by x and y"><span class="icon icon-toggle-phase">Toggle phase</span></a>
       </div>
       <div id="buffer-bg" class="figure-background">
 	<canvas id="active-figure-canvas" width="16px" height="16px"></canvas>
@@ -118,7 +118,7 @@
       <span id="btn-group-features">
 	<a class="button" href="#" id="feature-rule-details" title="View and edit rule details">Rule details</a>
 	<a class="button" href="#" id="feature-gif-recorder" title="Record GIF animations">GIF recorder</a>
-	<a class="button" href="#" id="feature-library" title="Library of figures">Library (<span id="library-size">0</span> figures)</a>
+	<a class="button" href="#" id="feature-library" title="Library of patterns">Library (<span id="library-size">0</span> patterns)</a>
 	<a class="button" href="#" id="feature-settings" title="Edit settings">Settings</a>
       </span>
     </div>
@@ -144,7 +144,7 @@
     </div>
 </div>
 <div id="settings-pane" class="panel">
-  <h3>Figure analyser</h3>
+  <h3>Pattern analyser</h3>
   <ul>
     <li>Stop analysys after <input id="analysys-max-steps" value="2048"/> steps.
     </li>
@@ -177,7 +177,7 @@
     <button id="lib-save" title="Save library to local storage">Save</button>
     <button id="lib-save-as" title="Save library with new name">Save as...</button>
     :
-    <button id="lib-remove-composites" title="Remove composite figures from the library">Remove composites</button>
+    <button id="lib-remove-composites" title="Remove composite patterns from the library">Remove composites</button>
     :
     <button id="lib-erase" title="Delete saved lirary data">Delete</button>
   </div>
@@ -192,13 +192,15 @@
   </div>
 </div>
 
-<div id="analysis-result" class="popup-dialog">
-  <h2>Analysys result</h2>
-  <div id="analysys-report-area">
-  </div>
+<div id="analysis-result" class="popup-container">
   <div>
-    <button id="analysis-result-close">Close</button>
-    <button id="analysis-result-to-library">Add to library</button>
+    <h2>Analysys result</h2>
+    <div id="analysys-report-area">
+    </div>
+    <div>
+      <button id="analysis-result-close">Close</button>
+      <button id="analysis-result-to-library">Add to library</button>
+    </div>
   </div>
 </div>
 

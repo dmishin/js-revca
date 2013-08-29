@@ -1293,7 +1293,7 @@
       window.setTimeout (=>@select()), 100
 
     E("analysis-result-to-library").onclick = -> golApp.analysysResultToLibrary()
-    E("analysis-result-close").onclick= ->
+    E("analysis-result").onclick = E("analysis-result-close").onclick = ->
       E("analysis-result").style.display="none"
 
     E("figure-rotate-cw").onclick  = nodefault -> golApp.buffer.transform [0,-1,1,0]
