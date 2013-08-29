@@ -17,3 +17,12 @@ clean:
 
 scripts/minified.js: $(ALL_OUTPUTS)
 	cat $(ALL_OUTPUTS) |closure --compilation_level ADVANCED_OPTIMIZATIONS > scripts/minified.js
+
+
+.must-be-master:
+	git checkout master
+
+publish: .must-be-master test all
+	git checkout gh-pages
+	git add images *.html scripts scripts-src *.css LICENSE README.md
+	git commit -m "Automatically generated commit"
