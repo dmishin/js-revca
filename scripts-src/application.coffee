@@ -280,17 +280,6 @@
             alert "" + e
             @stopPlayer()
 
-      selection2rle: ->
-          field = @gol.field
-          sel = @selection or [0, 0, field.width - 1, field.height - 1]
-          encode_rle(field, sel[0], sel[1], sel[2] + 1, sel[3] + 1)
-
-      paste_rle: (rle_str, tfm=[1,0,0,1]) ->
-          field = @gol.field
-          sel = @selection or [0, 0, field.width - 1, field.height - 1]
-          put_rle @gol.field, sel[0], sel[1], tfm, rle_str
-          @updateCanvas canvas
-
       update_time: ->
           @time_display.innerHTML = "" + @gol.generation  if @time_display
 

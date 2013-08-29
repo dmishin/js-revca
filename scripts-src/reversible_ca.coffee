@@ -100,7 +100,7 @@
       rval = []
       for y in [y0 ... y1] by 1
         for x in [x0 ... x1] by 1
-          rval.push [x - x0, y - y0]  if @get(x, y) isnt 0
+          rval.push [x - x0, y - y0]  if @get_wrapped(x, y) isnt 0
       rval
 
     ###
