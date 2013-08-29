@@ -303,25 +303,16 @@
 
       attach_listeners: ->
           canvas = @canvas_container
-          canvas.addEventListener "mousedown", ((e) =>
-            t = @mouse_tool
-            t.on_mouse_down e if t
-            e.preventDefault()
-          ), false
-          canvas.addEventListener "mouseup", ((e) =>
-            t = @mouse_tool
-            t.on_mouse_up e  if t
-            e.preventDefault()
-          ), false
-          canvas.addEventListener "mousemove", ((e) =>
-              t = @mouse_tool
-              t.on_mouse_move e if t
-              e.preventDefault()
-          ), false
-          canvas.addEventListener "mouseout", ((e) =>
-            t = @mouse_tool
-            t.on_mouse_out e if t
-          )
+          self = this
+          canvas.addEventListener "mousedown", nodefault ((e) -> self.mouse_tool.on_mouse_down e ), false
+          canvas.addEventListener "mouseup", nodefault((e) -> self.mouse_tool.on_mouse_up e), false
+          canvas.addEventListener "mousemove", nodefault((e) -> self.mouse_tool.on_mouse_move e), false
+          canvas.addEventListener "mouseout", nodefault((e) -> self.mouse_tool.on_mouse_out e), false
+
+          canvas.addEventListener "touchstart", nodefault ((e) -> self.mouse_tool.on_touch_start e ), false
+          canvas.addEventListener "touchend", nodefault ((e) -> self.mouse_tool.on_touch_end e ), false
+          canvas.addEventListener "touchmove", nodefault ((e) -> self.mouse_tool.on_touch_move e ), false
+          canvas.addEventListener "touchleave", nodefault ((e) -> self.mouse_tool.on_touch_leave e ), false
 
       ###
       Load initial state from the URL parameters
@@ -591,7 +582,10 @@
     on_cell_change: ->
     on_click_cell: ->
     on_mouse_out: ->
-      
+    on_touch_start: (e)->
+    on_touch_leave: (e)->
+    on_touch_end: (e)->
+    on_touch_move: (e)->
   ###
   # Mouse tool for erasing
   ###
