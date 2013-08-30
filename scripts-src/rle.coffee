@@ -3,35 +3,10 @@ Library for RLE ensocing and decoding, used by Life programs
 ###
 # Requires: nothing.
 ((exports)->
-
-  ###
-  Decode RLE string and put cells to the field
-  ###
-  exports.put_rle = (field, x0, y0, transform, rle_str) ->
-    [t00,t01,t10,t11] = transform
-    put_cell = (x, y) ->
-      xx = x * t00 + y * t01 + x0
-      yy = x * t10 + y * t11 + y0
-      field.set xx, yy, 1
-    parse_rle rle_str, put_cell
-
-
-  ###
-  Encode block of a field in RLE
-  ###
-  exports.encode_rle = (field, x0, y0, x1, y1) ->
-    encoder = new RLEEncoder()
-    for y in [y0 ... y1]
-      for x in [x0 ... x1]
-        encoder.put_cell field.get_wrapped(x, y)
-      encoder.newline()  unless y is y1 - 1
-    encoder.get_rle()
-
-
   ###
   Encoder, creating RLE string from cell data
   ###
-  exports.RLEEncoder = class RLEEncoder
+  class RLEEncoder
     constructor: ->
       @stack = []
       @cur_item = null
@@ -92,7 +67,7 @@ Library for RLE ensocing and decoding, used by Life programs
   ###
   Parse Life RLE string, producing 2 arrays: Xs and Ys.
   ###
-  exports.parse_rle = parse_rle = (rle_string, put_cell) ->
+  exports.parse_rle = (rle_string, put_cell) ->
     x = 0
     y = 0
     curCount = 0
@@ -116,5 +91,6 @@ Library for RLE ensocing and decoding, used by Life programs
           else
             throw new Error "Unexpected character '#{c}' at position #{i}"
     null
+    
   exports.remove_whitespaces = remove_whitespaces = (s) -> s.replace /\s+/g, ""
 )(exports ? this["rle"]={} )

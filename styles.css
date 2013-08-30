@@ -148,8 +148,14 @@ body {
 }
 /*********************Top-level layout********************/
 #cells-widget {
-    overflow: hidden;
+    overflow: auto;
+    float:left;
     max-height: 40em;
+    max-width: 80em;
+    border: 0.2em solid gray;
+}
+#generation-status-bar {
+    clear:left;
 }
 
 #feature-pane{

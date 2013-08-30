@@ -28,6 +28,7 @@
     cell_index: (x, y) -> y * @width + x
 
     set: (x, y, v) ->  @data[@cell_index(x, y)] = v
+    set_wrapped: (x, y, v) ->  @data[@cell_index(mod(x,@width),mod(y,@height))] = v
 
     get: (x, y) ->     @data[@cell_index(x, y)]
 

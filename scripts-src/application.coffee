@@ -11,7 +11,7 @@
   {getCanvasCursorPosition} = this.canvas_util
   {DomBuilder} = this.dom_builder
   {parseUri} = this.parseuri
-  {put_rle, remove_whitespaces} = this.rle
+  {parse_rle, remove_whitespaces} = this.rle
   ###################
   # Utils
   E = (id) -> document.getElementById(id)
@@ -211,7 +211,7 @@
 
       parseCellSize: (sel_style) ->
           [sw, sh] = st = sel_style.split(",")
-          throw new Error ("Value is incorrect:" + value)  unless st.length is 2
+          throw new Error "Value is incorrect: #{sel_style}" unless st.length is 2
           [parseInt(sw, 10), parseInt(sh, 10)]
 
       adjustCanvasSize: ->
@@ -323,8 +323,8 @@
           if keys.size?
             sz = keys.size.split 'x'
             throw new Error "Size must have form WIDTHxHEIGHT" unless sz.length is 2
-            r = parseInt sz[0], 10
-            c = parseInt sz[1], 10
+            c = parseInt sz[0], 10
+            r = parseInt sz[1], 10
             throw new Error "Width and height must be even"  if r % 2 isnt 0 or c % 2 isnt 0
             @gol = new MargolusNeighborehoodField(new Array2d(c, r), @gol.rule)
             @gol.clear()
@@ -346,7 +346,8 @@
           if keys.rle?
             x0 = if keys.rle_x0 then parseInt(keys.rle_x0, 10) else 0
             y0 = if keys.rle_y0 then parseInt(keys.rle_y0, 10) else 0
-            put_rle @gol.field, x0, y0, [1, 0, 0, 1], keys.rle
+            parse_rle keys.rle, (x,y) =>
+              @gol.field.set_wrapped x0+x, y0+y, 1
           if keys.rule?
             try
               r = NamedRules[ keys.rule ]
@@ -367,7 +368,33 @@
               @step_size = s
             catch e
               alert e
+      encode_state_in_url: ->
+        urlArgs = []
 
+        srule = Rules.stringify @gol.rule
+        urlArgs.push "rule=#{srule}"
+        
+        fld = @gol.field
+        pattern = fld.get_cells 0, 0, fld.width, fld.height
+        if pattern.length > 0
+          [x0, y0] = Cells.bounds pattern
+          srle = Cells.to_rle Cells.offset pattern, -x0, -y0
+          urlArgs.push "rle_x0=#{x0}"
+          urlArgs.push "rle_y0=#{y0}"
+          urlArgs.push "rle=#{srle}"
+        urlArgs.push "step=#{@step_size}"
+        urlArgs.push "frame_delay=#{@step_delay}"
+        urlArgs.push "size=#{fld.width}x#{fld.height}"
+        urlArgs.push "cell_size=#{@view.cell_size},#{@view.cell_spacing}"
+
+        loc = ""+window.location
+        argsStartAt = loc.indexOf "?"
+        baseUrl = 
+          if argsStartAt is -1 then loc else loc.substr 0, argsStartAt
+
+        return baseUrl + "?" + (urlArgs.join "&")
+        
+          
       initialize: ->
           @load_parameters()
           @adjustCanvasSize()
@@ -1286,6 +1313,10 @@
     E("pattern-flip-v").onclick = nodefault -> golApp.buffer.transform [1,0,0,-1]
     E("pattern-toggle-phase").onclick = nodefault -> golApp.buffer.togglePhase()
     E("pattern-from-selection").onclick = nodefault -> golApp.copyToBuffer()
+
+    E("app-create-link").onclick = -> E("url-output").value = golApp.encode_state_in_url()
+    E("url-output").onfocus = ->
+      window.setTimeout (=>@select()), 100
 
     golApp.step_size = parseInt E("speed-show-every").value
     golApp.step_delay = parseInt E("speed-frame-delay").value

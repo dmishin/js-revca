@@ -27,3 +27,26 @@ describe "class Array2d: array of bytes", ->
   it "shoud return size", ->
     a = new Array2d 20, 10
     assert.deepEqual a.size(), [20,10]
+
+
+  it "should support wrapped access", ->
+    a = new Array2d 10, 15
+    a.fill 0
+    a.set_wrapped 5, 7, 57
+    a.set_wrapped 15, 19, 59
+    a.set_wrapped -1, -2, 12
+
+    assert.equal a.get(5,7), 57
+    assert.equal a.get_wrapped(5,7), 57
+    assert.equal a.get_wrapped(15,7), 57
+    assert.equal a.get_wrapped(-5,7), 57
+    assert.equal a.get_wrapped(5,22), 57
+    assert.equal a.get_wrapped(5,-8), 57
+
+    assert.equal a.get_wrapped(15, 19), 59
+    assert.equal a.get_wrapped(5, 4), 59
+    assert.equal a.get(5, 4), 59
+
+    assert.equal a.get_wrapped(-1, -2), 12
+    assert.equal a.get_wrapped(9, 13), 12
+    
