@@ -79,7 +79,7 @@
 
 .icon-separator { 
     background-image: none;
-    background-color: none;
+    background-color: transparent;
     width: 7px;
 }
 

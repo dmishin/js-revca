@@ -1325,7 +1325,6 @@
     #Update GUI controls
     E("rule").value = Rules.stringify golApp.gol.rule
 
-    selection-analyze E("speed-show-every"), golApp.step_size
     selectOrAddOption E("speed-show-every"), golApp.step_size
     selectOrAddOption E("speed-frame-delay"), golApp.step_delay, "#{golApp.step_delay}ms"
 

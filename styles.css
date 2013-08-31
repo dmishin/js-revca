@@ -79,7 +79,7 @@ body {
     overflow:hidden;
 }
 .lib-pattern-background{
-    paddind: 0.2em 0.2em;
+    padding: 0.2em 0.2em;
     text-align:center;
     background-color: rgb(220,220,220);
     padding: 0.2em 0.2em;
@@ -243,7 +243,6 @@ article{
 .formula{
     text-align: center;
     font-size: 120%;
-    //font-weight: bold;
 }
 dt{
     font-weight: bold;
