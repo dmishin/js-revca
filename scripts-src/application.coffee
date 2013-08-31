@@ -607,10 +607,11 @@
     on_cell_change: ->
     on_click_cell: ->
     on_mouse_out: ->
-    on_touch_start: (e)->
-    on_touch_leave: (e)->
-    on_touch_end: (e)->
-    on_touch_move: (e)->
+      
+    on_touch_start: (e)-> @on_mouse_down(e)
+    on_touch_leave: (e)-> @on_mouse_out(e)
+    on_touch_end: (e)-> @on_mouse_up(e)
+    on_touch_move: (e)-> @on_mouse_move(e)
   ###
   # Mouse tool for erasing
   ###
