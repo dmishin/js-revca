@@ -350,10 +350,8 @@
               @gol.field.set_wrapped x0+x, y0+y, 1
           if keys.rule?
             try
-              r = NamedRules[ keys.rule ]
-              unless r?
-                r = Rules.parse keys.rule, ","
-              @gol.rule = r
+              r = NamedRules[ keys.rule ] ? Rules.parse(keys.rule, ",")
+              @gol.set_rule  r
             catch e
               alert "Incorrect rule: #{keys.rule}"
           if keys.frame_delay?
@@ -1318,12 +1316,16 @@
     E("url-output").onfocus = ->
       window.setTimeout (=>@select()), 100
 
+    #Applicaiton initialization
     golApp.step_size = parseInt E("speed-show-every").value
     golApp.step_delay = parseInt E("speed-frame-delay").value
     golApp.set_rule E("select-rule").value
     golApp.initialize()
+
+    #Update GUI controls
     E("rule").value = Rules.stringify golApp.gol.rule
-    
+
+    selection-analyze E("speed-show-every"), golApp.step_size
     selectOrAddOption E("speed-show-every"), golApp.step_size
     selectOrAddOption E("speed-frame-delay"), golApp.step_delay, "#{golApp.step_delay}ms"
 
