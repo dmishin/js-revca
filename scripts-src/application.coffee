@@ -309,10 +309,10 @@
           canvas.addEventListener "mousemove", nodefault((e) -> self.mouse_tool.on_mouse_move e), false
           canvas.addEventListener "mouseout", nodefault((e) -> self.mouse_tool.on_mouse_out e), false
 
-          canvas.addEventListener "touchstart", nodefault ((e) -> self.mouse_tool.on_touch_start e ), false
-          canvas.addEventListener "touchend", nodefault ((e) -> self.mouse_tool.on_touch_end e ), false
-          canvas.addEventListener "touchmove", nodefault ((e) -> self.mouse_tool.on_touch_move e ), false
-          canvas.addEventListener "touchleave", nodefault ((e) -> self.mouse_tool.on_touch_leave e ), false
+          canvas.addEventListener "touchstart", ((e) -> self.mouse_tool.on_touch_start e ), false
+          canvas.addEventListener "touchend", ((e) -> self.mouse_tool.on_touch_end e ), false
+          canvas.addEventListener "touchmove", ((e) -> self.mouse_tool.on_touch_move e ), false
+          canvas.addEventListener "touchleave",  ((e) -> self.mouse_tool.on_touch_leave e ), false
 
       ###
       Load initial state from the URL parameters
@@ -564,6 +564,7 @@
     constructor: (@golApp, @snapping=false, @show_overlay=true) ->
       @dragging = false
       @last_xy = null
+      @ignore_next_mouse_down = 0
       
     get_xy: (e, snap=false) ->
       [x,y] = getCanvasCursorPosition(e, @golApp.canvas_container)
@@ -592,6 +593,9 @@
 
     getOverlayContext: -> @golApp.canvas_overlay.getContext("2d")
     on_mouse_down: (e) ->
+      if @ignore_next_mouse_down
+        @ignore_next_mouse_down = false
+        return
       @dragging = true
       @last_xy = xy = @get_xy e, @snapping
       @on_click_cell e, xy
@@ -608,10 +612,24 @@
     on_click_cell: ->
     on_mouse_out: ->
       
-    on_touch_start: (e)-> @on_mouse_down(e)
-    on_touch_leave: (e)-> @on_mouse_out(e)
-    on_touch_end: (e)-> @on_mouse_up(e)
-    on_touch_move: (e)-> @on_mouse_move(e)
+    on_touch_start: (e)->
+      E("debug-txt").value = "Touches: #{e.touches.length}"
+      if e.touches.length is 1
+        @on_mouse_down(e)
+        e.preventDefault()
+        @ignore_next_mouse_down = true
+    on_touch_leave: (e)->
+      if e.touches.length is 1
+        e.preventDefault()
+        @on_mouse_out(e)
+    on_touch_end: (e)->
+      if e.touches.length is 1
+        e.preventDefault()
+        @on_mouse_up(e)
+    on_touch_move: (e)->
+      if e.touches.length is 1
+        e.preventDefault()
+        @on_mouse_move(e)
   ###
   # Mouse tool for erasing
   ###
