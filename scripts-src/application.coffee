@@ -167,6 +167,8 @@
 
         @library = new LibraryPane(E("pattern-report"), E("library-size"), this)
         @buffer = new BufferPane(E("active-pattern-canvas"))
+        @ghost_click_detector = new GhostClickDetector()
+        
         
       setSize: (cols, rows) ->
         RECOMMENDED_WIDTH = 800
@@ -302,18 +304,25 @@
           @update_time()
 
       attach_listeners: ->
-          canvas = @canvas_container
+          widget = @canvas_container
           self = this
-          canvas.addEventListener "mousedown", nodefault ((e) -> self.mouse_tool.on_mouse_down e ), false
-          canvas.addEventListener "mouseup", nodefault((e) -> self.mouse_tool.on_mouse_up e), false
-          canvas.addEventListener "mousemove", nodefault((e) -> self.mouse_tool.on_mouse_move e), false
-          canvas.addEventListener "mouseout", nodefault((e) -> self.mouse_tool.on_mouse_out e), false
+          widget.addEventListener "mousedown", nodefault ((e) ->
+            unless self.ghost_click_detector.isGhost
+              self.mouse_tool.on_mouse_down e
+            ), false
+          widget.addEventListener "mouseup", nodefault((e) ->
+            unless self.ghost_click_detector.isGhost
+              self.mouse_tool.on_mouse_up e
+            ), false
+          widget.addEventListener "mousemove", nodefault((e) -> self.mouse_tool.on_mouse_move e), false
+          widget.addEventListener "mouseout", nodefault((e) -> self.mouse_tool.on_mouse_out e), false
 
-          canvas.addEventListener "touchstart", ((e) -> self.mouse_tool.on_touch_start e ), false
-          canvas.addEventListener "touchend", ((e) -> self.mouse_tool.on_touch_end e ), false
-          canvas.addEventListener "touchmove", ((e) -> self.mouse_tool.on_touch_move e ), false
-          canvas.addEventListener "touchleave",  ((e) -> self.mouse_tool.on_touch_leave e ), false
-
+          widget.addEventListener "touchstart", ((e) -> self.mouse_tool.on_touch_start e ), false
+          widget.addEventListener "touchend", ((e) -> self.mouse_tool.on_touch_end e ), false
+          widget.addEventListener "touchmove", ((e) -> self.mouse_tool.on_touch_move e ), false
+          widget.addEventListener "touchleave",  ((e) -> self.mouse_tool.on_touch_leave e ), false
+          @ghost_click_detector.addListeners widget
+          
       ###
       Load initial state from the URL parameters
       ###
@@ -400,7 +409,7 @@
           @setMouseTool @mouse_tools.draw
           @updateCanvas()
           @attach_listeners()
-
+          
       clear_selection: ->
           if sel = @selection
               @gol.field.fill_box sel[0], sel[1], sel[2], sel[3], 0
@@ -564,7 +573,7 @@
     constructor: (@golApp, @snapping=false, @show_overlay=true) ->
       @dragging = false
       @last_xy = null
-      @ignore_next_mouse_down = 0
+      @old_rect = null
       
     get_xy: (e, snap=false) ->
       [x,y] = getCanvasCursorPosition(e, @golApp.canvas_container)
@@ -573,6 +582,10 @@
         @snap_below ixy
       else
         ixy
+        
+    clear_old_rect: (ctx)->
+      if (r = @old_rect)
+        ctx.clearRect r ...
         
     snap_below: ([x,y]) ->
       gol = @golApp.gol
@@ -593,9 +606,6 @@
 
     getOverlayContext: -> @golApp.canvas_overlay.getContext("2d")
     on_mouse_down: (e) ->
-      if @ignore_next_mouse_down
-        @ignore_next_mouse_down = false
-        return
       @dragging = true
       @last_xy = xy = @get_xy e, @snapping
       @on_click_cell e, xy
@@ -606,30 +616,63 @@
       if @show_overlay then @golApp.showOverlay true
         
     on_disable: ->
-      if @show_overlay then @golApp.showOverlay false
+      if @show_overlay
+        @clear_old_rect @getOverlayContext()
+        @golApp.showOverlay false
+        
 
     on_cell_change: ->
     on_click_cell: ->
     on_mouse_out: ->
       
     on_touch_start: (e)->
-      E("debug-txt").value = "Touches: #{e.touches.length}"
       if e.touches.length is 1
         @on_mouse_down(e)
         e.preventDefault()
-        @ignore_next_mouse_down = true
+        
     on_touch_leave: (e)->
-      if e.touches.length is 1
-        e.preventDefault()
-        @on_mouse_out(e)
+      @on_mouse_out(e)
+      
     on_touch_end: (e)->
-      if e.touches.length is 1
+      if @dragging
         e.preventDefault()
         @on_mouse_up(e)
+        
     on_touch_move: (e)->
-      if e.touches.length is 1
+      if @dragging
         e.preventDefault()
         @on_mouse_move(e)
+
+  ###
+  # In some mobile browsers, ghost clicks can not be prevented. So here easy solution: every mouse event,
+  # coming after some interval after a touch event is ghost
+  ###
+  class GhostClickDetector
+    constructor: ->
+      @isGhost = false
+      @timerHandle = null
+      @ghostInterval = 1000 #ms
+      #Bound functions
+      @_onTimer = =>
+        @isGhost=false
+        @timerHandle=null
+      @_onTouch = =>
+        @onTouch()
+
+    onTouch: ->
+      @stopTimer()
+      @isGhost = true
+      @timerHandle = window.setTimeout @_onTimer, @ghostInterval
+      
+    stopTimer: ->
+      if (handle = @timerHandle)
+        window.clearTimeout handle
+        @timerHandle = null
+
+    addListeners: (element)->
+      for evtName in ["touchstart", "touchend"]
+        element.addEventListener evtName, @_onTouch, false
+        
   ###
   # Mouse tool for erasing
   ###
@@ -644,8 +687,10 @@
       dc = (@size/2)|0
       ctx = @getOverlayContext()
       ctx.fillStyle = @preview_color
-      ctx.globalCompositeOperation = "copy"
-      ctx.fillRect (x0-dc)*cell_size, (y0-dc)*cell_size, sz, sz
+      @clear_old_rect ctx
+      rect = [(x0-dc)*cell_size, (y0-dc)*cell_size, sz, sz]
+      ctx.fillRect rect ...
+      @old_rect = rect
       null
           
     on_cell_change: (e, xy) ->
@@ -677,13 +722,12 @@
       y0-=dy
       ctx = @getOverlayContext()
       ctx.fillStyle = @preview_color
-      ctx.globalCompositeOperation = "copy" #First box will clear everything
+      @clear_old_rect ctx
       for [x,y], i in fig
-        if i is 1
-          ctx.globalCompositeOperation = "source-over"
         xx = (x+x0)*size
         yy = (y+y0)*size
         ctx.fillRect xx, yy, size, size
+      @old_rect = [x0*size, y0*size, (dx+1)*size, (dy+1)*size]
       null
       
     on_cell_change: (e, xy) -> @_drawPreview xy
@@ -761,10 +805,12 @@
     draw_box: ->
       ctx = @getOverlayContext()
       size = @golApp.view.cell_size
-      ctx.globalCompositeOperation = "copy"
       ctx.fillStyle = @selection_color
       [x0,y0,x1,y1] = @selection()
-      ctx.fillRect x0 * size, y0 * size, (x1 - x0 + 1) * size, (y1-y0+ 1) * size
+      rect = [x0 * size, y0 * size, (x1 - x0 + 1) * size, (y1-y0+ 1) * size]
+      @clear_old_rect ctx
+      @old_rect = rect
+      ctx.fillRect rect ...
 
   #////////////////////////////
   # Buffer pane
@@ -931,6 +977,7 @@
         if cellSize <= 2 then cell_spacing = 0
 
         fld = new Array2d cols, rows
+        fld.fill 0
         fld.put_cells cells, 0, 0
         view = new FieldView fld
         view.cell_size = cellSize
@@ -1191,6 +1238,17 @@
   #//////////////////////////////////////////////////////////////////////////////
     golApp = new GolApplication([64, 64], "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15", "overlay-container", "canvas", "overlay", "time")
     
+    fastButton = (id, handler) ->
+      e = E id
+      e.addEventListener "click", (e)->
+        e.preventDefault()
+        unless golApp.ghost_click_detector.isGhost
+          handler e
+      e.addEventListener "touchstart", (e)->
+        e.preventDefault()
+        golApp.ghost_click_detector.onTouch()
+        handler e
+
     fill_rules [
       ["Billiard Ball Machine", Rules.parse("0;8;4;3;2;5;9;7;1;6;10;11;12;13;14;15",";") ]
       ["Bounce gas", Rules.parse("0;8;4;3;2;5;9;14; 1;6;10;13;12;11;7;15",";")],
@@ -1208,22 +1266,23 @@
       ["Double Rotate", NamedRules.doubleRotate],
       ["Single Rotate", NamedRules.singleRotate]]
 
-    E("clear_field").onclick = nodefault -> golApp.do_clear()
-    E("go-next").onclick = nodefault -> golApp.doStep()
-    E("go-back").onclick = nodefault -> golApp.doReverseStep()
-    E("rplay").onclick = nodefault -> golApp.startPlayer -1
-    E("play").onclick = nodefault -> golApp.startPlayer 1
-    E("stop").onclick = nodefault -> golApp.stopPlayer()
+    
+    fastButton "clear_field", -> golApp.do_clear()
+    fastButton "go-next", -> golApp.doStep()
+    fastButton "go-back", -> golApp.doReverseStep()
+    fastButton "rplay", -> golApp.startPlayer -1
+    fastButton "play", -> golApp.startPlayer 1
+    fastButton "stop", -> golApp.stopPlayer()
     E("reset-timer").onclick = -> golApp.reset_time()
     
     E("set_rule").onclick = ->
       rule = golApp.set_rule E("rule").value
       selectOption E("select-rule"), Rules.stringify(golApp.gol.rule), ""
 
-    E("clear-selection").onclick = nodefault -> golApp.clear_selection()
-    E("clear-nonselection").onclick = nodefault -> golApp.clear_nonselection()
-    E("selection-random").onclick = nodefault -> golApp.random_fill_selection 0.5
-    E("selection-analyze").onclick = nodefault -> golApp.analyzeSelection()
+    fastButton "clear-selection", -> golApp.clear_selection()
+    fastButton "clear-nonselection", -> golApp.clear_nonselection()
+    fastButton "selection-random", -> golApp.random_fill_selection 0.5
+    fastButton "selection-analyze", -> golApp.analyzeSelection()
 
      
     E("speed-show-every").onchange = ->
@@ -1308,8 +1367,7 @@
         selectOrAddOption E("select-style"), golApp.view.cell_size
       catch e
         null
-    E("toggle-catcher").onclick = (e)->
-      e.preventDefault()
+    fastButton "toggle-catcher", ->
       if golApp.spaceship_catcher isnt null
         golApp.disable_spaceship_catcher()
       else
@@ -1319,17 +1377,18 @@
     E("rle-encoded").onfocus = ->
       window.setTimeout (=>@select()), 100
 
+
     E("analysis-result-to-library").onclick = -> golApp.analysisResultToLibrary()
     E("analysis-result-close").onclick= ->
     E("analysis-result").onclick = E("analysis-result-close").onclick = ->
       E("analysis-result").style.display="none"
 
-    E("pattern-rotate-cw").onclick  = nodefault -> golApp.buffer.transform [0,-1,1,0]
-    E("pattern-rotate-ccw").onclick = nodefault -> golApp.buffer.transform [0,1,-1,0]
-    E("pattern-flip-h").onclick = nodefault -> golApp.buffer.transform [-1,0,0,1]
-    E("pattern-flip-v").onclick = nodefault -> golApp.buffer.transform [1,0,0,-1]
-    E("pattern-toggle-phase").onclick = nodefault -> golApp.buffer.togglePhase()
-    E("pattern-from-selection").onclick = nodefault -> golApp.copyToBuffer()
+    fastButton "pattern-rotate-cw", -> golApp.buffer.transform [0,-1,1,0]
+    fastButton "pattern-rotate-ccw", -> golApp.buffer.transform [0,1,-1,0]
+    fastButton "pattern-flip-h", -> golApp.buffer.transform [-1,0,0,1]
+    fastButton "pattern-flip-v", -> golApp.buffer.transform [1,0,0,-1]
+    fastButton "pattern-toggle-phase", -> golApp.buffer.togglePhase()
+    fastButton "pattern-from-selection", -> golApp.copyToBuffer()
 
     E("app-create-link").onclick = -> E("url-output").value = golApp.encode_state_in_url()
     E("url-output").onfocus = ->

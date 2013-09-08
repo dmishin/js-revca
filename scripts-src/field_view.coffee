@@ -82,7 +82,7 @@
       field = @field
       if not @old_field or @old_field.width isnt field.width or @old_field.height isnt field.height
         od = new Array2d(field.width, field.height)
-        od.fill -1
+        od.fill 255
         @old_field = od
         return od
       else
@@ -93,7 +93,7 @@
       context.fillRect x, y, size, size
 
     invalidate: ->
-      @old_field.fill -1  if @old_field
+      @old_field.fill 255  if @old_field
 
     erase_background: (context) ->
       cs = @cell_size

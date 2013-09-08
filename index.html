@@ -10,7 +10,9 @@
   <body> 
     <div class="heading">Reversible cellular automata simulator. | <a href="https://github.com/dmishin/js-revca">Sources</a> | <a href="https://plus.google.com/u/0/116542359168957860292/posts">Author</a> | <a href="help.html">Help</a> | <a href="https://github.com/dmishin/js-revca/issues">Bugs</a>
     </div>
+    <!--
     <input id="debug-txt"></input>
+    -->
     <div class="toolbar" id="toolbar-parameters">
       Rule: <select id="select-rule"></select> 
       Step: 
@@ -53,32 +55,32 @@
     </div>
     <div id="main-window" class="panel"> <!-- window that contains tools etc -->
     <div class="toolbar" id="toolbar-main">
-      <a href="#" class="button" id="go-back" title="Step backwards"><span class="icon icon-rstep">|&lt;</span></a>
-      <a href="#" class="button" id="go-next" title="Step forward"><span class="icon icon-step">&gt;|</span></a>
+      <a href="#" class="button" id="go-back" title="Step backwards"><span class="icon icon-rstep"></span></a>
+      <a href="#" class="button" id="go-next" title="Step forward"><span class="icon icon-step"></span></a>
       <span class="separator"></span>
-      <a href="#" class="button" id="rplay" title="Play backwards"><span class="icon icon-rplay">&lt;|</span></a>
-      <a href="#" class="button" id="stop" title="Stop"><span class="icon icon-pause">||</span></a>
-      <a href="#" class="button" id="play" title="Play forward"><span class="icon icon-play">|&gt;</span></a>
+      <a href="#" class="button" id="rplay" title="Play backwards"><span class="icon icon-rplay"></span></a>
+      <a href="#" class="button" id="stop" title="Stop"><span class="icon icon-pause"></span></a>
+      <a href="#" class="button" id="play" title="Play forward"><span class="icon icon-play"></span></a>
       <span class="separator"></span>
-      <a href="#" class="button" id="clear_field" title="Clear field"><span class="icon icon-clearall">C</span></a>
+      <a href="#" class="button" id="clear_field" title="Clear field"><span class="icon icon-clearall"></span></a>
       <span class="separator"></span>
-      <a href="#" class="button" id="clear-selection" title="Clear selected"><span class="icon icon-clearsel">CS</span></a>
-      <a href="#" class="button" id="clear-nonselection" title="Clear not selected"><span class="icon icon-clearnsel">CN</span></a>
-      <a href="#" class="button" id="selection-random" title="Random fill selection"><span class="icon icon-rndsel1">R</span></a>
+      <a href="#" class="button" id="clear-selection" title="Clear selected"><span class="icon icon-clearsel"></span></a>
+      <a href="#" class="button" id="clear-nonselection" title="Clear not selected"><span class="icon icon-clearnsel"></span></a>
+      <a href="#" class="button" id="selection-random" title="Random fill selection"><span class="icon icon-rndsel1"></span></a>
       <span class="separator"></span>
-      <a href="#" class="button" id="selection-analyze" title="Analyze selection"><span class="icon icon-analyze">Analyze</span></a>
+      <a href="#" class="button" id="selection-analyze" title="Analyze selection"><span class="icon icon-analyze"></span></a>
       <span class="separator"></span>
-      <a href="" class="button" id="toggle-catcher" title="Spaceship catcher: when enabled, all spaceships, flying through the border of the field, are removed and added to library"><span class="icon icon-catcher">Catcher</span></a>
+      <a href="" class="button" id="toggle-catcher" title="Spaceship catcher: when enabled, all spaceships, flying through the border of the field, are removed and added to library"><span class="icon icon-catcher"></span></a>
     </div>
 
     <div class="vertical-toolbar" id="toolbar-editing">
       <span id="btn-group-tools">
-      <a class="button" href="#" id="btn-tool-draw" title="Draw cells"><span class="icon icon-draw">Draw</span></a>
-      <a class="button" href="#" id="btn-tool-select" title="Select"><span class="icon icon-select">Select</span></a>
-      <a class="button" href="#" id="btn-tool-stamp" title="Paste pattern from buffer"><span class="icon icon-stamp">Stamp</span></a>    
-      <a class="button" href="#" id="btn-tool-erase" title="Eraser"><span class="icon icon-erase">Erase</span></a>    
+      <a class="button" href="#" id="btn-tool-draw" title="Draw cells"><span class="icon icon-draw"></span></a>
+      <a class="button" href="#" id="btn-tool-select" title="Select"><span class="icon icon-select"></span></a>
+      <a class="button" href="#" id="btn-tool-stamp" title="Paste pattern from buffer"><span class="icon icon-stamp"></span></a>    
+      <a class="button" href="#" id="btn-tool-erase" title="Eraser"><span class="icon icon-erase"></span></a>    
       </span>
-      <a class="button" href="#" id="pattern-from-selection" title="Copy from selection"><span class="icon icon-copy">Copy</span></a>
+      <a class="button" href="#" id="pattern-from-selection" title="Copy from selection"><span class="icon icon-copy"></span></a>
     </div>
 
     <div id="cells-widget">
@@ -99,11 +101,11 @@
     <div id="current-pattern-pane" class="panel">
       <h2>Buffer</h2>
       <div class="vertical-toolbar">
-	<a class="button" href="#" id="pattern-rotate-cw" title="Rotate clockwise"><span class="icon icon-rotate-cw">Rotate cw</span></a>
-	<a class="button" href="#" id="pattern-rotate-ccw" title="Rotate counter-clockwise"><span class="icon icon-rotate-ccw">Rotate ccw</span></a>
-	<a class="button" href="#" id="pattern-flip-h" title="Flip horizontally"><span class="icon icon-flip-h">Flip H</span></a>
-	<a class="button" href="#" id="pattern-flip-v" title="Flip vertically"><span class="icon icon-flip-v">Flip V</span></a>
-	<a class="button" href="#" id="pattern-toggle-phase" title="Toggle phase: shift pattern by 1 by x and y"><span class="icon icon-toggle-phase">Toggle phase</span></a>
+	<a class="button" href="#" id="pattern-rotate-cw" title="Rotate clockwise"><span class="icon icon-rotate-cw"></span></a>
+	<a class="button" href="#" id="pattern-rotate-ccw" title="Rotate counter-clockwise"><span class="icon icon-rotate-ccw"></span></a>
+	<a class="button" href="#" id="pattern-flip-h" title="Flip horizontally"><span class="icon icon-flip-h"></span></a>
+	<a class="button" href="#" id="pattern-flip-v" title="Flip vertically"><span class="icon icon-flip-v"></span></a>
+	<a class="button" href="#" id="pattern-toggle-phase" title="Toggle phase: shift pattern by 1 by x and y"><span class="icon icon-toggle-phase"></span></a>
       </div>
       <div id="buffer-bg" class="pattern-background">
 	<canvas id="active-pattern-canvas" width="16px" height="16px"></canvas>
