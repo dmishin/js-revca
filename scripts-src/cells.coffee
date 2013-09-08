@@ -190,6 +190,7 @@
       [xrange, yrange] = @extent pattern
       sandbox_size = 64 + 2 * Math.max(xrange + yrange, pattern.length) #some heuristics here.
       sandbox = new MargolusNeighborehoodField(new Array2d(sandbox_size, sandbox_size), rule)
+      sandbox.field.fill 0
       x0 = sandbox.snap_below div(sandbox_size - xrange, 2)
       y0 = sandbox.snap_below div(sandbox_size - yrange, 2)
       sandbox.field.put_cells pattern, x0, y0
