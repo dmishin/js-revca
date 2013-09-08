@@ -1230,12 +1230,20 @@
       null
         
 
-
+  loadExternalCSS = (cssHref) ->
+    link = document.createElement "link"
+    link.rel = "stylesheet"
+    link.type = "text/css"
+    link.href = cssHref
+    document.getElementsByTagName("head")[0].appendChild link
+    
   # Bind appliction to GUI
   (->
   #//////////////////////////////////////////////////////////////////////////////
   # Initialization block
   #//////////////////////////////////////////////////////////////////////////////
+    unless document.implementation.hasFeature "http://www.w3.org/TR/SVG11/feature#Image", "1.1"
+      loadExternalCSS "icons-png.css"
     golApp = new GolApplication([64, 64], "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15", "overlay-container", "canvas", "overlay", "time")
     
     fastButton = (id, handler) ->

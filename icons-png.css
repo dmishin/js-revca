@@ -1,0 +1,25 @@
+/*  
+    ICON stypes
+*/
+.icon {
+     background-image: url("images/icons.png");
+     background-repeat: no-repeat;
+     width: 25px;
+     height: 25px;
+     /*text-indent: -10000px;  hides the text */
+     display: inline-block; 
+
+     text-indent: 100%;
+     white-space: nowrap;
+     overflow: hidden;
+}
+
+
+.cellicon {
+     background-image: url("images/cell-icons.png");
+     background-repeat: no-repeat;
+     width: 25px;
+     height: 25px;
+     text-indent: -10000px; /* hides the text */
+     display: inline-block; 
+}
