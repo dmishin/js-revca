@@ -2,6 +2,7 @@
 fs = require "fs"
 path = require "path"
 os = require "os"
+mkdirp = require "mkdirp"
 
 isWin = !!os.platform().match(/^win/);
 
@@ -18,10 +19,12 @@ js_sources = []
 coffee_sources = []
 js_outputs = []
 coffee_outputs = []
+output_dirs = {}
 
 makeCoffeeSource = (dir, fname)->
   ipath = path.join(dir, fname)
   odir = dir.replace(/^scripts-src/, "scripts")
+  output_dirs[odir] = true
   opath = path.join(odir, fname.replace(/.coffee$/,".js"))
   fs.writeSync makefile, "#{opath}: #{ipath}\n"
   fs.writeSync makefile, "\t$(COFFEE) $(COFFEE_FLAGS) -c -o #{odir} #{ipath}\n"
@@ -69,3 +72,7 @@ fs.writeSync makefile, "ALL_OUTPUTS = $(JS_OUTPUTS) $(COFFEE_OUTPUTS)\n"
 fs.writeSync makefile, "everything: $(ALL_OUTPUTS)\n"
         
 fs.closeSync makefile
+
+#Create the complete output directory structure.
+for odir of output_dirs
+  mkdirp odir

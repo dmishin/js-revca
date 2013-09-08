@@ -3,3 +3,4 @@
 \.#*
 scripts
 Makefile
+node_modules
