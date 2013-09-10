@@ -11,11 +11,9 @@
   exports.FieldView = class FieldView
     constructor: (@field) ->
       @cell_colors = ["#888", "#ff0"]
-      @bg_style = "#444"
       @cell_size = 4
-      @cell_spacing = 1
+      @grid_width = 1
       @old_field = null
-      @show_grid = true
       @grid_colors = ["rgb(153,153,153)", "gray"]
     
     ###
@@ -27,50 +25,43 @@
 
     draw_grid: (context, x0, y0, x1, y1) ->
       size = @cell_size
-      return if size <= @cell_spacing
+      spacing = @grid_width
+      return if size <= @grid_width
       xmax = size * x1
       ymax = size * y1
       xmin = size * x0
       ymin = size * y0
       drawGridVrt = (xstart, style) ->
-        context.beginPath()
-        context.strokeStyle = style
+        context.fillStyle = style
         for x in [xstart ... xmax] by (size*2)
-          context.moveTo x + 0.5, ymin + 0.5
-          context.lineTo x + 0.5, ymax + 0.5
-        context.stroke()
+          context.fillRect x, ymin, spacing, (ymax-ymin)
 
       drawGridHrz = (ystart, style) ->
-        context.beginPath()
-        context.strokeStyle = style
+        context.fillStyle = style
         for y in [ystart ... ymax] by (size*2)
-          context.moveTo xmin + 0.5, y + 0.5
-          context.lineTo xmax + 0.5, y + 0.5
-        context.stroke()
+          context.fillRect xmin, y, xmax-xmin ,spacing
 
-      context.lineWidth = @cell_spacing
       drawGridHrz ymin + size - 1, @grid_colors[y0 % 2]
       drawGridVrt xmin + size - 1, @grid_colors[x0 % 2]
       drawGridHrz ymin + size + size - 1, @grid_colors[(y0 + 1) % 2]
       drawGridVrt xmin + size + size - 1, @grid_colors[(x0 + 1) % 2]
 
-    grid2screenX: (xGrid) ->
-      @size * xGrid
-
-    grid2screenY: (yGrid) ->
-      @size * yGrid
-
     draw_box: (context, x0, y0, x1, y1) ->
       size = @cell_size
-      spacing = @cell_spacing
+      spacing = @grid_width
       data = @field.data
       old_field = @get_old_field().data
+      prev_state = 255
       for i in [y0 ... y1] by 1
         idx = @field.cell_index(x0, i)
         for j in [x0 ... x1] by 1
           state = data[idx]
           unless old_field[idx] is state
-            @draw_cell context, size * j, size * i, size, state
+            #@draw_cell context, size * j, size * i, size, state
+            if state isnt prev_state
+              prev_state = state
+              context.fillStyle = @cell_colors[state]
+            context.fillRect size * j, size * i, size, size
             old_field[idx] = state
           idx++
       @draw_grid context, x0, y0, x1, y1  if spacing > 0
@@ -95,8 +86,4 @@
     invalidate: ->
       @old_field.fill 255  if @old_field
 
-    erase_background: (context) ->
-      cs = @cell_size
-      context.fillStyle = @bg_style
-      context.fillRect 0, 0, @field.width * cs, @field.height * cs
 )(this["field_view"] = {})

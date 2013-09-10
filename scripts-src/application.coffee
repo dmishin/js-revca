@@ -182,11 +182,10 @@
           if max_cell_size < @view.cell_size
             @view.cell_size = max_cell_size
             if max_cell_size <= 2
-              @view.cell_spacing = 0 #disable grid.
+              @view.grid_width = 0 #disable grid.
           @adjustCanvasSize()
           ctx = @canvas.getContext("2d")
           @view.invalidate()
-          @view.erase_background ctx
           @view.draw ctx
 
           
@@ -228,14 +227,12 @@
           @view.cell_size = size
           @adjustCanvasSize()
           ctx = @canvas.getContext("2d")
-          @view.erase_background ctx
           @view.invalidate()
           @view.draw ctx
           
       setShowGrid: (show) ->
-        @view.cell_spacing = if show then 1 else 0
+        @view.grid_width = if show then 1 else 0
         ctx = @canvas.getContext("2d")
-        @view.erase_background ctx
         @view.invalidate()
         @view.draw ctx
           
@@ -340,7 +337,7 @@
             @view = new FieldView(@gol.field)
             
           if keys.cell_size?
-            [@view.cell_size, @view.cell_spacing] =
+            [@view.cell_size, @view.grid_width] =
               @parseCellSize(keys.cell_size)
           if keys.colors?
             colors = keys.colors.split ";"
@@ -392,7 +389,7 @@
         urlArgs.push "step=#{@step_size}"
         urlArgs.push "frame_delay=#{@step_delay}"
         urlArgs.push "size=#{fld.width}x#{fld.height}"
-        urlArgs.push "cell_size=#{@view.cell_size},#{@view.cell_spacing}"
+        urlArgs.push "cell_size=#{@view.cell_size},#{@view.grid_width}"
 
         loc = ""+window.location
         argsStartAt = loc.indexOf "?"
@@ -405,7 +402,6 @@
       initialize: ->
           @load_parameters()
           @adjustCanvasSize()
-          @view.erase_background @canvas.getContext "2d"
           @setMouseTool @mouse_tools.draw
           @updateCanvas()
           @attach_listeners()
@@ -413,12 +409,12 @@
       clear_selection: ->
           if sel = @selection
               @gol.field.fill_box sel[0], sel[1], sel[2], sel[3], 0
-              @updateCanvas()
+              @updateCanvasBox sel ...
 
       random_fill_selection: (p) ->
           if sel = @selection
             @gol.field.random_fill sel[0], sel[1], sel[2], sel[3], p
-            @updateCanvas()
+            @updateCanvasBox sel ...
 
 
       _getAnalyzerMaxSteps: ->
@@ -701,8 +697,8 @@
     _erase_at: ([x,y]) ->
       s = @size
       dc = (s/2)|0
-      @golApp.gol.field.fill_box x-dc, y-dc, x-dc+s, y-dc+s
-      @golApp.updateCanvas()
+      @golApp.gol.field.fill_box x-dc, y-dc, x-dc+s, y-dc+s, 0
+      @golApp.updateCanvasBox x-dc, y-dc, x-dc+s, y-dc+s
       
     on_click_cell: (e, xy) -> @_erase_at xy
   ###
@@ -735,8 +731,10 @@
     on_click_cell: (e, xy) ->
       app = @golApp
       buffer = app.buffer
-      app.gol.field.put_cells buffer.pattern, (Point.subtract xy, buffer.patternExtent) ...
-      app.updateCanvas()
+      extent = buffer.patternExtent
+      origin = Point.subtract xy, extent
+      app.gol.field.put_cells buffer.pattern, origin ...
+      app.updateCanvasBox [origin[0],origin[1], origin[0]+extent[0]+1, origin[1]+extent[1]+1]
     
   ###
   Mouse tool that draws lines of 1 or 0 cells
@@ -765,7 +763,7 @@
       [x,y] = xy
       @value = 1 ^ @golApp.gol.field.get(x,y)
       @draw_at x, y
-      @golApp.updateCanvas()
+      @golApp.updateCanvasBox x,y,x+1,y+1
     on_mouse_out: (e) ->
       @dragging=false
 
@@ -964,7 +962,7 @@
   #Function for drawing a single pattern on a canvas
   #Arguemnts:
   # canvasGetter: (w, h) -> canvas   Return Canvas instance, taking in account given width and height.
-  drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, cell_spacing) ->
+  drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid_width) ->
         [DESIRED_W, DESIRED_H] = desired_size
         [cell_min, cell_max] = cell_size_limits
         [x0, y0, cols, rows] = Cells.bounds cells
@@ -974,18 +972,17 @@
         rows += (rows % 2)
         
         cellSize = cap cell_min, cell_max, Math.min( DESIRED_W/cols, DESIRED_H/rows) |0
-        if cellSize <= 2 then cell_spacing = 0
+        if cellSize <= 2 then grid_width = 0
 
         fld = new Array2d cols, rows
         fld.fill 0
         fld.put_cells cells, 0, 0
         view = new FieldView fld
         view.cell_size = cellSize
-        view.cell_spacing = cell_spacing
+        view.grid_width = grid_width
         
         canv = canvasGetter cols * cellSize, rows * cellSize
         ctx = canv.getContext "2d"
-        view.erase_background ctx
         view.draw ctx
         return canv
 
@@ -1418,7 +1415,7 @@
     selectOrAddOption E("select-size"), JSON.stringify(sz), "#{sz[0]} x #{sz[1]}"
     
     selectOrAddOption E("select-style"), golApp.view.cell_size
-    E("show-grid").checked = (golApp.view.cell_spacing > 0)
+    E("show-grid").checked = (golApp.view.grid_width > 0)
     golApp.updateLibrariesList()
   )()
 ).call(this)
