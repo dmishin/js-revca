@@ -243,7 +243,7 @@
               gc.scan @gol
           if @spaceship_catcher? and @gol.generation >= @spaceship_catcher.reseed_period
             @do_clear()
-            @random_fill_selection 0.4
+            @random_fill_selection parseFloat(E("random-fill-percent").value)*0.01
           @updateCanvas()
           @update_time()
           @recordFrame()
@@ -412,8 +412,11 @@
               @updateCanvasBox sel ...
 
       random_fill_selection: (p) ->
+          if p < 0 or p > 1 or isNaN(p)
+            alert "Wrong percentage: #{p}"
+            return
           if sel = @selection
-            @gol.field.random_fill sel[0], sel[1], sel[2], sel[3], p
+            @gol.field.random_fill sel[0], sel[1], sel[2]+1, sel[3]+1, p
             @updateCanvasBox sel ...
 
 
@@ -776,7 +779,7 @@
       @selection_color = "rgba(0,0,255,0.3)"
       @xy0 = null
       @xy1 = null
-      
+
     on_mouse_up: (e) ->
       super e
       @golApp.selection = @selection()
@@ -792,11 +795,9 @@
 
     selection: ->
       if @xy0 and @xy1
-        [x0,y0] = @xy0
-        [x1,y1] = @xy1
-        mi = Math.min
-        mx = Math.max
-        return [mi(x0, x1), mi(y0, y1), mx(x0, x1), mx(y0, y1)]
+        [x0,y0,x1,y1] = Point.boundBox @xy0, @xy1
+        d = if @snapping then 1 else 0
+        return [x0,y0,x1+d, y1+d]
       else
         return [0, 0, 0, 0]
 
@@ -805,7 +806,7 @@
       size = @golApp.view.cell_size
       ctx.fillStyle = @selection_color
       [x0,y0,x1,y1] = @selection()
-      rect = [x0 * size, y0 * size, (x1 - x0 + 1) * size, (y1-y0+ 1) * size]
+      rect = [x0 * size, y0 * size, (x1 - x0) * size, (y1-y0) * size]
       @clear_old_rect ctx
       @old_rect = rect
       ctx.fillRect rect ...
@@ -1286,7 +1287,7 @@
 
     fastButton "clear-selection", -> golApp.clear_selection()
     fastButton "clear-nonselection", -> golApp.clear_nonselection()
-    fastButton "selection-random", -> golApp.random_fill_selection 0.5
+    fastButton "selection-random", -> golApp.random_fill_selection (parseFloat(E("random-fill-percent").value)*0.01)
     fastButton "selection-analyze", -> golApp.analyzeSelection()
 
      
