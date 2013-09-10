@@ -734,7 +734,7 @@
       extent = buffer.patternExtent
       origin = Point.subtract xy, extent
       app.gol.field.put_cells buffer.pattern, origin ...
-      app.updateCanvasBox [origin[0],origin[1], origin[0]+extent[0]+1, origin[1]+extent[1]+1]
+      app.updateCanvasBox origin[0], origin[1], xy[0]+1, xy[1]+1
     
   ###
   Mouse tool that draws lines of 1 or 0 cells
