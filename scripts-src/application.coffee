@@ -1379,7 +1379,7 @@
         golApp.enable_spaceship_catcher()
         
 
-    E("rle-encoded").onfocus = ->
+    E("library-json-data").onfocus = E("rle-encoded").onfocus = ->
       window.setTimeout (=>@select()), 100
 
 
