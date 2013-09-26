@@ -90,7 +90,7 @@
       else
         @selected = null
         
-      @handlers = {change: []}
+      @handlers = {"change": []}
 
       for btn in containerElem.getElementsByTagName tag
         btn.addEventListener "click", @_btnClickListener btn
