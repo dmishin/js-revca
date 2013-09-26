@@ -10,6 +10,8 @@
   {DomBuilder} = require "./dom_builder"
   {parseUri} = require "./parseuri"
   {parse_rle, remove_whitespaces} = require "./rle"
+  {GIFEncoder} = require "./ext/GIFEncoder"
+  {exactPalette} = require "./ext/ExactPaletteQuant"
   ###################
   # Utils
   E = (id) -> document.getElementById(id)

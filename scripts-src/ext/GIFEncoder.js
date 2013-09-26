@@ -17,11 +17,11 @@
 //import flash.net.URLRequest;
 //import flash.net.navigateToURL;
 
-{WritableByteStream} = require "./WritableStream"
-{LZWEncoder} = require "./LZWEncoder"
-{exactPalette} = require "./ExactPaletteQuant"
+var WritableByteStream = require("./WritableStream").WritableByteStream
+var LZWEncoder = require("./LZWEncoder").LZWEncoder;
+var exactPalette = require("./ExactPaletteQuant").exactPalette;
 
-GIFEncoder = function()
+exports.GIFEncoder = function()
 {
     var exports = {};
     /*private*/ var width/*int*/ // image size
