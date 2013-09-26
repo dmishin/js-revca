@@ -1,9 +1,7 @@
-"use strict"
-
 ###
 Exact palette quantizer. Returns palette as array of bytes
 ###
-exactPalette = (rgbaImage, indexImage) ->
+exports.exactPalette = (rgbaImage, indexImage) ->
   pal = []
   rgb2index = {}
   j = 0

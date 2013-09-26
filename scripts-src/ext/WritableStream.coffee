@@ -5,13 +5,11 @@ class WritableByteStream
     @curChunk = @newChunk()
     @chunks = [@curChunk]
 
-
   ###
   How many bytes currently contained in the stream
   ###
   getSize: ->
     (@chunks.length - 1) * @chunkSize + @curChunkPos
-
 
   ###
   Create new chunk
@@ -71,3 +69,5 @@ class WritableByteStream
     for i in [ offset ... length ] by 1 #To simplify JS code
       @writeByte array[i]
     null
+
+exports.WritableByteStream = WritableByteStream

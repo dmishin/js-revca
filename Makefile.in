@@ -15,9 +15,12 @@ compile: everything
 clean:
 	rm $(ALL_OUTPUTS)
 
-scripts/minified.js: $(ALL_OUTPUTS)
-	cat $(ALL_OUTPUTS) |closure --compilation_level ADVANCED_OPTIMIZATIONS > scripts/minified.js
 
+bundle.js: everything
+	browserify scripts/application.js -o bundle.js
+
+minified.js: bundle.js
+	cat bundle.js |closure --compilation_level ADVANCED_OPTIMIZATIONS > minified.js
 
 .must-be-master:
 	git checkout master

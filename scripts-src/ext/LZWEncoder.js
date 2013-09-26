@@ -1,4 +1,3 @@
-'use stict';
 /**
  * This class handles LZW encoding
  * Adapted from Jef Poskanzer's Java port by way of J. M. G. Elliott.
@@ -9,7 +8,7 @@
 
 //import flash.utils.ByteArray;
 	
-LZWEncoder = function()
+exports.LZWEncoder = function()
 {
     var exports = {};
     /*private_static*/ var EOF/*int*/ = -1;

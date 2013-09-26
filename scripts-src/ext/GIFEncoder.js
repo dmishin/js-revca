@@ -17,6 +17,10 @@
 //import flash.net.URLRequest;
 //import flash.net.navigateToURL;
 
+{WritableByteStream} = require "./WritableStream"
+{LZWEncoder} = require "./LZWEncoder"
+{exactPalette} = require "./ExactPaletteQuant"
+
 GIFEncoder = function()
 {
     var exports = {};
