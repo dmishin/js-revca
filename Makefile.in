@@ -15,7 +15,7 @@ clean:
 	rm $(ALL_OUTPUTS)
 
 minified.js: bundle.js
-	cat bundle.js |closure --compilation_level ADVANCED_OPTIMIZATIONS > minified.js
+	closure bundle.js --compilation_level SIMPLE_OPTIMIZATIONS > minified.js
 
 .must-be-master:
 	git checkout master
