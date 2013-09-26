@@ -1,4 +1,3 @@
-((exports) ->
   #########
   # Let's make a bicycle!
   #
@@ -54,4 +53,3 @@
   # dom = new DimBuilder
   # dom.tag("div").a("id", "my-div").a("class","toolbar").end()
   # 
-)(this["dom_builder"]={})

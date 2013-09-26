@@ -1,5 +1,3 @@
-((exports) ->
-
   #taken from http://www.html5canvastutorials.com/advanced/html5-canvas-mouse-coordinates/
   exports.getCanvasCursorPosition = (e, canvas) ->
     if e.type is "touchmove" or e.type is "touchstart" or e.type is "touchend"
@@ -31,5 +29,3 @@
     x -= canvas.offsetLeft
     y -= canvas.offsetTop
     [x, y]
-    
-)(this["canvas_util"]={}) #Browser module

@@ -1,13 +1,8 @@
 # module reversible_ca
 #requires math_util.js
-((exports) ->
   #Import section: add support for node.js
-  if require?
-    math_util = require "./math_util"
-    module_rules = require "./rules"
-  else
-    math_util = this.math_util
-    module_rules = this.rules
+  math_util = require "./math_util"
+  module_rules = require "./rules"
   {div, mod} = math_util
   {Rules} = module_rules
     
@@ -246,5 +241,3 @@
 
     snap_box: ([x0,y0,x1,y1]) ->
       [@snap_below(x0), @snap_below(y0), @snap_upper(x1), @snap_upper(y1)]
-      
-)( exports ? this["reversible_ca"]={} )

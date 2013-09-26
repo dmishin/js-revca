@@ -1,8 +1,7 @@
 # This is a browser-only module
-((exports)->
   ###### imports #######
-  {MargolusNeighborehoodField, Array2d} = this.reversible_ca
-  {div, mod} = this.math_util
+  {MargolusNeighborehoodField, Array2d} = require "./reversible_ca"
+  {div, mod} = require "./math_util"
   ######################
 
   ###
@@ -85,5 +84,3 @@
 
     invalidate: ->
       @old_field.fill 255  if @old_field
-
-)(this["field_view"] = {})

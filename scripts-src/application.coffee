@@ -1,17 +1,15 @@
 #Import modules
 # This applicaiton module will only work in the browser
-# So, no "require"
-(->
   ##### Imports #####
-  {Rules, NamedRules, Rule2Name} = this.rules
-  {Cells, Point, splitPattern, getDualTransform} = this.cells
-  {MargolusNeighborehoodField, Array2d} = this.reversible_ca
-  {div, mod, line_pixels, rational2str, getReadableFileSizeString, cap} = this.math_util
-  {FieldView} = this.field_view
-  {getCanvasCursorPosition} = this.canvas_util
-  {DomBuilder} = this.dom_builder
-  {parseUri} = this.parseuri
-  {parse_rle, remove_whitespaces} = this.rle
+  {Rules, NamedRules, Rule2Name} = require "./rules"
+  {Cells, Point, splitPattern, getDualTransform} = require "./cells"
+  {MargolusNeighborehoodField, Array2d} = require "./reversible_ca"
+  {div, mod, line_pixels, rational2str, getReadableFileSizeString, cap} = require "./math_util"
+  {FieldView} = require "./field_view"
+  {getCanvasCursorPosition} = require "./canvas_util"
+  {DomBuilder} = require "./dom_builder"
+  {parseUri} = require "./parseuri"
+  {parse_rle, remove_whitespaces} = require "./rle"
   ###################
   # Utils
   E = (id) -> document.getElementById(id)
@@ -1419,4 +1417,3 @@
     E("show-grid").checked = (golApp.view.grid_width > 0)
     golApp.updateLibrariesList()
   )()
-).call(this)

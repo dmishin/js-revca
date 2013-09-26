@@ -1,18 +1,12 @@
 #//////////////////////////////////////////////////////////////////////////////
 # Configuration analysis
 #//////////////////////////////////////////////////////////////////////////////
-((exports)->
   #Import section
-  if require?
-    module_rle = require "./rle"
-    module_rules = require "./rules"
-    module_math_util = require "./math_util"
-    module_reversible_ca = require "./reversible_ca"
-  else
-    module_rle = this.rle
-    module_rules = this.rules
-    module_math_util = this.math_util
-    module_reversible_ca = this.reversible_ca
+  module_rle = require "./rle"
+  module_rules = require "./rules"
+  module_math_util = require "./math_util"
+  module_reversible_ca = require "./reversible_ca"
+
   {parse_rle} = module_rle
   {Rules, Bits} = module_rules
   {Maximizer, mod, div} = module_math_util
@@ -471,4 +465,3 @@
         grp = parseInt grp_key, 10
         for label in labels
           pattern[ parseInt(label,10)-1 ])
-)(exports ? this["cells"]={} )

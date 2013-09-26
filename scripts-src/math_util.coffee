@@ -1,6 +1,4 @@
 # module reversible_ca
-((exports) ->
-
   #array utilities
   exports.getReadableFileSizeString = (fileSizeInBytes) ->
     i = -1
@@ -110,4 +108,3 @@
     getVal: () ->
       throw new Error "Has no values" unless @hasAny()
       @bestY
-)( exports ? this["math_util"]={} )
