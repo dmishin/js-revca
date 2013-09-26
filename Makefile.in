@@ -1,23 +1,18 @@
 COFFEE = coffee
 COFFEE_FLAGS = -m -b
 
+bundle.js: everything
+	browserify scripts/application.js -o bundle.js
+
 all: compile
 
 test:
 	mocha tests/test*.coffee --compilers coffee:coffee-script
 
-#compile:
-#	coffee -m -b -c -o scripts scripts-src
-#	ln -f scripts-src/ext/*.js scripts/ext/
-
 compile: everything
 
 clean:
 	rm $(ALL_OUTPUTS)
-
-
-bundle.js: everything
-	browserify scripts/application.js -o bundle.js
 
 minified.js: bundle.js
 	cat bundle.js |closure --compilation_level ADVANCED_OPTIMIZATIONS > minified.js

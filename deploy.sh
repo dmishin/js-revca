@@ -5,7 +5,7 @@ set -e
 echo Deployment script
 ODIR=../js-revca-deploy/js-revca
 
-cp -r images *.html scripts scripts-src *.css LICENSE README.md $ODIR
+cp -r images *.html bundle.js scripts-src *.css LICENSE README.md $ODIR
 
 cd $ODIR
 
