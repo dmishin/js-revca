@@ -1,8 +1,8 @@
 COFFEE = coffee
 COFFEE_FLAGS = -m -b
 
-bundle.js: everything
-	browserify scripts/application.js -o bundle.js
+scripts/bundle.js: everything
+	browserify scripts/application.js -o scripts/bundle.js
 
 all: compile
 
@@ -14,8 +14,8 @@ compile: everything
 clean:
 	rm $(ALL_OUTPUTS)
 
-minified.js: bundle.js
-	closure bundle.js --compilation_level SIMPLE_OPTIMIZATIONS > minified.js
+scripts/minified.js: scripts/bundle.js
+	closure scripts/bundle.js --compilation_level SIMPLE_OPTIMIZATIONS > scripts/minified.js
 
 .must-be-master:
 	git checkout master
