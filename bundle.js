@@ -3747,7 +3747,7 @@ exports.Rules = Rules = {
   */
 
   is_invertible: function(rule) {
-    var a, a0, all_transforms, b, b0, i, r, ri, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+    var i, r, ri, _i, _len;
     r = (function() {
       var _i, _len, _results;
       _results = [];
@@ -3766,23 +3766,23 @@ exports.Rules = Rules = {
         return false;
       }
     }
-    true;
-    ({
-      make_from_samples: function(samples, invariants) {}
-    });
+    return true;
+  },
+  make_from_samples: function(samples, invariants) {
+    var a, a0, all_transforms, b, b0, i, ri, rule, _i, _j, _k, _len, _len1, _len2, _ref, _ref1;
     all_transforms = function(x, y, transforms) {
-      var walk, x2y, xy_pairs;
+      var i, walk, x2y, xy_pairs;
       x2y = (function() {
-        var _j, _results;
+        var _i, _results;
         _results = [];
-        for (i = _j = 0; _j <= 15; i = ++_j) {
+        for (i = _i = 0; _i <= 15; i = ++_i) {
           _results.push(null);
         }
         return _results;
       })();
       xy_pairs = [];
       walk = function(x, y) {
-        var tfm, y_old, _j, _len1;
+        var tfm, y_old, _i, _len;
         if ((y_old = x2y[x]) != null) {
           if (y_old !== y) {
             throw new Error("Samples are contradicting invariants");
@@ -3790,8 +3790,8 @@ exports.Rules = Rules = {
         } else {
           x2y[x] = y;
           xy_pairs.push([x, y]);
-          for (_j = 0, _len1 = transforms.length; _j < _len1; _j++) {
-            tfm = transforms[_j];
+          for (_i = 0, _len = transforms.length; _i < _len; _i++) {
+            tfm = transforms[_i];
             walk(tfm(x), tfm(y));
           }
         }
@@ -3801,17 +3801,17 @@ exports.Rules = Rules = {
       return xy_pairs;
     };
     rule = (function() {
-      var _j, _results;
+      var _i, _results;
       _results = [];
-      for (i = _j = 0; _j <= 15; i = ++_j) {
+      for (i = _i = 0; _i <= 15; i = ++_i) {
         _results.push(null);
       }
       return _results;
     })();
-    for (i = _j = 0, _len1 = samples.length; _j < _len1; i = ++_j) {
+    for (i = _i = 0, _len = samples.length; _i < _len; i = ++_i) {
       _ref = samples[i], a0 = _ref[0], b0 = _ref[1];
       _ref1 = all_transforms(a, b, invariants);
-      for (b = _k = 0, _len2 = _ref1.length; _k < _len2; b = ++_k) {
+      for (b = _j = 0, _len1 = _ref1.length; _j < _len1; b = ++_j) {
         a = _ref1[b];
         if (rule[a] !== null && rule[a] !== b) {
           throw new Error("Sample " + (i + 1) + " conflicts with other samples");
@@ -3819,7 +3819,7 @@ exports.Rules = Rules = {
         rule[a] = b;
       }
     }
-    for (i = _l = 0, _len3 = rule.length; _l < _len3; i = ++_l) {
+    for (i = _k = 0, _len2 = rule.length; _k < _len2; i = ++_k) {
       ri = rule[i];
       if (ri === null) {
         throw new Error("Samples incomplete. State " + i + " has no descendant");

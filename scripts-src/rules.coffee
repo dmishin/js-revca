@@ -58,8 +58,9 @@ exports.Rules = Rules =
     for ri, i in r
       if ri isnt i
         return false
-    true  
-    make_from_samples: (samples, invariants) ->
+    true
+    
+  make_from_samples: (samples, invariants) ->
     all_transforms = (x, y, transforms)->
       x2y = (null for i in [0..15])
       xy_pairs = []
