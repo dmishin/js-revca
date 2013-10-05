@@ -1280,10 +1280,17 @@
     fastButton "play", -> golApp.startPlayer 1
     fastButton "stop", -> golApp.stopPlayer()
     E("reset-timer").onclick = -> golApp.reset_time()
-    
+
+    #Rule set manually
     E("set_rule").onclick = ->
       rule = golApp.set_rule E("rule").value
       selectOption E("select-rule"), Rules.stringify(golApp.gol.rule), ""
+      
+    #RUle set from the editor
+    E("select-style").onchange = ->
+      sz = parseInt E("select-style").value, 10
+      golApp.setCellSize sz
+
 
     fastButton "clear-selection", -> golApp.clear_selection()
     fastButton "clear-nonselection", -> golApp.clear_nonselection()
@@ -1301,10 +1308,6 @@
       if (rule = E("select-rule").value) isnt ""
         golApp.set_rule rule
         E("rule").value = Rules.stringify(golApp.gol.rule)
-
-    E("select-style").onchange = ->
-      sz = parseInt E("select-style").value, 10
-      golApp.setCellSize sz
 
     E("show-grid").onchange = -> golApp.setShowGrid E("show-grid").checked
 
@@ -1411,7 +1414,8 @@
 
     selectOrAddOption E("speed-show-every"), golApp.step_size
     selectOrAddOption E("speed-frame-delay"), golApp.step_delay, "#{golApp.step_delay}ms"
-
+    selectOption E("select-rule"), Rules.stringify(golApp.gol.rule), "" #Select rule, loaded from the URL
+    
     sz = golApp.gol.field.size()
     selectOrAddOption E("select-size"), JSON.stringify(sz), "#{sz[0]} x #{sz[1]}"
     
