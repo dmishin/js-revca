@@ -54,7 +54,7 @@
   selectOption = (elem, value, value0) ->
     val2opt = selectValue2Option elem
     o = val2opt[value]
-    if value0 and (not o?)
+    if value0? and (not o?)
       o = val2opt[value0]
     if o?
       o.selected = true
@@ -1414,7 +1414,7 @@
 
     selectOrAddOption E("speed-show-every"), golApp.step_size
     selectOrAddOption E("speed-frame-delay"), golApp.step_delay, "#{golApp.step_delay}ms"
-    selectOption E("select-rule"), Rules.stringify(golApp.gol.rule), "" #Select rule, loaded from the URL
+    selectOption E("select-rule"), Rules.stringify(golApp.gol.rule), "" #Select rule, loaded from URL
     
     sz = golApp.gol.field.size()
     selectOrAddOption E("select-size"), JSON.stringify(sz), "#{sz[0]} x #{sz[1]}"
