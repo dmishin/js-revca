@@ -12,6 +12,7 @@ To start using, open the index.html file. The interface is fairly standard for t
 
 See it here: http://dmishin.github.io/js-revca/index.html
 
+Some explanations on Reversible Cellular Automata: http://dmishin.blogspot.ru/2013/10/reversible-cellular-automata.html
 
 Features
 --------
@@ -76,7 +77,7 @@ Simulation of the orthogonal c/14 spaceship:
 Its RLE code is: `b2o2bobo$4b2o$o4bo`
 
 See it in the demonstration:
-http://dmishin.github.io/js-revca/revca-singlerot.svg?rle=b2o2bobo$4b2o$o4bo&quick=1&x=2&y=6&palette=black;yellow
+[href="http://dmishin.github.io/js-revca/revca-singlerot.svg?rle=b2o2bobo$4b2o$o4bo&quick=1&x=2&y=6&palette=black;yellow](http://dmishin.github.io/js-revca/revca-singlerot.svg?rle=b2o2bobo$4b2o$o4bo&quick=1&x=2&y=6&palette=black;yellow)
 
-Or in the Simulator:
-http://dmishin.github.io/js-revca/index.html?rule=0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15&rle_x0=26&rle_y0=28&rle=b2o2bobo$4b2o$o4bo&step=8&frame_delay=100&size=64x64&cell_size=4,1
+Or in the [Simulator](http://dmishin.github.io/js-revca/index.html?rule=0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15&rle_x0=26&rle_y0=28&rle=b2o2bobo$4b2o$o4bo&step=8&frame_delay=100&size=64x64&cell_size=4,1).
+
