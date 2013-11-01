@@ -432,7 +432,7 @@ function startup(evt){
     };
 
     try{
-	var keys = parseUri(doc.defaultView.location).queryKey;
+	var keys = parseUri(decodeURI(doc.defaultView.location)).queryKey;
 	var rle = keys.rle || "3o$o$bo";
 	var rle_x = parseInt(keys.x || "2", 10);
 	var rle_y = parseInt(keys.y || "2", 10);

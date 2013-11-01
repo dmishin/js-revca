@@ -324,7 +324,7 @@
       Load initial state from the URL parameters
       ###
       load_parameters: ->
-          keys = parseUri(window.location).queryKey
+          keys = parseUri(decodeURI(window.location)).queryKey
           #load RLE code of the initial field
           if keys.size?
             sz = keys.size.split 'x'
