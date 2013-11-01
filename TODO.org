@@ -42,8 +42,9 @@
 ** DONE Make key modules work both in browser and in Node.js
 
 * Bugs
+** 
 ** DONE Cell icons-9 wrong  
-** TODO When field is big, scroll bar appears
+** DONE When field is big, scroll bar appears
    Why? What limits its size?
    
 
