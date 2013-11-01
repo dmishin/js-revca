@@ -432,12 +432,14 @@ function startup(evt){
     };
 
     try{
-	var keys = parseUri(decodeURI(doc.defaultView.location)).queryKey;
+	var keys = parseUri(doc.defaultView.location).queryKey;
 	var rle = keys.rle || "3o$o$bo";
 	var rle_x = parseInt(keys.x || "2", 10);
 	var rle_y = parseInt(keys.y || "2", 10);
 	var speed = parseFloat(keys.speed || "0.1");
 	var quick = parseInt(keys.quick || "0", 10);
+        for k, v of keys
+          keys[k] = decodeURIComponent [keys[k]]
 	if (keys.palette)
 	    palette = keys.palette.split(";");
 
