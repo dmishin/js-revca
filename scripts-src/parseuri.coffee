@@ -10,6 +10,9 @@
     uri[o.q.name] = {}
     uri[o.key[12]].replace o.q.parser, ($0, $1, $2) ->
       uri[o.q.name][$1] = $2  if $1
+      
+    for k, v of uri.queryKey
+      uri.queryKey[k] = decodeURIComponent v
 
     uri
   parseUri.options =

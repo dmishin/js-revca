@@ -387,7 +387,7 @@ function startup(evt){
 	}
     })();
     var parseUri = function(str) {
-	var i, m, o, uri;
+	var i, m, o, uri, _ref, k, v;
 	o = parseUri.options;
 	m = o.parser[(o.strictMode ? "strict" : "loose")].exec(str);
 	uri = {};
@@ -401,6 +401,11 @@ function startup(evt){
 		return uri[o.q.name][$1] = $2;
 	    }
 	});
+	_ref = uri.queryKey;
+	for (k in _ref) {
+	    v = _ref[k];
+	    uri.queryKey[k] = decodeURIComponent(v);
+	}	
 	return uri;
     };
     parseUri.options = {
@@ -438,8 +443,7 @@ function startup(evt){
 	var rle_y = parseInt(keys.y || "2", 10);
 	var speed = parseFloat(keys.speed || "0.1");
 	var quick = parseInt(keys.quick || "0", 10);
-        for k, v of keys
-          keys[k] = decodeURIComponent [keys[k]]
+
 	if (keys.palette)
 	    palette = keys.palette.split(";");
 
