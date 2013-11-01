@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="0 0 400 400" onload="startup(evt)">
+<script type="text/javascript" xlink:href="scripts/revca_singlerot.js"/>
+
+<defs>
+  <!-- Cell image, fill is defined by the script  -->
+  <circle id = "cell-image" cx = "10" cy = "10" r = "8.5" stroke = "black" stroke-width = "2"/>
+
+  <g id="block-empty"/>
+
+  <!-- rotating block background -->
+  <g id="block">
+    <rect x="-20" y="-20" width="40" height="40" fill = "rgb(250,255,230)" stroke = "black"  />
+    <g style="stroke:black;stroke-width:1" stroke-dasharray="2,4" opacity="0.25">
+      <line x1="0" y1="-20" x2="0" y2="20" />
+      <line x1="-20" y1="0" x2="20" y2="0" />
+    </g>
+  </g>
+</defs>
+
+<!-- background -->
+<rect width="100%" height="100%" fill="rgb(240,255,255)"/>
+
+<!-- To ensure sharp pixel edges: offset everything by 0.5 pixels -->
+<g transform="translate(.5 .5)"> 
+  <g id="grid" style="stroke:black;stroke-width:1" stroke-dasharray="2,4"/>
+  <!-- translate 1 cell outside of screen, since border is special -->
+  <g id="field" transform="translate(-20 -20)"/> 
+</g>
+
+<!-- Show this, when script is not enabled -->
+<text id="no-script" x="10" y="50" width="200" style="font-size:1em;" fill="#820">JavaScript is required</text>
+
+<!-- when JS error occurs, error text is put here -->
+<g id="error-box" style="font-size:1em;font-family:monospace;" fill="#820" transform="translate(25 25)" />
+
+</svg>
