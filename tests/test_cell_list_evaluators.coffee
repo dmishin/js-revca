@@ -1,6 +1,5 @@
 assert = require "assert"
-module_cells = require "../scripts-src/cells"
-{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = module_cells
+{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = require "../scripts-src/cells"
 
 
 
