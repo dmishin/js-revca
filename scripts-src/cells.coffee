@@ -37,7 +37,6 @@ exports.Cells = Cells =
       y0 = Math.min(y0, y)
       y1 = Math.max(y1, y)
     [x0, y0, x1, y1]
-
   
   transform: (lst, tfm, need_normalize = true) ->
     #transform cell block: rotate or flip
@@ -52,7 +51,7 @@ exports.Cells = Cells =
       @normalize lst1
     else
       lst1
-
+        
   #Normalize list: sort cells and offset them to the origin    
   normalize: (lst1) -> @sortXY @normalizeXY lst1
   
@@ -79,6 +78,7 @@ exports.Cells = Cells =
   extent: (lst) ->
     [_,_,x1, y1] = @bounds lst
     [x1, y1]
+
   #Find index of the first cell with given coordinates    
   find: (lst, [x,y]) ->
     for [xi, yi], i in lst
@@ -170,7 +170,9 @@ exports.Cells = Cells =
     throw new Error "Impossible to rotate vector (#{dx},#{dy}) to the positive direction"
 
 
-  analyze: (pattern, rule, max_iters = 2048, stop_on_border_hit=true) ->
+  
+
+  analyze1: (pattern, rule, max_iters = 2048, stop_on_border_hit=true) ->
     throw new Error ("Pattern undefined")  unless pattern
     throw new Error ("Rule undefined")  unless rule
     #sort cells by Y, then by X
@@ -191,7 +193,7 @@ exports.Cells = Cells =
 
     bestPatternSearch = new Maximizer @energy
     bestPatternSearch.put pattern
-    
+
     #start search
     cycle_found = false
     for iter in [1 .. max_iters] by 1
@@ -225,7 +227,68 @@ exports.Cells = Cells =
         result.period = iter
      result.cells = cells_best
      return result
+
+  analyze: (pattern, rule, max_iters = 2048, stop_on_border_hit=true) ->
+    throw new Error ("Pattern undefined")  unless pattern
+    throw new Error ("Rule undefined")  unless rule
+    snap_below = (x,generation) ->
+      x - mod(x + generation, 2)
+                        
+    offsetToOrigin = (pattern, generation) ->
+      [x0,y0] = Cells.bounds pattern
+      x0 = snap_below x0, generation
+      y0 = snap_below y0, generation
+      Cells.offset pattern, -x0, -y0
+      return [pattern, x0, y0]
+                        
+    vacuum_period = Rules.vacuum_period rule
+    unless vacuum_period is 1
+      throw new Error "Empty field is not periodic for this rule. Analysis impossible"
+
+    pattern = @normalize pattern
+                
+    #Shift pattern to the origin
+    [pattern] = offsetToOrigin pattern, 0
+                
+    bestPatternSearch = new Maximizer @energy
+    bestPatternSearch.put pattern
     
+    #start search
+    cycle_found = false
+    curPattern = pattern
+    dx = 0
+    dy = 0
+    #console.log "####Analyze pattern #{ Cells.to_rle curPattern }"
+    for iter in [1 .. max_iters] by 1
+      #TODO: evaluate cell list, always assuming initial, 0 phase
+      curPattern = evaluateCellList rule, curPattern, 0
+      @sortXY curPattern
+      #console.log "#### Iter #{ iter }\t:  #{ @to_rle @normalizeXY curPattern[..] }"
+      #After evaluation, pattern is in phase 1. remove offset and transform back to phase 0
+      [curPattern, x0, y0] = offsetToOrigin curPattern, 1
+      dx += x0
+      dy += y0
+      
+      if iter % vacuum_period isnt 0
+        continue #Skip states with nonzero vacuum
+                                
+      if @areEqual pattern, curPattern
+        cycle_found = true
+        break
+      bestPatternSearch.put curPattern
+
+     #Return results
+    result = {
+      analyzed_generations: max_iters
+    }
+    cells_best = bestPatternSearch.getArg() 
+    if cycle_found
+       [cells_best, result.dx, result.dy] =
+         @canonicalize_spaceship cells_best, rule, dx, dy
+       result.period = iter
+    result.cells = cells_best
+    return result
+                    
   #Given a spaceship and its direction,
   # Rotate it, if rule is invariant in relation to rotation
   canonicalize_spaceship: (pattern, rule, dx, dy) ->
