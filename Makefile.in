@@ -14,8 +14,10 @@ compile: everything
 clean:
 	rm $(ALL_OUTPUTS)
 
+#scripts/minified.js: scripts/bundle.js
+#	closure scripts/bundle.js --compilation_level SIMPLE_OPTIMIZATIONS > scripts/minified.js
 scripts/minified.js: scripts/bundle.js
-	closure scripts/bundle.js --compilation_level SIMPLE_OPTIMIZATIONS > scripts/minified.js
+	uglifyjs scripts/bundle.js > scripts/minified.js
 
 .must-be-master:
 	git checkout master
