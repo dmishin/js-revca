@@ -172,7 +172,7 @@ exports.Cells = Cells =
 
   
 
-  analyze1: (pattern, rule, max_iters = 2048, stop_on_border_hit=true) ->
+  analyze_field_based: (pattern, rule, max_iters = 2048, stop_on_border_hit=true) ->
     throw new Error ("Pattern undefined")  unless pattern
     throw new Error ("Rule undefined")  unless rule
     #sort cells by Y, then by X
@@ -243,7 +243,8 @@ exports.Cells = Cells =
                         
     vacuum_period = Rules.vacuum_period rule
     unless vacuum_period is 1
-      throw new Error "Empty field is not periodic for this rule. Analysis impossible"
+      #fall-back to the field-based evaluator
+      return @analyze_field_based pattern, rule, max_iters, stop_on_border_hit
 
     pattern = @normalize pattern
                 
