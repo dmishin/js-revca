@@ -72,3 +72,22 @@ describe "compose_transpositions(t1, t2)", ->
     test 7, 5
     test 13, 15
     test 4, 9
+    
+describe "Rules.vacuum_cycle(rule)", ->
+  it "must return [0] for stable vacuum rules", ->
+    iden_rule = Rules.parse "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15"
+    
+    assert.deepEqual Rules.vacuum_cycle(iden_rule), [0]
+
+    singlerot = Rules.from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+    assert.deepEqual Rules.vacuum_cycle(singlerot), [0]
+
+  it "must return [0,15] for 'flashing' rules", ->
+    critters = Rules.from_list [15,14,13,3,11,5,6,1,7,9,10,2,12,4,8,0]
+    assert.deepEqual Rules.vacuum_cycle(critters), [0,15]
+
+  it "must return correct result for complex asymmetric rule", ->
+    rule = Rules.from_list [1,2,3,4,5,6,7,8,9,10,11,12,13,14,0,15]
+    cycle = Rules.vacuum_cycle rule
+    assert.deepEqual cycle, [0,8,9,5,6,14]
+        

@@ -165,17 +165,24 @@ exports.Rules = Rules =
   #Calculate, in how many steps vacuum returns to the zero state.
   # If it never returns (could be a case in non-invertible rules),
   # return null
-  vacuum_period: (rule) ->
+  vacuum_period: (rule) -> @vacuum_cycle(rule).length
+    
+  #Evolution of empty field.
+  # For rules with stable vacuum, returns [0]
+  vacuum_cycle: (rule) ->
     # abab  ....
     # cdcd  .dc.
     # abab  .ba.
     # cdcd  ....
     mirror_bits = Bits.rotate180
     x = 0
+    cycle = [x]
     for period in [1..16] #Period can't be more than 16 or less than 1
       if (x = mirror_bits rule[x]) is 0
-        return period
-    null
+        break
+      cycle.push x
+    cycle
+    
   #Convert a "flashing" rule, that inverses vacuum on each steps, into 2 vacuum-preserving rules.
   # Applying these 2 rules will give the same result as applying original rule twice
   flashing_to_regular: (rule)->
@@ -187,6 +194,7 @@ exports.Rules = Rules =
   #Convert a rule with unstable vacuum to a secuence of rules with stable vacuum
   #These rules represent evulution of difference between vacuum and pattern.
   stabilize_vacuum: (rule)->
+    
     
   #Flashing rule is a rule that converts vacuum to its inverse and back, on each step
   is_flashing: (rule) -> rule[0] is 15
