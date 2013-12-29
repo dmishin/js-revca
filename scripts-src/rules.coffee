@@ -1,10 +1,16 @@
 # module rules
 #Composition of two transpositions, given as arrays of the same size
 # Returns list, representing transposition of the same size
-compose_transpositions = (t1, t2) ->
+exports.compose_transpositions = compose_transpositions = (t1, t2) ->
   if (n=t1.length) isnt t2.length then throw new Error "Transpositions are incompatible"
   return (t2[t1_i] for t1_i in t1)
-  
+
+#Generates transposition, produced by XOR'ing given value with original value
+exports.xor_transposition = xor_transposition = (x) ->
+  unless 0<=x<=15
+    throw Error "Argument must be between 0 and 15"
+  (y ^ x for y in [0..15])
+    
 exports.Rules = Rules = 
   ###
   # Create rule object from list
@@ -177,7 +183,11 @@ exports.Rules = Rules =
     transp_inv = Bits.tabulate Bits.invert
     [ compose_transpositions(rule, transp_inv),
       compose_transpositions(transp_inv, rule) ]
-      
+
+  #Convert a rule with unstable vacuum to a secuence of rules with stable vacuum
+  #These rules represent evulution of difference between vacuum and pattern.
+  stabilize_vacuum: (rule)->
+    
   #Flashing rule is a rule that converts vacuum to its inverse and back, on each step
   is_flashing: (rule) -> rule[0] is 15
   #Vaccum-stable rules don't change empty field
