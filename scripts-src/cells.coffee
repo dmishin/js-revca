@@ -156,8 +156,9 @@ exports.Cells = Cells =
     for [x1,y1], i in lst
       for j in [i+1 ... n]
         [x2,y2] = lst[j]
-        e += 1.0 / Math.pow(Math.abs(x1 - x2) + Math.abs(y1 - y2), 2)
-    e
+        e += 1.0 / Math.pow(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2), 0.25)
+    [x0,y0,x1,y1] = Cells.bounds lst
+    e/((x1-x0+1)*(y1-y0+1))
 
   _rotations: [[1, 0, 0, 1], [0, 1, -1, 0], [-1, 0, 0, -1], [0, -1, 1, 0]] #Different rotations
   
