@@ -453,7 +453,7 @@
         if @spaceship_catcher is null
           maxSteps = @_getAnalyzerMaxSteps()
           on_spaceship = (pattern, rule)  =>
-            if result=Cells.analyze(pattern, rule, maxSteps)
+            if result=Cells.analyze(pattern, rule, {max_iters:maxSteps})
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
                   @library.put result, @gol.rule
@@ -517,7 +517,7 @@
 
         #Delay analysis
         window.setTimeout (=>
-          @analysis_result = result = Cells.analyze(cells, @gol.rule, @_getAnalyzerMaxSteps())
+          @analysis_result = result = Cells.analyze(cells, @gol.rule, {max_iters:@_getAnalyzerMaxSteps()})
 
           makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
           canv = drawPatternOnCanvas makeCanvas, result.cells, [128, 96], [1, 24], 1

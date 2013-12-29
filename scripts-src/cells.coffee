@@ -229,14 +229,19 @@ exports.Cells = Cells =
      result.cells = cells_best
      return result
 
-  analyze: (pattern, rule, max_iters = 2048, stop_on_border_hit=true) ->
+  analyze: (pattern, rule, options={}) ->
     throw new Error ("Pattern undefined")  unless pattern
     throw new Error ("Rule undefined")  unless rule
+
+    max_iters = options.max_iters ? 2048
+    max_population = options.max_population ? 1024
+    max_size = options.max_size ? 1024
+    
     snap_below = (x,generation) ->
       x - mod(x + generation, 2)
                         
-    offsetToOrigin = (pattern, generation) ->
-      [x0,y0] = Cells.bounds pattern
+    offsetToOrigin = (pattern, bounds, generation) ->
+      [x0,y0] = bounds
       x0 = snap_below x0, generation
       y0 = snap_below y0, generation
       Cells.offset pattern, -x0, -y0
@@ -245,12 +250,12 @@ exports.Cells = Cells =
     vacuum_period = Rules.vacuum_period rule
     unless vacuum_period is 1
       #fall-back to the field-based evaluator
-      return @analyze_field_based pattern, rule, max_iters, stop_on_border_hit
+      return @analyze_field_based pattern, rule, max_iters, (options.stop_on_border_hit ? true)
 
     pattern = @normalize pattern
                 
     #Shift pattern to the origin
-    [pattern] = offsetToOrigin pattern, 0
+    [pattern] = offsetToOrigin pattern, Cells.bounds(pattern), 0
                 
     bestPatternSearch = new Maximizer @energy
     bestPatternSearch.put pattern
@@ -261,13 +266,18 @@ exports.Cells = Cells =
     dx = 0
     dy = 0
     #console.log "####Analyze pattern #{ Cells.to_rle curPattern }"
+    result = {
+      analyzed_generations: max_iters
+      resolution: "iterations exceeded"
+    }
     for iter in [1 .. max_iters] by 1
       #TODO: evaluate cell list, always assuming initial, 0 phase
       curPattern = evaluateCellList rule, curPattern, 0
       @sortXY curPattern
       #console.log "#### Iter #{ iter }\t:  #{ @to_rle @normalizeXY curPattern[..] }"
       #After evaluation, pattern is in phase 1. remove offset and transform back to phase 0
-      [curPattern, x0, y0] = offsetToOrigin curPattern, 1
+      bounds = Cells.bounds curPattern
+      [curPattern, x0, y0] = offsetToOrigin curPattern, bounds, 1
       dx += x0
       dy += y0
       
@@ -276,13 +286,17 @@ exports.Cells = Cells =
                                 
       if @areEqual pattern, curPattern
         cycle_found = true
+        result.resolution = "cycle found"
         break
       bestPatternSearch.put curPattern
+      if curPattern.length > max_population
+        result.resolution = "pattern grew too big"
+        break
+      if Math.max( bounds[2]-bounds[0], bounds[3]-bounds[1]) > max_size
+        result.resolution = "pattern dimensions grew too big"
+        break
 
-     #Return results
-    result = {
-      analyzed_generations: max_iters
-    }
+    #Return results
     cells_best = bestPatternSearch.getArg() 
     if cycle_found
        [cells_best, result.dx, result.dy] =
