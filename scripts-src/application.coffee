@@ -433,7 +433,7 @@
             if result=Cells.analyze(pattern, rule, maxSteps)
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
-                  @library.put result
+                  @library.put result, @gol.rule
             null
           try
             reseed_period = parseInt E("catcher-reseed-period").value, 10
@@ -520,7 +520,7 @@
         
       analysisResultToLibrary: ->
         if @analysis_result?
-          @library.put @analysis_result
+          @library.put @analysis_result, @gol.rule
           
       copyToBuffer: ->
         @analysis_result = null
@@ -1009,9 +1009,21 @@
       {@library_body} = dom.vars
       @div.appendChild dom.finalize()
       
-    put: (result)->
+    put: (result, rule)->
       return unless result?
       rle = Cells.to_rle result.cells
+
+      unless rle of @key2result
+        if result.dx!=0 or result.dy!=0
+          [dual_pattern, dx1, dy1] = Cells.getDualSpaceship result.cells, rule, result.dx, result.dy
+          if dual_pattern?
+            dual_rle = Cells.to_rle dual_pattern
+            if dual_rle of @key2result
+              result.cells = dual_pattern
+              result.dx = dx1
+              result.dy = dy1
+              rle = dual_rle
+              
       record = (
           result: result
           count: 1
@@ -1031,8 +1043,8 @@
       return (rle of @key2result)
     hasDual: (result, rule)->
       if result.dx?
-        rle = Cells.getDualSpaceship result.cells, rule, result.dx, result.dy
-        rle of @key2result
+        [dual_pattern, dx1, dy1] = Cells.getDualSpaceship result.cells, rule, result.dx, result.dy
+        (Cells.to_rle dual_pattern) of @key2result
       else
         false
       
