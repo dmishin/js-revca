@@ -3,7 +3,7 @@ assert = require "assert"
 #{Cells, evaluateCellList, evaluateLabelledCellList, splitFigure} = module_cells
 module_rules = require "../scripts-src/rules"
 {xor_transposition, compose_transpositions, Rules, Bits} = module_rules
-
+{Array2d, MargolusNeighborehoodField} = require "../scripts-src/reversible_ca"
 
 
 describe "Rules.from_list, to_list", ->
@@ -113,3 +113,21 @@ describe "Rules.stabilize_vacuum(r)", ->
     [s1, s2] = rval = Rules.flashing_to_regular critters
     assert.deepEqual cr1, s1
     assert.deepEqual cr2, s2
+
+  it "must produce rule sequence that gives the same result as applying orignal rule several times", ->
+    rule = Rules.from_list [1,2,3,4,5,6,7,8,9,10,11,12,13,14,0,15]
+    cells1 = new Array2d 64, 64
+    field1 = new MargolusNeighborehoodField cells1, rule
+    cells2 = new Array2d 64, 64
+    field2 = new MargolusNeighborehoodField cells2, Rules.from_list([0..15])
+    
+    cells1.set 32,32,1
+    cells2.set 32,32,1
+
+    stabilized = Rules.stabilize_vacuum rule
+    for iterator in [0...10]
+      for stab_rule in stabilized
+        field1.transform()
+        field2.set_rule stab_rule
+        field2.transform()
+    assert.deepEqual cells1, cells2

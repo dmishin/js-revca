@@ -215,7 +215,7 @@ exports.Rules = Rules =
 
     for i in [0...period] by 1
       i1 = (i+1)%period
-      Rules.from_list compose3( stabilizers[i], rule, stabilizers[i1] )
+      Rules.from_list compose3( stabilizers[i], rule, stabilizersR[i1] )
       
   #Flashing rule is a rule that converts vacuum to its inverse and back, on each step
   is_flashing: (rule) -> rule[0] is 15
