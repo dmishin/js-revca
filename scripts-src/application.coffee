@@ -286,15 +286,19 @@
           @gol.set_generation mod(@gol.generation, 2) #Newer try to change oddity of the generation
           @update_time()
 
-      set_rule: (srule) ->
+      set_rule_str: (srule) ->
         try
-          rule = Rules.parse srule
-          @gol.set_rule rule
-          show_rule_diagram rule, E("function_display")
-          show_rule_properties rule, E("function_properties")
+          @set_rule Rules.parse srule
         catch e
-          alert ""+e
-
+          alert "Faield to set rule: #{e}"
+          
+      set_rule: (rule) ->
+        @gol.set_rule rule
+        show_rule_diagram rule, E("function_display")
+        show_rule_properties rule, E("function_properties")
+        selectOption E("select-rule"), Rules.stringify(rule), ""
+        E("rule").value = Rules.stringify rule
+        
       do_clear: ->
           @gol.clear()
           @updateCanvas()
@@ -357,9 +361,13 @@
           if keys.rule?
             try
               r = NamedRules[ keys.rule ] ? Rules.parse(keys.rule, ",")
-              @gol.set_rule  r
+              @set_rule r
             catch e
-              alert "Incorrect rule: #{keys.rule}"
+              alert "Incorrect rule: #{keys.rule}: #{e}"
+          else
+            if (rule = E("select-rule").value) isnt ""
+              @set_rule_str rule
+        
           if keys.frame_delay?
             try
               @setDelay parseInt keys.frame_delay, 10
@@ -405,7 +413,22 @@
           @setMouseTool @mouse_tools.draw
           @updateCanvas()
           @attach_listeners()
+          @update_controls()
           
+      update_controls: ->
+          #Update GUI controls
+          E("rule").value = Rules.stringify @gol.rule
+
+          selectOrAddOption E("speed-show-every"), @step_size
+          selectOrAddOption E("speed-frame-delay"), @step_delay, "#{@step_delay}ms"
+              
+          sz = @gol.field.size()
+          selectOrAddOption E("select-size"), JSON.stringify(sz), "#{sz[0]} x #{sz[1]}"
+          
+          selectOrAddOption E("select-style"), @view.cell_size
+          E("show-grid").checked = (@view.grid_width > 0)
+          @updateLibrariesList()
+                    
       clear_selection: ->
           if sel = @selection
               @gol.field.fill_box sel[0], sel[1], sel[2], sel[3], 0
@@ -1295,8 +1318,8 @@
 
     #Rule set manually
     E("set_rule").onclick = ->
-      rule = golApp.set_rule E("rule").value
-      selectOption E("select-rule"), Rules.stringify(golApp.gol.rule), ""
+      golApp.set_rule_str E("rule").value
+      
       
     #RUle set from the editor
     E("select-style").onchange = ->
@@ -1318,8 +1341,8 @@
 
     E("select-rule").onchange = ->
       if (rule = E("select-rule").value) isnt ""
-        golApp.set_rule rule
-        E("rule").value = Rules.stringify(golApp.gol.rule)
+        golApp.set_rule_str rule
+        
 
     E("show-grid").onchange = -> golApp.setShowGrid E("show-grid").checked
 
@@ -1418,20 +1441,8 @@
     #Applicaiton initialization
     golApp.step_size = parseInt E("speed-show-every").value
     golApp.step_delay = parseInt E("speed-frame-delay").value
-    golApp.set_rule E("select-rule").value
+    
     golApp.initialize()
 
-    #Update GUI controls
-    E("rule").value = Rules.stringify golApp.gol.rule
-
-    selectOrAddOption E("speed-show-every"), golApp.step_size
-    selectOrAddOption E("speed-frame-delay"), golApp.step_delay, "#{golApp.step_delay}ms"
-    selectOption E("select-rule"), Rules.stringify(golApp.gol.rule), "" #Select rule, loaded from URL
     
-    sz = golApp.gol.field.size()
-    selectOrAddOption E("select-size"), JSON.stringify(sz), "#{sz[0]} x #{sz[1]}"
-    
-    selectOrAddOption E("select-style"), golApp.view.cell_size
-    E("show-grid").checked = (golApp.view.grid_width > 0)
-    golApp.updateLibrariesList()
   )()
