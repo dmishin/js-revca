@@ -511,7 +511,6 @@
       analyzeSelection: ->
         cells = @getSelectedCells()
         return if cells.length is 0
-
         root = E "analysis-report-area"
         root.innerHTML = "<div style='text-align:center'><span class='icon-wait'>Analysing...</span></div>"
         E("analysis-result").style.display = "block"
@@ -522,8 +521,11 @@
 
           makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
           canv = drawPatternOnCanvas makeCanvas, result.cells, [128, 96], [1, 24], 1
-          in_library = (@library.has result) or (@library.hasDual result, @gol.rule)
-          
+          try
+            in_library = (@library.has result) or (@library.hasDual result, @gol.rule)
+          catch e
+            alert "Library lookup failed: #{e}"
+
           dom = new DomBuilder
           dom.tag("div").CLASS("pattern-background").append(canv).end()
           dom.tag("ul")
@@ -1064,12 +1066,13 @@
     has: (result)->
       rle = Cells.to_rle result.cells
       return (rle of @key2result)
+      
     hasDual: (result, rule)->
       if result.dx?
         [dual_pattern, dx1, dy1] = Cells.getDualSpaceship result.cells, rule, result.dx, result.dy
-        (Cells.to_rle dual_pattern) of @key2result
-      else
-        false
+        if dual_pattern?
+          (Cells.to_rle dual_pattern) of @key2result
+      false
       
     _putRecord: (record)->
       old_record = @key2result[record.key]
