@@ -187,20 +187,43 @@ exports.Rules = Rules =
   # Applying these 2 rules will give the same result as applying original rule twice
   flashing_to_regular: (rule)->
     if not Rules.is_flashing rule then throw new Error "Rule is not flashing"
-    transp_inv = Bits.tabulate Bits.invert
-    [ compose_transpositions(rule, transp_inv),
-      compose_transpositions(transp_inv, rule) ]
+    transp_inv = Bits.tabulate Bits.negate
+    
+    return [ Rules.from_list(compose_transpositions(rule, transp_inv)),
+             Rules.from_list(compose_transpositions(transp_inv, rule)) ]
 
   #Convert a rule with unstable vacuum to a secuence of rules with stable vacuum
   #These rules represent evulution of difference between vacuum and pattern.
   stabilize_vacuum: (rule)->
+    cycle = @vacuum_cycle rule
+    # Assume vacuum cycle is : [0, V1, V2, V3]
+    # Then rule maps 0 to V1', where ' is rotate-by-180 operation.
+    #      (Bits.rotate180)
+    #
+    # Transpositions, that change vacuum to 0 on each corresponding step
+    #console.log "cycle:" + JSON.stringify(cycle)
+    stabilizers  = (xor_transposition(ci) for ci in cycle)
+    stabilizersR = (xor_transposition(Bits.rotate180(ci)) for ci in cycle)
     
-    
+    period = cycle.length
+    # Stabilized rules are:
+    # r1 : XOR_V1( RUle (XOR_0 (x)))
+    # r2 : XOR_V2( Rule (XOR_V1 (x)))
+    # r3 : XOR_V3( Rule (XOR_V2 (x)))
+    # r4 : XOR_0(  Rule (XOR_V3 (x)))
+    compose3 = (t1,t2,t3) -> compose_transpositions( compose_transpositions( t1, t2), t3 )
+
+    for i in [0...period] by 1
+      i1 = (i+1)%period
+      Rules.from_list compose3( stabilizers[i], rule, stabilizers[i1] )
+      
   #Flashing rule is a rule that converts vacuum to its inverse and back, on each step
   is_flashing: (rule) -> rule[0] is 15
   #Vaccum-stable rules don't change empty field
   is_vacuum_stable: (rule) -> rule[0] is 0
-  #Operations over 4-bit blocks
+
+  
+#Operations over 4-bit blocks
 exports.Bits = Bits = 
   ####
   # Rotate block of 4 bits counter-clockwise

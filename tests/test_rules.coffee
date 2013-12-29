@@ -90,4 +90,26 @@ describe "Rules.vacuum_cycle(rule)", ->
     rule = Rules.from_list [1,2,3,4,5,6,7,8,9,10,11,12,13,14,0,15]
     cycle = Rules.vacuum_cycle rule
     assert.deepEqual cycle, [0,8,9,5,6,14]
-        
+
+describe "Rules.stabilize_vacuum(r)", ->
+  it "must return rule itself, when vacuum is stable", ->
+    iden_rule = Rules.parse "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15"    
+    assert.deepEqual Rules.stabilize_vacuum(iden_rule), [iden_rule]
+
+    singlerot = Rules.from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+    assert.deepEqual Rules.stabilize_vacuum(singlerot), [singlerot]
+    
+  it "must return flipped pair of rules, when vacuum is not stable", ->
+    critters = Rules.from_list [15,14,13,3,11,5,6,1,7,9,10,2,12,4,8,0]
+    stab_critters = Rules.stabilize_vacuum critters
+    assert.equal stab_critters.length, 2
+    [cr1, cr2] = stab_critters
+    assert.equal cr1[0], 0
+    assert.equal cr2[0], 0
+    
+  it "must return the same result as flashing_to_regular, when rule has period 2", ->
+    critters = Rules.from_list [15,14,13,3,11,5,6,1,7,9,10,2,12,4,8,0]
+    [cr1, cr2] = Rules.stabilize_vacuum critters
+    [s1, s2] = rval = Rules.flashing_to_regular critters
+    assert.deepEqual cr1, s1
+    assert.deepEqual cr2, s2
