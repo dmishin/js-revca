@@ -529,6 +529,7 @@
           dom = new DomBuilder
           dom.tag("div").CLASS("pattern-background").append(canv).end()
           dom.tag("ul")
+          dom.tag("li").text("Result: ").text(result.resolution).end()            
           dom.tag("li").text("Pattern type: ").text(spaceshipType result.dx, result.dy).end()
           dom.tag("li").text("Population: #{cells.length} cells").end()
           dom.tag("li").text("Period: ").text(result.period ? "unknown").end()
@@ -891,8 +892,8 @@
   #//////////////////////////////////////////////////////////////////////////////
   # Rule analysis
   #//////////////////////////////////////////////////////////////////////////////
+  cells_icon = (value) -> "cellicon icon-cells_#{ value.toString(16) }"
   show_rule_diagram = (rule, element) ->
-      cells_icon = (value) -> "cellicon icon-cells_#{ value.toString(16) }"
       #rule must be array of 1 6 integers
       throw new Error ("Function must be array of 16 elements, not\n" + rule)  unless rule.length is 16
 
@@ -928,6 +929,7 @@
     population_invariance = Rules.invariance_type rule
     invertible = Rules.is_invertible rule
     dualTransform = getDualTransform rule
+    vacuum_cycle = Rules.vacuum_cycle rule
     ######### Report generatio part ############
     dom = new DomBuilder
 
@@ -962,6 +964,21 @@
       else
         dom.text("Rule has dual transform: ").text(Transforms.getDescription dualTransform[0])
     dom.end()
+
+
+    if invertible
+      dom.tag "p"
+      if vacuum_cycle.length == 1
+        dom.text "Rule has stable vacuum."
+      else
+        dom.text "Rule has periodic vacuum with period #{vacuum_cycle.length}. The period is:"
+        dom.tag("div").CLASS("func_row").tag("span").CLASS("func_pair")
+        for value, i in vacuum_cycle
+          dom.tag("span").CLASS("icon icon-rarrow").end() if i
+          dom.tag("span").CLASS(cells_icon(value)).end()
+        dom.end().end()
+      dom.end()
+  
     
     element.innerHTML = ""
     element.appendChild dom.finalize()
