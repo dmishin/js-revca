@@ -170,65 +170,6 @@ exports.Cells = Cells =
         return [dx1, dy1, t]
     throw new Error "Impossible to rotate vector (#{dx},#{dy}) to the positive direction"
 
-
-  
-
-  analyze_field_based: (pattern, rule, max_iters = 2048, stop_on_border_hit=true) ->
-    throw new Error ("Pattern undefined")  unless pattern
-    throw new Error ("Rule undefined")  unless rule
-    #sort cells by Y, then by X
-
-    vacuum_period = Rules.vacuum_period rule
-    unless vacuum_period?
-      throw new Error "Empty field is not periodic for this rule. Analysis impossible"
-
-    pattern = @normalize pattern
-    #prepare original field
-    [xrange, yrange] = @extent pattern
-    sandbox_size = 64 + 2 * Math.max(xrange + yrange, pattern.length) #some heuristics here.
-    sandbox = new MargolusNeighborehoodField(new Array2d(sandbox_size, sandbox_size), rule)
-    sandbox.field.fill 0
-    x0 = sandbox.snap_below div(sandbox_size - xrange, 2)
-    y0 = sandbox.snap_below div(sandbox_size - yrange, 2)
-    sandbox.field.put_cells pattern, x0, y0
-
-    bestPatternSearch = new Maximizer @energy
-    bestPatternSearch.put pattern
-
-    #start search
-    cycle_found = false
-    for iter in [1 .. max_iters] by 1
-      sandbox.transform()
-      if iter % vacuum_period isnt 0
-        continue #Skip states with nonzero vacuum
-      if stop_on_border_hit
-        if sandbox.field.is_nonempty(0, 0, sandbox_size, 1) or
-           sandbox.field.is_nonempty(0, 0, 1, sandbox_size)
-          break
-        
-      curPattern = sandbox.field.get_cells 0, 0, sandbox_size, sandbox_size
-      [x1, y1] = @bounds curPattern
-      x1 = sandbox.snap_below x1
-      y1 = sandbox.snap_below y1
-      @offset curPattern, -x1, -y1
-      
-      if @areEqual pattern, curPattern
-        cycle_found = true
-        break
-      bestPatternSearch.put curPattern
-
-     #Return results
-     result = {
-      analyzed_generations: max_iters
-     }
-     cells_best = bestPatternSearch.getArg() 
-     if cycle_found
-        [cells_best, result.dx, result.dy] =
-          @canonicalize_spaceship cells_best, rule, (x1 - x0), (y1 - y0)
-        result.period = iter
-     result.cells = cells_best
-     return result
-
   analyze: (pattern, rule, options={}) ->
     throw new Error ("Pattern undefined")  unless pattern
     throw new Error ("Rule undefined")  unless rule
