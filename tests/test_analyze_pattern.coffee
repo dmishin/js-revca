@@ -64,3 +64,15 @@ describe "Cells.analyze() : analyze patterns", ->
 
     r1 = Cells.analyze r.cells, single_rot
     assert.deepEqual [r1.dx, r1.dy], [1,1]
+
+  it "must correctly detect patterns in rules with nonstable vacuum", ->
+    critters = Rules.from_list [15,14,13,3,11,5,6,1,7,9,10,2,12,4,8,0]
+
+    pattern = Cells.from_rle "$bo$2bo$2bo$bo" #The common )-spaceship
+
+    result = Cells.analyze pattern, critters
+    assert.equal result.dx, 2
+    assert.equal result.dy, 0
+  
+    assert.equal result.period, 4
+    assert.equal result.cells.length, 4
