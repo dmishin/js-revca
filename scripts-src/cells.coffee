@@ -246,12 +246,9 @@ exports.Cells = Cells =
       y0 = snap_below y0, generation
       Cells.offset pattern, -x0, -y0
       return [pattern, x0, y0]
-                        
-    vacuum_period = Rules.vacuum_period rule
-    unless vacuum_period is 1
-      #fall-back to the field-based evaluator
-      return @analyze_field_based pattern, rule, max_iters, (options.stop_on_border_hit ? true)
 
+    stable_rules = Rules.stabilize_vacuum rule
+    vacuum_period = stable_rules.length
     pattern = @normalize pattern
                 
     #Shift pattern to the origin
@@ -270,20 +267,21 @@ exports.Cells = Cells =
       analyzed_generations: max_iters
       resolution: "iterations exceeded"
     }
-    for iter in [1 .. max_iters] by 1
+    for iter in [vacuum_period .. max_iters] by vacuum_period
       #TODO: evaluate cell list, always assuming initial, 0 phase
-      curPattern = evaluateCellList rule, curPattern, 0
+      phase = 0
+      for stable_rule in stable_rules
+        curPattern = evaluateCellList stable_rule, curPattern, phase
+        phase ^= 1
+        
       @sortXY curPattern
       #console.log "#### Iter #{ iter }\t:  #{ @to_rle @normalizeXY curPattern[..] }"
       #After evaluation, pattern is in phase 1. remove offset and transform back to phase 0
       bounds = Cells.bounds curPattern
-      [curPattern, x0, y0] = offsetToOrigin curPattern, bounds, 1
+      [curPattern, x0, y0] = offsetToOrigin curPattern, bounds, phase
       dx += x0
       dy += y0
       
-      if iter % vacuum_period isnt 0
-        continue #Skip states with nonzero vacuum
-                                
       if @areEqual pattern, curPattern
         cycle_found = true
         result.resolution = "cycle found"
