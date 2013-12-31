@@ -1,12 +1,12 @@
 COFFEE = coffee
-COFFEE_FLAGS = -m -b
+COFFEE_FLAGS = -b
 
 all: scripts/minified.js
 
 #scripts/minified.js: scripts/bundle.js
 #	closure scripts/bundle.js --compilation_level SIMPLE_OPTIMIZATIONS > scripts/minified.js
 scripts/minified.js: scripts/bundle.js
-	uglifyjs scripts/bundle.js > scripts/minified.js
+	uglifyjs --screw-ie8 scripts/bundle.js > scripts/minified.js
 
 test:
 	mocha tests/test*.coffee --compilers coffee:coffee-script
@@ -16,7 +16,6 @@ scripts/bundle.js: everything
 
 clean:
 	rm $(ALL_OUTPUTS) scripts/bundle.js
-	rm scripts/*.map
 
 publish: test all
 	git checkout master
