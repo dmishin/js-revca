@@ -1,10 +1,16 @@
-COFFEE = coffee
+makeCOFFEE = coffee
 COFFEE_FLAGS = -m -b
 
-scripts/bundle.js: everything
+all: scripts/minified.js
+
+#scripts/minified.js: scripts/bundle.js
+#	closure scripts/bundle.js --compilation_level SIMPLE_OPTIMIZATIONS > scripts/minified.js
+scripts/minified.js: scripts/bundle.js
+	uglifyjs scripts/bundle.js > scripts/minified.js
+
+scripts/bundle.js: $(ALL_OUTPUTS)
 	browserify scripts/application.js -o scripts/bundle.js
 
-all: compile
 
 test:
 	mocha tests/test*.coffee --compilers coffee:coffee-script
@@ -14,13 +20,8 @@ compile: everything
 clean:
 	rm $(ALL_OUTPUTS)
 
-#scripts/minified.js: scripts/bundle.js
-#	closure scripts/bundle.js --compilation_level SIMPLE_OPTIMIZATIONS > scripts/minified.js
-scripts/minified.js: scripts/bundle.js
-	uglifyjs scripts/bundle.js > scripts/minified.js
-
-.must-be-master:
+publish: test all
 	git checkout master
-
-publish: .must-be-master test all
 	sh deploy.sh
+
+.PHONY: clean test all everything publish
