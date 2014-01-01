@@ -145,6 +145,7 @@
         #Application state and initialization
         rule = Rules.parse rule_string
         @gol = new MargolusNeighborehoodField(new Array2d(field_size ...), rule)
+        @generation = 0
         @gol.clear()
         @view = new FieldView(@gol.field)
         @step_size = 1
@@ -241,7 +242,8 @@
             @gol.transform()          
             if (@gol.phase is 0) and (gc = @spaceship_catcher)
               gc.scan @gol
-          if @spaceship_catcher? and @gol.generation >= @spaceship_catcher.reseed_period
+          @generation += @step_size
+          if @spaceship_catcher? and @generation >= @spaceship_catcher.reseed_period
             @do_clear()
             @random_fill_selection parseFloat(E("random-fill-percent").value)*0.01
           @updateCanvas()
@@ -272,6 +274,7 @@
           try
             for i in [0...@step_size]
               @gol.untransform()
+            @generation -= @step_size
             @updateCanvas()
             @update_time()
             @recordFrame()
@@ -280,17 +283,17 @@
             @stopPlayer()
 
       update_time: ->
-          @time_display.innerHTML = "" + @gol.generation  if @time_display
+          @time_display.innerHTML = "" + @generation  if @time_display
 
       reset_time: ->
-          @gol.set_generation mod(@gol.generation, 2) #Newer try to change oddity of the generation
+          @generation = mod(@generation, 2) #Newer try to change oddity of the generation
           @update_time()
 
       set_rule_str: (srule) ->
         try
           @set_rule Rules.parse srule
         catch e
-          alert "Faield to set rule: #{e}"
+          alert "Failed to set rule: #{e}"
           
       set_rule: (rule) ->
         @gol.set_rule rule
@@ -298,7 +301,14 @@
         show_rule_properties rule, E("function_properties")
         selectOption E("select-rule"), Rules.stringify(rule), ""
         E("rule").value = Rules.stringify rule
-        
+        if rule[0] isnt 0
+          @stabilized_subrules = Rules.stabilize_vacuum rule
+          E("stablize-rule").checked = false
+          E("rule-stabilization-pane").style.visibility = "visible"
+        else
+          E("rule-stabilization-pane").style.visibility = "hidden"
+          @stabilized_subrules = null
+          
       do_clear: ->
           @gol.clear()
           @updateCanvas()

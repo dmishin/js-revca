@@ -142,7 +142,6 @@ A field with Margolus neighborehood
 exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
   constructor: (@field, rule) ->
     throw "Field size must be even, not " + field.width + "x" + field.height  if field.width % 2 isnt 0 or field.height % 2 isnt 0
-    @generation = 0
     @phase = 0
     @set_rule rule
 
@@ -151,12 +150,6 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
     @inverse_rule = null
 
   transform_from: (x0, y0, rule) ->
-    if rule.call?
-      @transform_from_general x0, y0, rule
-    else
-      @transform_from_2state x0, y0, rule
-      
-  transform_from_2state: (x0, y0, rule) ->
     field = @field
     data = field.data
     w = field.width
@@ -179,34 +172,15 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
         a += 2
     null #Return null to increase performance
     
-  transform_from_general: (x0, y0, general_rule) ->
-    field = @field
-    data = field.data
-    w = field.width
-    h = field.height
-    a = 0 #cell index
-    for y in [y0 ... h] by 2
-      dy = (if (y + 1 < h) then w else (w * (1 - h)))
-      a = y*w+x0
-      for x in [x0 ... w] by 2
-        dx = (if (x + 1 < w) then 1 else (1 - w))
-        #Code was inlined to increase performance
-        b=a + dx; c=a + dy; d=b + dy;
-        general_rule data, a, b, c, d
-        a += 2
-    null #Return null to increase performance
-
   transform: ->
     xy0 = @phase 
     @transform_from xy0, xy0, @rule
     @phase = mod @phase+1, 2
-    @generation++
 
   untransform: ->
     xy0 = mod @phase-1, 2
     @transform_from xy0, xy0, @get_inverse_rule()
     @phase = mod @phase-1, 2
-    @generation--
 
   
   ###
@@ -225,12 +199,7 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
           Rules.reverse @rule
 
   clear: ->
-    @set_generation 0
     @field.fill 0
-
-  set_generation: (g) ->
-    @phase = mod g, 2
-    @generation = g
 
   snap_below: (x) ->
     x - mod(x + @phase, 2)

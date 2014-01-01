@@ -138,6 +138,9 @@
     <div id="rule-info-pane" class="panel">
       <h2>Rule</h2>
       Edit rule: <input id="rule"/> <button id="set_rule">(Set)</button>
+      <div id="rule-stabilization-pane">
+	<label for="stablize-rule">Hide vacuum changes:</label><input type="checkbox" name="stablize-rule" id="stablize-rule" title="When checked, difference between evolution of the actual field and vacuum is calculated. This speeds up calculation and improves speed"></input>
+      </div>	
       <p>
 	Transformation table:
 	<div id="function_display"></div>
