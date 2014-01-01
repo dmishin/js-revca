@@ -301,6 +301,7 @@
           return
         if @ruleset_enabled
           @doReverseStepRuleset @step_size
+          @showRulesetPhase()
         else
           @doReverseStepSimpleRule @step_size
 
@@ -337,6 +338,18 @@
           if @ruleset_enabled
             @ruleset_phase = mod @generation, @ruleset.length
 
+      #Play forward until rule phase is 0
+      # Does nothing, if already 0
+      nullifyRulesetPhase: ->
+        if @ruleset_enabled
+          old_step = @step_size
+          @step_size = mod (-@ruleset_phase), @ruleset.length
+          try
+            @doStep()
+          finally
+            @step_size = old_step
+        null
+        
       set_rule_str: (srule) ->
         try
           @set_rule Rules.parse srule
@@ -359,6 +372,7 @@
         E("stable-sub-rules").innerHTML = ""
         if rule[0] isnt 0
           @ruleset = Rules.stabilize_vacuum rule
+          @ruleset_phase = 0
           try
             @inverse_ruleset = (Rules.reverse r for r in @ruleset)
           catch e
@@ -462,6 +476,13 @@
             y0 = if keys.rle_y0 then parseInt(keys.rle_y0, 10) else 0
             parse_rle keys.rle, (x,y) =>
               @gol.field.set_wrapped x0+x, y0+y, 1
+          if keys.phase?
+            phase = parseInt keys.phase, 10
+            unless phase in [0,1]
+              alert "Incorrect phase value #{phase}, must be 0 or 1"
+            @gol.phase = phase
+            @generation = phase
+            
           if keys.rule?
             try
               r = NamedRules[ keys.rule ] ? Rules.parse(keys.rule, ",")
@@ -471,7 +492,18 @@
           else
             if (rule = E("select-rule").value) isnt ""
               @set_rule_str rule
-        
+          if keys.ruleset_phase?
+            if not keys.rule?
+              alert "Rule must be specified, when using ruleset_phase"
+            else
+              phase = parseInt keys.ruleset_phase
+              unless phase >=0 and phase < @ruleset.length
+                alert "Ruleset phase #{phase} is outside of allowed region"
+              else
+                @ruleset_enabled = true
+                @ruleset_phase = phase
+                @showRulesetPhase()
+                
           if keys.frame_delay?
             try
               @setDelay parseInt keys.frame_delay, 10
@@ -502,6 +534,9 @@
         urlArgs.push "frame_delay=#{@step_delay}"
         urlArgs.push "size=#{fld.width}x#{fld.height}"
         urlArgs.push "cell_size=#{@view.cell_size},#{@view.grid_width}"
+        urlArgs.push "phase=#{@gol.phase}"
+        if @ruleset_enabled
+          urlArgs.push "ruleset_phase=#{@ruleset_phase}"
 
         loc = ""+window.location
         argsStartAt = loc.indexOf "?"
@@ -614,7 +649,8 @@
       ##Remove the recorded GIF image
       gifRecorderClear: -> E("gif-output").innerHTML = ""
 
-      #Evaluate pattern several steps until its rule phase is 0
+      #Evaluate pattern several steps until its ruleset phase is 0
+      #Only usable in ruleset-based evaluation
       _promoteToZeroPhase: (pattern) ->
         rule_phase = @ruleset_phase
         field_phase = 0
@@ -1456,6 +1492,7 @@
     fastButton "play", -> golApp.startPlayer 1
     fastButton "stop", -> golApp.stopPlayer()
     E("reset-timer").onclick = -> golApp.reset_time()
+    E("nullify-phase").onclick = -> golApp.nullifyRulesetPhase()
 
     #Rule set manually
     E("set_rule").onclick = ->
