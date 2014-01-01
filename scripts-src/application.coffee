@@ -2,7 +2,7 @@
 # This applicaiton module will only work in the browser
   ##### Imports #####
   {Rules, NamedRules, Rule2Name} = require "./rules"
-  {Cells, Point, splitPattern, getDualTransform} = require "./cells"
+  {Cells, Point, splitPattern, getDualTransform, evaluateCellList} = require "./cells"
   {MargolusNeighborehoodField, Array2d} = require "./reversible_ca"
   {div, mod, line_pixels, rational2str, getReadableFileSizeString, cap} = require "./math_util"
   {FieldView} = require "./field_view"
@@ -270,6 +270,8 @@
             @doStepSimpleRule @step_size
             
           if @spaceship_catcher? and @generation >= @spaceship_catcher.reseed_period
+            @generation = 0
+            @ruleset_phase = 0
             @do_clear()
             @random_fill_selection parseFloat(E("random-fill-percent").value)*0.01
           @updateCanvas()
@@ -379,7 +381,7 @@
           
       showRulesetPhase: ->
         phase = @ruleset_phase
-        #TODO
+        E("vacuum-phase").innerHTML = phase
     
       show_rule_stabilization: ->
         dom = new DomBuilder
@@ -611,13 +613,29 @@
           
       ##Remove the recorded GIF image
       gifRecorderClear: -> E("gif-output").innerHTML = ""
-    
+
+      #Evaluate pattern several steps until its rule phase is 0
+      _promoteToZeroPhase: (pattern) ->
+        rule_phase = @ruleset_phase
+        field_phase = 0
+        while rule_phase isnt 0
+          pattern = evaluateCellList @ruleset[rule_phase], pattern, field_phase
+          rule_phase = (rule_phase+1)%@ruleset.length
+          field_phase ^= 1
+        if field_phase
+          pattern = Cells.offset pattern,1,1
+        Cells.sortXY pattern
+        
       analyzeSelection: ->
         cells = @getSelectedCells()
         return if cells.length is 0
         root = E "analysis-report-area"
         root.innerHTML = "<div style='text-align:center'><span class='icon-wait'>Analysing...</span></div>"
         E("analysis-result").style.display = "block"
+
+        if @ruleset_enabled
+          #Promote phase of the selection to 0
+          cells = @_promoteToZeroPhase cells
 
         #Delay analysis
         window.setTimeout (=>

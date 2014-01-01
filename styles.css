@@ -70,6 +70,13 @@ body {
     text-align:right;
     background-color:white;
 }
+#vacuum-phase {
+    display:inline-block;
+    min-width:2em;
+    text-align:right;
+    background-color:white;
+}
+
 .pattern-background{
     min-width: 3em;
     min-height: 2em;
