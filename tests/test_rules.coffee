@@ -117,9 +117,10 @@ describe "Rules.stabilize_vacuum(r)", ->
   it "must produce rule sequence that gives the same result as applying orignal rule several times", ->
     rule = Rules.from_list [1,2,3,4,5,6,7,8,9,10,11,12,13,14,0,15]
     cells1 = new Array2d 64, 64
-    field1 = new MargolusNeighborehoodField cells1, rule
+    field1 = new MargolusNeighborehoodField cells1
     cells2 = new Array2d 64, 64
-    field2 = new MargolusNeighborehoodField cells2, Rules.from_list([0..15])
+    ide_rule = Rules.from_list [0..15]
+    field2 = new MargolusNeighborehoodField cells2
     
     cells1.set 32,32,1
     cells2.set 32,32,1
@@ -127,7 +128,6 @@ describe "Rules.stabilize_vacuum(r)", ->
     stabilized = Rules.stabilize_vacuum rule
     for iterator in [0...10]
       for stab_rule in stabilized
-        field1.transform()
-        field2.set_rule stab_rule
-        field2.transform()
+        field1.transform rule
+        field2.transform stab_rule
     assert.deepEqual cells1, cells2

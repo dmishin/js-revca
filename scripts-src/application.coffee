@@ -143,8 +143,8 @@
       constructor: (field_size, rule_string, container_id, canvas_id, overlay_id, time_display_id) ->
     
         #Application state and initialization
-        rule = Rules.parse rule_string
-        @gol = new MargolusNeighborehoodField(new Array2d(field_size ...), rule)
+        @rule = Rules.parse rule_string
+        @gol = new MargolusNeighborehoodField(new Array2d(field_size ...))
         @generation = 0
         @gol.clear()
         @view = new FieldView(@gol.field)
@@ -175,7 +175,7 @@
         RECOMMENDED_WIDTH = 800
         RECOMMENDED_HEIGHT = 600
         unless cols is @gol.field.width and rows is @gol.field.height
-          @gol = new MargolusNeighborehoodField(new Array2d(cols, rows), @gol.rule)
+          @gol = new MargolusNeighborehoodField(new Array2d(cols, rows), @rule)
           @gol.clear()
           @view.field = @gol.field
           #Update cell size, if needed
@@ -239,9 +239,9 @@
           
       doStep: ->
           for i in [0...@step_size]
-            @gol.transform()          
+            @gol.transform @rule
             if (@gol.phase is 0) and (gc = @spaceship_catcher)
-              gc.scan @gol
+              gc.scan @gol, @rule
           @generation += @step_size
           if @spaceship_catcher? and @generation >= @spaceship_catcher.reseed_period
             @do_clear()
@@ -271,15 +271,15 @@
             @field_player = window.setInterval(@field_player_proc, @step_delay)
 
       doReverseStep: ->
-          try
+          if irule = @inverse_rule
             for i in [0...@step_size]
-              @gol.untransform()
+              @gol.untransform irule
             @generation -= @step_size
             @updateCanvas()
             @update_time()
             @recordFrame()
-          catch e
-            alert "" + e
+          else
+            alert "Rule is not reversible"
             @stopPlayer()
 
       update_time: ->
@@ -296,7 +296,14 @@
           alert "Failed to set rule: #{e}"
           
       set_rule: (rule) ->
-        @gol.set_rule rule
+        @rule = rule
+
+        @inverse_rule =
+          try
+            Rules.reverse rule
+          catch
+            null
+        
         show_rule_diagram rule, E("function_display")
         show_rule_properties rule, E("function_properties")
         selectOption E("select-rule"), Rules.stringify(rule), ""
@@ -346,7 +353,7 @@
             c = parseInt sz[0], 10
             r = parseInt sz[1], 10
             throw new Error "Width and height must be even"  if r % 2 isnt 0 or c % 2 isnt 0
-            @gol = new MargolusNeighborehoodField(new Array2d(c, r), @gol.rule)
+            @gol = new MargolusNeighborehoodField(new Array2d(c, r), @rule)
             @gol.clear()
             @view = new FieldView(@gol.field)
             
@@ -393,7 +400,7 @@
       encode_state_in_url: ->
         urlArgs = []
 
-        srule = Rules.stringify @gol.rule
+        srule = Rules.stringify @rule
         urlArgs.push "rule=#{srule}"
         
         fld = @gol.field
@@ -427,7 +434,7 @@
           
       update_controls: ->
           #Update GUI controls
-          E("rule").value = Rules.stringify @gol.rule
+          E("rule").value = Rules.stringify @rule
 
           selectOrAddOption E("speed-show-every"), @step_size
           selectOrAddOption E("speed-frame-delay"), @step_delay, "#{@step_delay}ms"
@@ -466,7 +473,7 @@
             if result=Cells.analyze(pattern, rule, {max_iters:maxSteps})
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
-                  @library.put result, @gol.rule
+                  @library.put result, @rule
             null
           try
             reseed_period = parseInt E("catcher-reseed-period").value, 10
@@ -527,12 +534,12 @@
 
         #Delay analysis
         window.setTimeout (=>
-          @analysis_result = result = Cells.analyze(cells, @gol.rule, {max_iters:@_getAnalyzerMaxSteps()})
+          @analysis_result = result = Cells.analyze(cells, @rule, {max_iters:@_getAnalyzerMaxSteps()})
 
           makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
           canv = drawPatternOnCanvas makeCanvas, result.cells, [128, 96], [1, 24], 1
           try
-            in_library = (@library.has result) or (@library.hasDual result, @gol.rule)
+            in_library = (@library.has result) or (@library.hasDual result, @rule)
           catch e
             alert "Library lookup failed: #{e}"
 
@@ -556,7 +563,7 @@
         
       analysisResultToLibrary: ->
         if @analysis_result?
-          @library.put @analysis_result, @gol.rule
+          @library.put @analysis_result, @rule
           
       copyToBuffer: ->
         @analysis_result = null
@@ -1188,7 +1195,7 @@
         return
       name=@name
       if newName or (name is "")
-        name = prompt "Please enter library name", @defaultLibraryForRule @golApp.gol.rule
+        name = prompt "Please enter library name", @defaultLibraryForRule @golApp.rule
         if not name then return
         if (@_libraryKey name) of storage
           unless confirm "Library #{name} already exists in the storage. Do you want to overwrite it?"
@@ -1275,9 +1282,8 @@
       @spaceships_found = []
       
     #Scan field for the spaceships; remove them from the field
-    scan: (gol)->
+    scan: (gol, rule)->
       f = gol.field
-      rule = gol.rule
       pick = (x,y) =>
         x0 = gol.snap_below x
         y0 = gol.snap_below y
@@ -1424,14 +1430,14 @@
           alert e
     E("lib-remove-composites").onclick = ->
       isnt_composite = (record) ->
-        groups = splitPattern(golApp.gol.rule, record.result.cells, record.result.period)
+        groups = splitPattern(golApp.rule, record.result.cells, record.result.period)
         groups.length <= 1
       try
         golApp.library.filter isnt_composite
       catch e
         alert "Error:"+e
     E("lib-load-default").onclick = ->
-      golApp.library.load localStorage, golApp.library.defaultLibraryForRule golApp.gol.rule
+      golApp.library.load localStorage, golApp.library.defaultLibraryForRule golApp.rule
 
     E("select-size").onchange = ->
       try

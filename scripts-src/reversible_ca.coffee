@@ -140,14 +140,9 @@ exports.Array2d = class Array2d
 A field with Margolus neighborehood
 ###
 exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
-  constructor: (@field, rule) ->
+  constructor: (@field) ->
     throw "Field size must be even, not " + field.width + "x" + field.height  if field.width % 2 isnt 0 or field.height % 2 isnt 0
     @phase = 0
-    @set_rule rule
-
-  set_rule: (rule) ->
-    @rule = rule
-    @inverse_rule = null
 
   transform_from: (x0, y0, rule) ->
     field = @field
@@ -172,32 +167,17 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
         a += 2
     null #Return null to increase performance
     
-  transform: ->
+  transform: (rule)->
     xy0 = @phase 
-    @transform_from xy0, xy0, @rule
+    @transform_from xy0, xy0, rule
     @phase = mod @phase+1, 2
 
-  untransform: ->
+  untransform: (irule) ->
     xy0 = mod @phase-1, 2
-    @transform_from xy0, xy0, @get_inverse_rule()
+    @transform_from xy0, xy0, irule
     @phase = mod @phase-1, 2
 
   
-  ###
-  Calculates reverse rule and returns it.
-  Raises an exception, if rule is not reversible
-  ###
-  get_inverse_rule: ->
-    if (ir = @inverse_rule)?
-      ir
-    else
-      @inverse_rule = 
-        if @rule.call?
-          throw "Inverse rule not provided!" unless @rule.inverse?
-          @rule.inverse
-        else
-          Rules.reverse @rule
-
   clear: ->
     @field.fill 0
 
