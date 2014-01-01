@@ -267,9 +267,7 @@
             @doStepRuleset @step_size
             @showRulesetPhase()
           else
-            console.log "Simple ruleset step"
             @doStepSimpleRule @step_size
-            console.log "Step done, generation: #{@generation}"
             
           if @spaceship_catcher? and @generation >= @spaceship_catcher.reseed_period
             @do_clear()
@@ -277,6 +275,36 @@
           @updateCanvas()
           @update_time()
           @recordFrame()
+
+      doReverseStepRuleset: (step_size)->
+        phase = @ruleset_phase
+        iruleset = @inverse_ruleset
+        for i in [0...step_size]
+          phase = mod (phase-1), iruleset.length
+          @gol.untransform iruleset[phase]
+          
+        @ruleset_phase = phase
+        @generation -= @step_size
+
+      doReverseStepSimpleRule: (step_size)->
+        irule = @inverse_rule
+        for i in [0...@step_size]
+          @gol.untransform irule
+        @generation -= @step_size
+        
+      doReverseStep: ->
+        unless @inverse_rule
+          alert "Rule is not reversible"
+          @stopPlayer()
+          return
+        if @ruleset_enabled
+          @doReverseStepRuleset @step_size
+        else
+          @doReverseStepSimpleRule @step_size
+
+        @updateCanvas()
+        @update_time()
+        @recordFrame()
 
       recordFrame: ->
         return unless @encoder?
@@ -297,18 +325,6 @@
           if @isPlaying()
             window.clearInterval @field_player
             @field_player = window.setInterval(@field_player_proc, @step_delay)
-
-      doReverseStep: ->
-          if irule = @inverse_rule
-            for i in [0...@step_size]
-              @gol.untransform irule
-            @generation -= @step_size
-            @updateCanvas()
-            @update_time()
-            @recordFrame()
-          else
-            alert "Rule is not reversible"
-            @stopPlayer()
 
       update_time: ->
           @time_display.innerHTML = "" + @generation  if @time_display
@@ -341,6 +357,10 @@
         E("stable-sub-rules").innerHTML = ""
         if rule[0] isnt 0
           @ruleset = Rules.stabilize_vacuum rule
+          try
+            @inverse_ruleset = (Rules.reverse r for r in @ruleset)
+          catch e
+            @inverse_ruleset = null
           E("stablize-rule").checked = false
           E("rule-stabilization-pane").style.visibility = "visible"
           @show_rule_stabilization()
