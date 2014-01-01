@@ -241,7 +241,7 @@
           for i in [0...@step_size]
             @gol.transform @rule
             if (@gol.phase is 0) and (gc = @spaceship_catcher)
-              gc.scan @gol, @rule
+              gc.scan @gol
           @generation += @step_size
           if @spaceship_catcher? and @generation >= @spaceship_catcher.reseed_period
             @do_clear()
@@ -467,13 +467,15 @@
           alert "Incorrect value of the analysis depth, will use #{maxSteps}"
         maxSteps
       enable_spaceship_catcher: ->
+        gol_application = this
         if @spaceship_catcher is null
           maxSteps = @_getAnalyzerMaxSteps()
-          on_spaceship = (pattern, rule)  =>
+          on_spaceship = (pattern)  =>
+            rule = gol_application.rule
             if result=Cells.analyze(pattern, rule, {max_iters:maxSteps})
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
-                  @library.put result, @rule
+                  @library.put result, rule
             null
           try
             reseed_period = parseInt E("catcher-reseed-period").value, 10
@@ -1282,14 +1284,14 @@
       @spaceships_found = []
       
     #Scan field for the spaceships; remove them from the field
-    scan: (gol, rule)->
+    scan: (gol)->
       f = gol.field
       pick = (x,y) =>
         x0 = gol.snap_below x
         y0 = gol.snap_below y
         fig = f.pick_pattern_at x, y, x0, y0, true #pick and erase
         if fig.length <= @max_size
-          @on_pattern fig, rule
+          @on_pattern fig
       for y in [0...@search_area] by 1
         for x in [0...f.width] by 1
           if f.get(x,y) isnt 0 then pick x, y
