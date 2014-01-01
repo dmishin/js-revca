@@ -143,7 +143,10 @@
       constructor: (field_size, rule_string, container_id, canvas_id, overlay_id, time_display_id) ->
     
         #Application state and initialization
-        @rule = Rules.parse rule_string
+        @rule = null
+        @ruleset = null
+        @ruleset_enabled = false
+        @ruleset_phase = 0
         @gol = new MargolusNeighborehoodField(new Array2d(field_size ...))
         @generation = 0
         @gol.clear()
@@ -168,6 +171,7 @@
 
         @library = new LibraryPane(E("pattern-report"), E("library-size"), this)
         @buffer = new BufferPane(E("active-pattern-canvas"))
+        @set_rule Rules.parse rule_string
         @ghost_click_detector = new GhostClickDetector()
         
         
@@ -236,13 +240,37 @@
         ctx = @canvas.getContext("2d")
         @view.invalidate()
         @view.draw ctx
+
+
+      doStepSimpleRule: (step_size) ->
+          for i in [0...step_size]
+            @gol.transform @rule
+            @onStep 0
+          @generation += step_size
+
+      doStepRuleset: (step_size) ->
+        phase = @ruleset_phase
+        ruleset = @ruleset
+        for i in [0...step_size]
+          @gol.transform ruleset[phase]
+          @onStep phase
+          phase = (phase+1) % ruleset.length
+        @generation += step_size
+        @ruleset_phase = phase
+          
+      onStep: (rulesetPhase)->
+        if (rulesetPhase is 0) and (gc = @spaceship_catcher)
+          gc.scan @gol
           
       doStep: ->
-          for i in [0...@step_size]
-            @gol.transform @rule
-            if (@gol.phase is 0) and (gc = @spaceship_catcher)
-              gc.scan @gol
-          @generation += @step_size
+          if @ruleset_enabled
+            @doStepRuleset @step_size
+            @showRulesetPhase()
+          else
+            console.log "Simple ruleset step"
+            @doStepSimpleRule @step_size
+            console.log "Step done, generation: #{@generation}"
+            
           if @spaceship_catcher? and @generation >= @spaceship_catcher.reseed_period
             @do_clear()
             @random_fill_selection parseFloat(E("random-fill-percent").value)*0.01
@@ -286,8 +314,10 @@
           @time_display.innerHTML = "" + @generation  if @time_display
 
       reset_time: ->
-          @generation = mod(@generation, 2) #Newer try to change oddity of the generation
+          @generation = mod(@generation, 2) #Never try to change oddity of the generation
           @update_time()
+          if @ruleset_enabled
+            @ruleset_phase = mod @generation, @ruleset.length
 
       set_rule_str: (srule) ->
         try
@@ -308,14 +338,49 @@
         show_rule_properties rule, E("function_properties")
         selectOption E("select-rule"), Rules.stringify(rule), ""
         E("rule").value = Rules.stringify rule
+        E("stable-sub-rules").innerHTML = ""
         if rule[0] isnt 0
-          @stabilized_subrules = Rules.stabilize_vacuum rule
+          @ruleset = Rules.stabilize_vacuum rule
           E("stablize-rule").checked = false
           E("rule-stabilization-pane").style.visibility = "visible"
+          @show_rule_stabilization()
         else
           E("rule-stabilization-pane").style.visibility = "hidden"
-          @stabilized_subrules = null
+          @ruleset = null
+
+      enableRuleset: (enabled) ->
+        @ruleset_enabled = enabled
+        if enabled
+          if not @ruleset
+            alert "No ruleset present, can't be enabled"
+          else
+            @ruleset_phase = mod @generation, @ruleset.length
+            @showRulesetPhase()
           
+      showRulesetPhase: ->
+        phase = @ruleset_phase
+        #TODO
+    
+      show_rule_stabilization: ->
+        dom = new DomBuilder
+        dom.tag("table").CLASS("library-table")
+        dom.tag("thead")
+          .tag("th").text("Phase").end()
+          .tag("th").text("Vacuum").end()
+          .tag("th").text("Rule").end()
+        .end()
+
+        dom.tag("tbody")
+        vacuum_cycle = Rules.vacuum_cycle @rule
+        for srule, i in @ruleset
+           dom.tag("tr")
+              .tag("td").text(i).end()
+              .tag("td").tag("span").CLASS(cells_icon vacuum_cycle[i]).end().end()
+              .tag("td").text(Rules.stringify srule).end()
+              .end()
+        dom.end().end()
+        E("stable-sub-rules").appendChild dom.finalize()
+        
       do_clear: ->
           @gol.clear()
           @updateCanvas()
@@ -1383,6 +1448,8 @@
         
 
     E("show-grid").onchange = -> golApp.setShowGrid E("show-grid").checked
+    E("stablize-rule").onchange = ->      
+      golApp.enableRuleset E("stablize-rule").checked
 
 
     btnGroupTools= new ButtonGroup E("btn-group-tools"), "a", "btn-tool-draw"
