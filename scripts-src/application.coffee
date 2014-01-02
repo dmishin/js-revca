@@ -388,14 +388,18 @@
           E("rule-stabilization-pane").style.visibility = "hidden"
           @ruleset = null
 
-      enableRuleset: (enabled) ->
-        @ruleset_enabled = enabled
+      enableRuleset: (enabled) ->          
         if enabled
           if not @ruleset
             alert "No ruleset present, can't be enabled"
           else
             @ruleset_phase = mod @generation, @ruleset.length
             @showRulesetPhase()
+        if (enabled and not @ruleset_enabled) or (not enabled and @ruleset_enabled)
+          vacuum_cycle = Rules.vacuum_cycle @rule
+          @gol.apply_xor vacuum_cycle[@ruleset_phase]
+          @updateCanvas()
+        @ruleset_enabled = enabled
           
       showRulesetPhase: ->
         phase = @ruleset_phase

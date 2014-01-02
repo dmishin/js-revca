@@ -13,7 +13,8 @@
 **** DONE Random fill
 **** DONE Disable selection layer, when it is not used (it slows down output)
 **** DONE Eraser tool
-*** TODO ? Scrolling, continuous player
+*** WONTDO ? Scrolling, continuous player
+    Instead, SVG-based player was implemented.
 
 ** DONE Change field size
 *** DONE SEt field size from URL parameters
@@ -30,7 +31,6 @@
 ** WONTDO Rule editor
    
 ** Simulation features
-*** WONTDO? Flashing rules.
 *** DONE Rule analysis
     - Invertibility 
     - SYmmetries
@@ -41,15 +41,24 @@
    
 ** DONE Make key modules work both in browser and in Node.js
 
+** Rule stabilization
+   vacuum stabilization
+   Support in:
+   - Load/save field
+   - Figure analysys
+   - TODO Figure catcher. Not working?
+   - 
 * Bugs
-** 
+** TODO When ruleset is enabled, ss catcher skips ss sometimes
+** TODO stabilization checkbox status not updated
+   
 ** DONE Cell icons-9 wrong  
 ** DONE When field is big, scroll bar appears
    Why? What limits its size?
    
 
 * Publishing
-** TODO Automatic publishing on github?
+** DONE Automatic publishing on github?
    git checkout master
    make test && make
    git checkout gh-pages
