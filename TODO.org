@@ -49,7 +49,11 @@
    - TODO Figure catcher. Not working?
    - 
 * Bugs
-** TODO When ruleset is enabled, ss catcher skips ss sometimes
+** DONE Rule seleciton from URL broken again.
+   No. # messes with things again
+** TODO When catcher isenabled, performance is low.
+** DONE When ruleset is enabled, ss catcher skips ss sometimes
+   Done. Phase was not updated.
 ** TODO stabilization checkbox status not updated
    
 ** DONE Cell icons-9 wrong  

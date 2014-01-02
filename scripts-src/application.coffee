@@ -378,17 +378,18 @@
           @inverse_ruleset = null
           
         selectOption E("select-rule"), Rules.stringify(rule), ""
+        #console.log "Selection rule #{Rules.stringify(rule)}"
         E("rule").value = Rules.stringify rule
         E("stable-sub-rules").innerHTML = ""
         show_rule_diagram rule, E("function_display")
         show_rule_properties rule, E("function_properties")
+        #console.log "Showed rule diagram for rule #{Rules.stringify(rule)}"
+        @ruleset_enabled = false
         if @ruleset.length > 1
-          @ruleset_enabled = false
           E("stablize-rule").checked = false
           E("rule-stabilization-pane").style.display = "block"
           @show_rule_stabilization()
         else
-          @ruleset_enabled = false
           E("rule-stabilization-pane").style.display = "none"
 
       enableRuleset: (enabled) ->          
@@ -457,6 +458,7 @@
       Load initial state from the URL parameters
       ###
       load_parameters: ->
+          #console.log "Loadung parameters from URL"
           keys = parseUri(window.location).queryKey
           #load RLE code of the initial field
           if keys.size?
@@ -468,7 +470,8 @@
             @gol = new MargolusNeighborehoodField(new Array2d(c, r), @rule)
             @gol.clear()
             @view = new FieldView(@gol.field)
-            
+            #console.log "Updated field width to #{keys.size}"
+              
           if keys.cell_size?
             [@view.cell_size, @view.grid_width] =
               @parseCellSize(keys.cell_size)
@@ -487,6 +490,8 @@
             y0 = if keys.rle_y0 then parseInt(keys.rle_y0, 10) else 0
             parse_rle keys.rle, (x,y) =>
               @gol.field.set_wrapped x0+x, y0+y, 1
+            #console.log "Put RLE"
+              
           if keys.phase?
             phase = parseInt keys.phase, 10
             unless phase in [0,1]
