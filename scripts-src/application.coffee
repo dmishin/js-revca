@@ -259,8 +259,12 @@
         @ruleset_phase = phase
           
       onStep: (rulesetPhase)->
-        if (rulesetPhase is 0) and (gc = @spaceship_catcher)
-          gc.scan @gol
+        if (gc = @spaceship_catcher)
+          if (@ruleset.length > 1) and not @ruleset_enabled
+            alert "Rule is unstable, disabling catcher. Enable stabilization to make it available"
+            @disable_spaceship_catcher()
+          else
+            gc.scan @gol
           
       doStep: ->
           if @ruleset_enabled
@@ -589,11 +593,14 @@
           alert "Incorrect value of the analysis depth, will use #{maxSteps}"
         maxSteps
       enable_spaceship_catcher: ->
-        gol_application = this
+        if (@ruleset.length > 1) and not @ruleset_enabled
+          alert "Enable rule stabilization to run catcher"
+          return
         if @spaceship_catcher is null
           maxSteps = @_getAnalyzerMaxSteps()
           on_spaceship = (pattern)  =>
-            rule = gol_application.rule
+            rule = @rule
+            pattern = @_promoteToZeroPhase pattern
             if result=Cells.analyze(pattern, rule, {max_iters:maxSteps})
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
