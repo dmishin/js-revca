@@ -246,6 +246,7 @@
           for i in [0...step_size]
             @gol.transform @rule
             @onStep 0
+          @phase = (@phase+step_size) % @ruleset.length
           @generation += step_size
 
       doStepRuleset: (step_size) ->
@@ -253,10 +254,10 @@
         ruleset = @ruleset
         for i in [0...step_size]
           @gol.transform ruleset[phase]
+          @ruleset_phase = phase = (phase+1) % ruleset.length
           @onStep phase
-          phase = (phase+1) % ruleset.length
         @generation += step_size
-        @ruleset_phase = phase
+        
           
       onStep: (rulesetPhase)->
         if (gc = @spaceship_catcher)
@@ -269,9 +270,9 @@
       doStep: ->
           if @ruleset_enabled
             @doStepRuleset @step_size
-            @showRulesetPhase()
           else
             @doStepSimpleRule @step_size
+          @showRulesetPhase()
             
           if @spaceship_catcher? and @generation >= @spaceship_catcher.reseed_period
             @generation = 0
@@ -296,6 +297,7 @@
         irule = @inverse_rule
         for i in [0...@step_size]
           @gol.untransform irule
+        @phase = mod (@phase-step_size), @ruleset.length
         @generation -= @step_size
         
       doReverseStep: ->
@@ -305,9 +307,9 @@
           return
         if @ruleset_enabled
           @doReverseStepRuleset @step_size
-          @showRulesetPhase()
         else
           @doReverseStepSimpleRule @step_size
+        @showRulesetPhase()
 
         @updateCanvas()
         @update_time()
@@ -362,31 +364,32 @@
           
       set_rule: (rule) ->
         @rule = rule
-
         @inverse_rule =
           try
             Rules.reverse rule
           catch
             null
         
-        show_rule_diagram rule, E("function_display")
-        show_rule_properties rule, E("function_properties")
+        @ruleset = Rules.stabilize_vacuum rule
+        @ruleset_phase = 0
+        try
+          @inverse_ruleset = (Rules.reverse r for r in @ruleset)
+        catch e
+          @inverse_ruleset = null
+          
         selectOption E("select-rule"), Rules.stringify(rule), ""
         E("rule").value = Rules.stringify rule
         E("stable-sub-rules").innerHTML = ""
-        if rule[0] isnt 0
-          @ruleset = Rules.stabilize_vacuum rule
-          @ruleset_phase = 0
-          try
-            @inverse_ruleset = (Rules.reverse r for r in @ruleset)
-          catch e
-            @inverse_ruleset = null
+        show_rule_diagram rule, E("function_display")
+        show_rule_properties rule, E("function_properties")
+        if @ruleset.length > 1
+          @ruleset_enabled = false
           E("stablize-rule").checked = false
-          E("rule-stabilization-pane").style.visibility = "visible"
+          E("rule-stabilization-pane").style.display = "block"
           @show_rule_stabilization()
         else
-          E("rule-stabilization-pane").style.visibility = "hidden"
-          @ruleset = null
+          @ruleset_enabled = false
+          E("rule-stabilization-pane").style.display = "none"
 
       enableRuleset: (enabled) ->          
         if enabled
@@ -596,6 +599,7 @@
           maxSteps = 2048
           alert "Incorrect value of the analysis depth, will use #{maxSteps}"
         maxSteps
+        
       enable_spaceship_catcher: ->
         if (@ruleset.length > 1) and not @ruleset_enabled
           alert "Enable rule stabilization to run catcher"
@@ -609,6 +613,7 @@
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
                   @library.put result, rule
+                  # console.log "#### Added ss: dx=#{result.dx} dy=#{result.dy}"
             null
           try
             reseed_period = parseInt E("catcher-reseed-period").value, 10
@@ -663,6 +668,8 @@
       #Evaluate pattern several steps until its ruleset phase is 0
       #Only usable in ruleset-based evaluation
       _promoteToZeroPhase: (pattern) ->
+        unless @ruleset_enabled
+          return pattern
         rule_phase = @ruleset_phase
         field_phase = 0
         while rule_phase isnt 0
@@ -680,9 +687,8 @@
         root.innerHTML = "<div style='text-align:center'><span class='icon-wait'>Analysing...</span></div>"
         E("analysis-result").style.display = "block"
 
-        if @ruleset_enabled
-          #Promote phase of the selection to 0
-          cells = @_promoteToZeroPhase cells
+        #Promote phase of the selection to 0, if ruleset is enabled
+        cells = @_promoteToZeroPhase cells
 
         #Delay analysis
         window.setTimeout (=>
