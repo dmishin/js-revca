@@ -102,7 +102,7 @@ exports.Array2d = class Array2d
   ###
   Put list of cells to the field
   ###
-  put_cells: (lst, x, y, value=1) ->
+  put_cells: (lst, x=0, y=0, value=1) ->
     w = @width
     h = @height
     for [xx,yy] in lst
@@ -110,7 +110,7 @@ exports.Array2d = class Array2d
     null
 
   #Returns list of cells in the given region
-  pick_pattern_at: (x, y, x0, y0, erase=false, range = 4) -> #[(int,int)]
+  pick_pattern_at: (x, y, x0, y0, erase=false, range = 4, max_size=null) -> #[(int,int)]
     self = this
     w = @width
     h = @height
@@ -120,21 +120,26 @@ exports.Array2d = class Array2d
     is_visited = (x,y) -> visited.hasOwnProperty key x, y
     visit = (x,y) -> visited[ key x, y ] = true
 
+    #return true, if max size reached.
     do_pick_at = (x,y)->
       wx = mod(x,w) #Wrapped coordinates
       wy = mod(y,h)
-      return if is_visited(wx,wy) or self.get(wx,wy) is 0
+      if is_visited(wx,wy) or self.get(wx,wy) is 0
+        return false
       visit wx, wy
       cells.push [x-x0,y-y0]
+      if max_size and (cells.length > max_size)
+        return true
       if erase then self.set wx, wy, 0
       for dy in [-range..range] by 1
         y1 = y+dy
         for dx in [-range..range] by 1
           continue if dy is 0 and dx is 0
-          do_pick_at x+dx, y1
-      cells
-      
+          if do_pick_at x+dx, y1
+            return true
+      return false
     do_pick_at x, y
+    cells
     
 ###
 A field with Margolus neighborehood

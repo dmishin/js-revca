@@ -1,9 +1,8 @@
 assert = require "assert"
-reversible_ca = require "../scripts-src/reversible_ca"
-{Array2d, MargolusNeighborehoodField} = reversible_ca
+{Array2d, MargolusNeighborehoodField} = require "../scripts-src/reversible_ca"
+{Cells} = require "../scripts-src/cells"
 
 describe "class Array2d: array of bytes", ->
-  {Array2d} = reversible_ca
   it "should support creation and element access", ->
     a = new Array2d 10, 10
     a.fill 0
@@ -141,4 +140,27 @@ describe "MargolusNeighborehoodField.apply_xor", ->
 
     cells1 = [[0,0],[1,0],[0,1],[2,1],[3,2],[0,3],[2,3]]
     assert.deepEqual (f.field.get_cells 0,0,4,4), cells1
+
+describe "Array2d::pick_pattern_at x, y, x0, y0, erase=false, range = 4, max_size=null", ->
+  empty_array = -> new Array2d 10, 10
+  
+  it "must pick simple figures of 1 cell", ->
+    arr = empty_array()
+    arr.put_cells [[5,5]]
+
+    picked = arr.pick_pattern_at 5,5,0,0
+    assert.deepEqual picked, [[5,5]]
+    assert.equal arr.get(5,5), 1, "picking by default should not change field"
+
+  it "must pick ffigure of more than 1 cell", ->
+
+    cells = [[5,5],[5,6],[6,5]]
+    Cells.sortXY cells
+    arr = empty_array()
+    arr.put_cells cells
+
+    picked = arr.pick_pattern_at 5,5,0,0
+    Cells.sortXY picked
+    assert.deepEqual picked, cells
+    assert.equal arr.get(5,5), 1, "picking by default should nto change field"
     
