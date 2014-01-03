@@ -384,12 +384,15 @@
         show_rule_diagram rule, E("function_display")
         show_rule_properties rule, E("function_properties")
         #console.log "Showed rule diagram for rule #{Rules.stringify(rule)}"
-        @ruleset_enabled = false
+
+        #By default, enable rulesets.        
         if @ruleset.length > 1
-          E("stablize-rule").checked = false
+          E("stablize-rule").checked = true
+          @ruleset_enabled = true
           E("rule-stabilization-pane").style.display = "block"
           @show_rule_stabilization()
         else
+          @ruleset_enabled = false
           E("rule-stabilization-pane").style.display = "none"
 
       enableRuleset: (enabled) ->          
