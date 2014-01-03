@@ -163,4 +163,33 @@ describe "Array2d::pick_pattern_at x, y, x0, y0, erase=false, range = 4, max_siz
     Cells.sortXY picked
     assert.deepEqual picked, cells
     assert.equal arr.get(5,5), 1, "picking by default should nto change field"
-    
+
+  it "must return the same, if figure is smaller then maximum size", ->
+    cells = [[5,5],[5,6],[6,5]]
+    Cells.sortXY cells
+    arr = empty_array()
+    arr.put_cells cells
+
+    picked = arr.pick_pattern_at 5,5,0,0, false, 4, 10 #10 is size limitation
+    Cells.sortXY picked
+    assert.deepEqual picked, cells
+    assert.equal arr.get(5,5), 1, "picking by default should nto change field"
+
+  it "must return smaller number of cells, when size limitation is specified", ->
+    cells = [[5,5],[5,6],[6,5]]
+    Cells.sortXY cells
+    arr = empty_array()
+    arr.put_cells cells
+
+    picked = arr.pick_pattern_at 5,5,0,0, false, 4, 2 #2 is size limitation - smaller than figure of 3 cells
+
+
+    cell_in_list = ([x,y], cells) ->
+      for [x1,y1] in cells
+        if x1 is x and y1 is y
+          return true
+    false
+
+    assert.equal picked.length, 2
+    for xy in picked
+      assert cell_in_list xy, cells, "Cell #{JSON.stringify xy} must be in the original figure #{JSON.stringify cells}"

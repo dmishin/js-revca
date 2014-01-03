@@ -1446,6 +1446,7 @@
     constructor: (@on_pattern, @max_size=20, @reseed_period=300000) ->
       @search_area=1
       @spaceships_found = []
+      @search_radius = 4
       
     #Scan field for the spaceships; remove them from the field
     scan: (gol)->
@@ -1453,7 +1454,7 @@
       pick = (x,y) =>
         x0 = gol.snap_below x
         y0 = gol.snap_below y
-        fig = f.pick_pattern_at x, y, x0, y0, true #pick and erase
+        fig = f.pick_pattern_at x, y, x0, y0, true, @search_radius, @max_size #pick and erase
         if fig.length <= @max_size
           @on_pattern fig
       for y in [0...@search_area] by 1

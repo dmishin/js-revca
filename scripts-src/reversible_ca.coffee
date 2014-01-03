@@ -128,7 +128,7 @@ exports.Array2d = class Array2d
         return false
       visit wx, wy
       cells.push [x-x0,y-y0]
-      if max_size and (cells.length > max_size)
+      if max_size and (cells.length >= max_size)
         return true
       if erase then self.set wx, wy, 0
       for dy in [-range..range] by 1
