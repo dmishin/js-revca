@@ -440,6 +440,7 @@ exports.splitPattern = (rule, pattern, steps) ->
   label2group = {}
   group2labels = {}
   labelled_pattern = []
+  ruleset = Rules.stabilize_vacuum rule
   #First, add label to each cell,
   #  and create individual group for each label.
   for [x,y], i in pattern
@@ -471,10 +472,13 @@ exports.splitPattern = (rule, pattern, steps) ->
       number_of_groups -= 1
     null
   
+  #assume that initial phase is 0
+  ruleset_phase = 0 
   #Evaluate pattern for the given number of steps,
   # or until it merges completely.
   for iter in [0..steps] by 1
-    labelled_pattern = evaluateLabelledCellList rule, labelled_pattern, (iter%2), merge_labels
+    labelled_pattern = evaluateLabelledCellList ruleset[ruleset_phase], labelled_pattern, (iter%2), merge_labels
+    ruleset_phase = (ruleset_phase+1)%ruleset.length
     if number_of_groups <= 1 #Reached total merge before complete evaluation
       break
   #Now just construct the result: list of patterns (list of lists)
