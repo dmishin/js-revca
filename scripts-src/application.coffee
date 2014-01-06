@@ -1503,7 +1503,6 @@
       ["Rotations II", Rules.parse("0;2;8;12;1;10;9; 13;4;6;5;7;3;14;11;15",";")],
       ["Rotations III", Rules.parse("0;4;1;10;8;3;9;11; 2;6;12;14;5;7;13;15",";")],
       ["Rotations IV", Rules.parse("0;4;1;12;8;10;6;14; 2;9;5;13;3;11;7;15",";")],
-      ["Sand", Rules.parse("0;4;8;12;4;12;12;13; 8;12;12;14;12;13;14;15",";")],
       ["String Thing", NamedRules.stringThing],
       ["String Thing II", Rules.parse("0;1;2;12;4;10;6;7;8; 9;5;11;3;13;14;15",";")],
       ["Swap On Diag", Rules.parse("0;8;4;12;2;10;6;14; 1;9;5;13;3;11;7;15",";")],
