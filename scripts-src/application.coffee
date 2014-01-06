@@ -558,6 +558,8 @@
           urlArgs.push "ruleset_phase=#{@ruleset_phase}"
 
         loc = ""+window.location
+        if (anchorStartsAt = loc.indexOf "#") isnt -1
+          loc = loc.substr 0, anchorStartsAt
         argsStartAt = loc.indexOf "?"
         baseUrl = 
           if argsStartAt is -1 then loc else loc.substr 0, argsStartAt

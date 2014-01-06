@@ -42,20 +42,22 @@
 ** DONE Make key modules work both in browser and in Node.js
 
 ** Rule stabilization
+   Status: feature is implemented and added to main branch
    vacuum stabilization
    Support in:
    - Load/save field
    - Figure analysys
-   - TODO Figure catcher. Not working?
-   - 
+   - Figure catcher
+   - Separation analysys
+
 * Bugs
-** # at the end of the URL prevents forming current URL
+** DONE # at the end of the URL prevents forming current URL
 ** DONE Rule seleciton from URL broken again.
    No. # messes with things again
 ** [not a bug?] When catcher isenabled, performance is low.
 ** DONE When ruleset is enabled, ss catcher skips ss sometimes
    Done. Phase was not updated.
-** TODO stabilization checkbox status not updated
+** DONE stabilization checkbox status not updated
    
 ** DONE Cell icons-9 wrong  
 ** DONE When field is big, scroll bar appears
