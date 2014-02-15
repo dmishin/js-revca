@@ -1,6 +1,12 @@
+#!/usr/bin/env python
 from xml.etree.ElementTree import ElementTree, Element, SubElement, Comment, tostring
 from optparse import OptionParser
 import sys
+
+cell_style = "fill:blue;stroke:black"
+bg_style = "stroke:none;fill:rgb(240,255,255)"
+grid1_style = "stroke:black;stroke-width:1"
+grid2_style = "stroke:black;stroke-width:1;stroke-dasharray:2,4"
 
 def parse_rle(rle_string, put_cell):
     """based on the CoffeScritp code"""
@@ -50,19 +56,19 @@ def CreateField(cells, cols, rows, cell_size = 20):
         "y":str(cell_size*0.15),
         "width": str(cell_size*0.7),
         "height": str(cell_size*0.7),
-        "style": "fill:blue;stroke:black"
+        "style": cell_style
     })
 
     background = SubElement(svg, "rect", {
         "x":"0", "y":"0",
         "width":"100%",
         "height":"100%",
-        "style": "stroke:none;fill:rgb(240,255,255)"
+        "style": bg_style
         })
     content = SubElement(svg, "g", {"transform":"translate(.5,.5)"})
     grids = SubElement(content, "g", {"id": "grids"})
-    grid1 = SubElement(grids, "g", {"style":"stroke:black;stroke-width:1"})
-    grid2 = SubElement(grids, "g", {"style":"stroke:black;stroke-width:1", "stroke-dasharray":"2,4"})
+    grid1 = SubElement(grids, "g", {"style":grid1_style})
+    grid2 = SubElement(grids, "g", {"style":grid2_style})
 
     for row in range(rows+1):
         grid = [grid1,grid2][row%2]
