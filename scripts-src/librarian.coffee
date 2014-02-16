@@ -1,10 +1,9 @@
 #!/usr/bin/env coffee
 fs = require "fs"
-revca = require "../scripts-src/reversible_ca"
-cells = require "../scripts-src/cells"
+{Cells, evaluateCellList, getDualTransform, splitPattern} = require "../scripts-src/cells"
 rules = require "../scripts-src/rules"
 stdio = require "stdio"
-
+{mod} = require "../scripts-src/math_util"
 #requireemnts:
 # - stdio
 
@@ -20,9 +19,6 @@ shallowCopy = (obj)->
 dictionaryValues = (dict)->(v for k,v of dict)
 
 stringifyLibrary = (rle2record) -> JSON.stringify dictionaryValues rle2record
-
-
-{Cells, evaluateCellList, getDualTransform} = cells
 
 mergeReport = (report_file, key2record) ->
   data = JSON.parse fs.readFileSync report_file
@@ -44,7 +40,7 @@ filterComposites = (rle2record, rule) ->
   filtered = {}
   for rle, rec of rle2record
     {result, count, key} = rec
-    grps = cells.splitPattern rule, result.cells, result.period
+    grps = splitPattern rule, result.cells, result.period
     if grps.length is 1
       filtered[rle] = rec
   return filtered
@@ -97,23 +93,35 @@ findCanonicalForm = (record, rule) ->
   #Find canonical form of a spaceship, according to the minimum of energy
   unless record.result.period?
     #no period -> no way to minimize energy
-    process.stderr.write "  no period - skip recalculation + #{JSON.stringify record}\n"
     return record
+    
+  snap_below = (x,generation) ->
+    x - mod(x + generation, 2)
+                        
+  offsetToOrigin = (pattern, generation) ->
+    [x0,y0] = Cells.bounds curPattern
+    x0 = snap_below x0, generation
+    y0 = snap_below y0, generation
+    Cells.offset pattern, -x0, -y0
+    return pattern
+    
   energyTreshold = 1e-3
   stable_rules = rules.Rules.stabilize_vacuum rule
   vacuum_period = stable_rules.length
+
   bestPattern = curPattern = record.result.cells
   bestPatternEnergy = Cells.energy curPattern
   bestPatternRle = record.key
-  for i in [0...record.period]
+  for i in [0...record.result.period]
     phase = 0
     for stable_rule in stable_rules
       curPattern = evaluateCellList stable_rule, curPattern, phase
       phase ^= 1
     Cells.sortXY curPattern
-    bounds = Cells.bounds curPattern
-    [curPattern] = offsetToOrigin curPattern, bounds, phase
+    
+    curPattern = offsetToOrigin curPattern, phase
     e = Cells.energy curPattern
+    #process.stderr.write "  best e: #{bestPatternEnergy}, cur e: #{e}\n"
     if e > bestPatternEnergy + energyTreshold
       bestPattern = curPattern
       bestPatternEnergy = e
