@@ -1,11 +1,28 @@
+#!/usr/bin/env coffee
 fs = require "fs"
 revca = require "../scripts-src/reversible_ca"
 cells = require "../scripts-src/cells"
 rules = require "../scripts-src/rules"
-#process = require "process"
-#infile = "C:\\dmishin\\Dropbox\\Math\\rev-ca\\report3.json"
-rule = rules.NamedRules.rotational1
-{Cells, evaluateCellList, evaluateLabelledCellList} = cells
+stdio = require "stdio"
+
+#requireemnts:
+# - stdio
+
+##################
+# Generic low-level utilities
+##################    
+shallowCopy = (obj)->
+  copied = {}
+  for k,v of obj
+    copied[k] = v
+  return copied
+
+dictionaryValues = (dict)->(v for k,v of dict)
+
+stringifyLibrary = (rle2record) -> JSON.stringify dictionaryValues rle2record
+
+
+{Cells, evaluateCellList, getDualTransform} = cells
 
 mergeReport = (report_file, key2record) ->
   data = JSON.parse fs.readFileSync report_file
@@ -17,40 +34,50 @@ mergeReport = (report_file, key2record) ->
     else
       key2record[key] = record
 
-consolidateReports = (reports) ->
+mergeLibraries = (reports) ->
   key2record = {}
   for report in reports
     mergeReport report, key2record
-  (record for key, record of key2record)
+  return key2record
 
-filterComposites = (records, rule) ->
-  filtered = []
-  for rec in consolidated
+filterComposites = (rle2record, rule) ->
+  filtered = {}
+  for rle, rec of rle2record
     {result, count, key} = rec
     grps = cells.splitPattern rule, result.cells, result.period
-    if grps.length == 1
-      filtered.push rec
-  filtered
+    if grps.length is 1
+      filtered[rle] = rec
+  return filtered
 
-makeDualGlider = (glider, dx, dy) ->
-  #Create dual glider, which is mirrored and phase-shifted.
-  #For the rotational-1 rule, this dual glider is also a pattern, that evolutes in reverse direction.
+makeDualSpaceship = (spaceship, rule, dualTransform, dx, dy) ->
+  #Create dual spaceship, which is mirrored and phase-shifted.
+  #For the rotational-1 rule, this dual spaceship is also a pattern, that evolutes in reverse direction.
 
-  g1 = Cells.transform (Cells.togglePhase glider), [-1, 0, 0, 1]
-  dx1 = dx #phase shift reveses dx,dy; 
-  dy1 = -dy #And mirror reverts only dx
-  #Rotate glider to the right position
-  [g1,dx1, dy1] = Cells.canonicalize_glider g1, rule, dx1, dy1
+  g1 = Cells.transform (Cells.togglePhase spaceship), dualTransform
+  #Transform movement vector too
+  [t00, t01, t10, t11] = dualTransform
+  dx1 = (t00 * dx + t01 * dy) | 0
+  dy1 = (t10 * dx + t11 * dy) | 0
+  #And reverse its direction since duality iverses time
+  dx1 = -dx1
+  dy1 = -dy1
+  #Rotate spaceship to the right position
+  [g1,dx1, dy1] = Cells.canonicalize_spaceship g1, rule, dx1, dy1
   if (dx1 isnt dx) or (dy1 isnt dy)
-    throw new Error "New glider moves in the different direction, that's wrong for rotational rule"
+    throw new Error "New spaceship moves in the different direction, that's wrong for rotational rule"
   Cells.normalize g1
 
-mergeDualGliders = (report) ->
+mergeDualSpaceships = (rle2record, rule, dualTransform) ->
   key2record = {}
   merged = 0
-  for record in report
+  for rle, record of rle2record
     {result, count, key} = record
-    dual = makeDualGlider result.cells, result.dx, result.dy
+    unless result.dx or result.dy
+      #skipping non-spaceships
+      key2record[rle] = record
+      continue
+      
+    dual = makeDualSpaceship result.cells, rule, dualTransform, result.dx, result.dy
     if key of key2record
       key2record[key].count += count #Duplicate entry?
       process.stderr.write "Duplicate entry: #{key}\n"
@@ -58,86 +85,111 @@ mergeDualGliders = (report) ->
       dual_key = Cells.to_rle dual
       if dual_key of key2record
         key2record[dual_key].count += count
+        process.stderr.write "   Merging #{rle} to #{dual_key}\n"
         merged += 1
       else
         #Neither dual nor original are not registered yet
         key2record[key] = record
   process.stderr.write "Merged records: #{merged}\n"
-  
-  (record for key, record of key2record)
+  return key2record
 
-mergeNonUniqueNormalizations = (report, rule, mk_dual) ->
-  #First group all records by the compond key [population, period, dx, dy]
-  # Only if these parameters are the same, two gliders can be equivalent
-  merged = 0
-  filtered_report = []
-  key2gliders = {}
-  for record in report
-    {result} = record
-    rle = record.key
-    key = "#{result.cells.length} #{result.period} #{result.dx} #{result.dy}"
-    gliders = key2gliders[key] ? (key2gliders[key] = [])
-    gliders.push record
-  for _, records of key2gliders
-    if records.length > 1
-      merged += _doMergeNonUnique records, rule, mk_dual, filtered_report
+findCanonicalForm = (record, rule) ->
+  #Find canonical form of a spaceship, according to the minimum of energy
+  unless record.result.period?
+    #no period -> no way to minimize energy
+    process.stderr.write "  no period - skip recalculation + #{JSON.stringify record}\n"
+    return record
+  energyTreshold = 1e-3
+  stable_rules = rules.Rules.stabilize_vacuum rule
+  vacuum_period = stable_rules.length
+  bestPattern = curPattern = record.result.cells
+  bestPatternEnergy = Cells.energy curPattern
+  bestPatternRle = record.key
+  for i in [0...record.period]
+    phase = 0
+    for stable_rule in stable_rules
+      curPattern = evaluateCellList stable_rule, curPattern, phase
+      phase ^= 1
+    Cells.sortXY curPattern
+    bounds = Cells.bounds curPattern
+    [curPattern] = offsetToOrigin curPattern, bounds, phase
+    e = Cells.energy curPattern
+    if e > bestPatternEnergy + energyTreshold
+      bestPattern = curPattern
+      bestPatternEnergy = e
+      bestPatternRle = Cells.to_rle curPattern
+    else if Math.abs(e - bestPatternEnergy) <= energyTreshold
+      curPatternRle = Cells.to_rle curPattern
+      if bestPatternRle < curPatternRle
+        #resolve case, when energy is the same
+        bestPattern = curPattern
+        bestPatternEnergy = e
+        bestPatternRle = curPatternRle
+  newRecord = shallowCopy record
+  newRecord.result = shallowCopy newRecord.result
+  newRecord.key = bestPatternRle
+  newRecord.result.cells = bestPattern
+  return newRecord
+
+recalculateCanonicalForm = (rle2record, rule)->
+  recalculated = {}
+  for rle, record of rle2record
+    recordNew = findCanonicalForm record, rule
+    if recordNew.key isnt rle
+      process.stderr.write "    #{rle} changed to #{recordNew.key}\n"
+    if recordNew.key of recalculated
+      #Two records gave the same result
+      process.stderr.write "Canonical forms matched, merging record #{rle} to #{recordNew.key}\n"
+      recalculated[recordNew.key].count += recordNew.count
     else
-      filtered_report.push records[0]
-  return [filtered_report, merged]
-
-
-_patternEvolutions = (cells, rule, period) ->
-  cells = ([x,y,1] for [x,y] in cells)
-  evols = [cells]
-  if mk_dual?
-    evols.push mk_dual cells
-  for i in [0...period-1]
-    cells = evaluateLabelledCellList rule, cells, i%2
-    cells_norm = if i%2 is 1 then cells else Cells.togglePhase cells # is 1! because iteration was already calculated!
-    evols.push cells_norm
-  evols
-      
-_doMergeNonUnique = (records, rule, mk_dual, report) -> #report is output!
-  #In this function, records contains list of records with the similar parameters: speed, population, period.
-  #Records will contain at least 2 different records
-  #process.stderr.write "      found group of #{records.length} gliders\n"
-  key2record = {}
-  merged = 0  
-  for record in records
-    {result} = record
-    rle = record.key
-    old_record = key2record[ rle ]
-    if old_record?
-      old_record.count += record.count
-      merged += 1
-    else
-      report.push record
-      #process.stdout.write "    Pattern:\n"
-      for fig in _patternEvolutions result.cells, rule, result.period
-        rle = Cells.to_rle Cells.normalize fig
-        #process.stdout.write "      register RLE: #{rle}\n"
-        key2record[rle] = record
-        if mk_dual?
-          fig_dual = mk_dual fig, result.dx, result.dy
-          rle = Cells.to_rle Cells.normalize fig_dual
-          key2record[rle] = record
-  return merged
+      recalculated[recordNew.key] = recordNew
+  return recalculated
 
 ##################
 # top-level code #
 ##################
-pth = "/home/dim/Dropbox/Math/rev-ca/"
-consolidated = consolidateReports (pth + f for f in [
-  "report3.json", "report1.json", "report2.json", "report-128x128-chrome-big.json", "report-256x256-chrome-big.json"])
+main = ->
+  opts = stdio.getopt {
+    'output': {key: 'o', args: 1, description: "Output file. Default is stdout"}
+    'allow-composites': {descriptsion: "When specified, composite filtering is not done"}
+    'canonicalize': {key: 'c', descriptsion: "Recalculate canonical form of the spaceships"}
+#    'alias-file': {key: 'a', args: 1, description: "File of aliases. Format is JSON: {'out-pattern': [in-patterns...]...}"}
+    'rule': {key: 'r', args: 1, description: "Reversible cellular automata rule, required for normalization. Format: 16 comma-separated decimals."}
+    }, " input1.json input2.json ... "
 
-consolidated = filterComposites consolidated, rule
-consolidated = mergeDualGliders consolidated
-process.stderr.write "Total records after merge: #{consolidated.length}\n"
+  console.log JSON.stringify opts
 
-process.stderr.write "Merging non-unique representations of a gliders\n"
-[consolidated, merges] = mergeNonUniqueNormalizations consolidated, rule, makeDualGlider
-process.stderr.write "   merged #{merges} records; new size: #{consolidated.length}\n"
+  unless opts.args?
+    process.stderr.write "No input files specified\n"
+    process.exit 1
 
-fs.writeFileSync "consolidated-singlerot.json", JSON.stringify consolidated
+  if opts.rule
+    rule = rules.Rules.parse opts.rule
+  else
+    rule = rules.Rules.from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
 
-process.stdout.write "Consolidation of results complete, #{consolidated.length} patterns found\n"
+  #merge alll given libraries
+  rle2record = mergeLibraries opts.args
+
+  process.stderr.write "Read #{opts.args.length} libraries\n"
+
+  unless opts['allow-composites']
+    process.stderr.write "Removing composites...\n"
+    rle2record = filterComposites rle2record, rule  
+
+  if opts.canonicalize
+    process.stderr.write "Re-calculating canonical forms of spaceships in the library\n"
+    rle2record = recalculateCanonicalForm rle2record, rule
+
+  if opts.output?
+    fs.writeFileSync opts.output, stringifyLibrary(rle2record)
+  else
+    process.stdout.write stringifyLibrary rle2record
+
+
+  [dualTfmName, dualTfm, dualBlockTfm] = getDualTransform rule
+  if dualTfmName
+    process.stderr.write "Rule has dual transform: #{dualTfmName}\n"
+    rle2record = mergeDualSpaceships rle2record, rule, dualTfm
+
+main()
