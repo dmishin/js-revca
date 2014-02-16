@@ -165,8 +165,6 @@ main = ->
     'rule': {key: 'r', args: 1, description: "Reversible cellular automata rule, required for normalization. Format: 16 comma-separated decimals."}
     }, " input1.json input2.json ... "
 
-  console.log JSON.stringify opts
-
   unless opts.args?
     process.stderr.write "No input files specified\n"
     process.exit 1
