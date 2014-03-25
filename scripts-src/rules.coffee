@@ -188,13 +188,7 @@ exports.from_list = from_list = (t) -> new Rule(t)
 ###
 exports.parse = parse = (rule_str, separator = ",") ->
   parts = rule_str.split separator
-  nparts = parts.length
-  throw new Error "Invalid rule string [" + rule_str + "], rule must have 16 parts, but have " + nparts  unless nparts is 16
-  rule = []
-  for riStr, i in parts
-    rule.push ri = parseInt(riStr, 10)
-    throw "Invalid value [" + ri + "] at position " + i + " in rule; must have values in range 0..15"  unless 0 <= ri < 16
-  new Rule rule
+  new Rule (parseInt(riStr, 10) for riStr in parts)
   # Rule to string. Revers to parse.
             
 exports.make_from_samples = make_from_samples =(samples, invariants) ->
