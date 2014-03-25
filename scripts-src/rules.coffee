@@ -12,9 +12,17 @@ exports.xor_transposition = xor_transposition = (x) ->
   (y ^ x for y in [0..15])
 
 
+list2array =
+  if Int8Array?
+    (table) -> new Int8Array(table)
+  else
+    (table) -> table
+
 exports.Rule = class Rule
-  constructor: (@table) ->
+  constructor: (table) ->
+    @table = list2array table
     @validate()
+    
   validate: ->
     if @table.length != 16
       throw new Error "Rule must have 16 components"
@@ -46,7 +54,7 @@ exports.Rule = class Rule
     rrule = (null for i in [0..15])  
     for i in [0..15]
       rrule[@table[i]] = i      
-    from_list rrule
+    new Rule rrule
         
   ###
   # Checks whether the rule is invertible
@@ -133,9 +141,7 @@ exports.Rule = class Rule
   # Applying these 2 rules will give the same result as applying original rule twice
   flashing_to_regular: ->
     if not @is_flashing() then throw new Error "Rule is not flashing"
-    transp_inv = Bits.tabulate Bits.negate    
-    return [ from_list(compose_transpositions(@table, transp_inv)),
-             from_list(compose_transpositions(transp_inv, @table)) ]
+    @stabilize_vacuum()
 
   #Convert a rule with unstable vacuum to a secuence of rules with stable vacuum
   #These rules represent evulution of difference between vacuum and pattern.
@@ -160,12 +166,14 @@ exports.Rule = class Rule
 
     for i in [0...period] by 1
       i1 = (i+1)%period
-      from_list compose3( stabilizers[i], @table, stabilizersR[i1] )
+      new Rule compose3( stabilizers[i], @table, stabilizersR[i1] )
       
   #Flashing rule is a rule that converts vacuum to its inverse and back, on each step
+  # (vacuum cycle is [0,15])
   is_flashing:  -> (@table[0] is 15) and (@table[15] is 0)
   
   #Vaccum-stable rules don't change empty field
+  # (vacuum cycle is [0])
   is_vacuum_stable: -> @table[0] is 0
 
     
@@ -173,11 +181,7 @@ exports.Rule = class Rule
 ###
 # Create rule object from list
 ###
-exports.from_list = from_list = 
-    if Int8Array?
-      (rule_list) -> new Rule( new Int8Array(rule_list))
-    else
-      (rule_list) -> new Rule(rule_list)
+exports.from_list = from_list = (t) -> new Rule(t)
               
 ###
 # Parse string rule
@@ -190,7 +194,7 @@ exports.parse = parse = (rule_str, separator = ",") ->
   for riStr, i in parts
     rule.push ri = parseInt(riStr, 10)
     throw "Invalid value [" + ri + "] at position " + i + " in rule; must have values in range 0..15"  unless 0 <= ri < 16
-  from_list rule
+  new Rule rule
   # Rule to string. Revers to parse.
             
 exports.make_from_samples = make_from_samples =(samples, invariants) ->
@@ -220,7 +224,7 @@ exports.make_from_samples = make_from_samples =(samples, invariants) ->
   for ri, i in rule
     if ri is null
       throw new Error "Samples incomplete. State " + i + " has no descendant"  
-  from_list rule
+  new Rule rule
 
 ###
 #Take samples, pairs ( (a,b)... ) and builds rotation-invariant function,
@@ -238,7 +242,7 @@ exports.make_rot_invariant_rule_from_samples = make_rot_invariant_rule_from_samp
   for ri, i in rule
     if ri is null
       throw new Error "Samples incomplete. State " + i + " has no descendant"  
-  from_list rule
+  new Rule rule
   
   
 #Operations over 4-bit blocks
@@ -277,22 +281,22 @@ exports.Bits = Bits =
   
  #Some rules from: http://psoup.math.wisc.edu/mcell/rullex_marg.html
 exports.NamedRules = NamedRules = 
-  tron: from_list [15,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0]
-  billiardBallMachine: from_list [0,8,4,3,2,5,9,7,1,6,10,11,12,13,14,15]
-  bounceGas: from_list [0,8,4,3,2,5,9,14, 1,6,10,13,12,11,7,15]
-  hppGas: from_list [0,8,4,12,2,10,9, 14,1,6,5,13,3,11,7,15]
-  rotations: from_list [0,2,8,12,1,10,9, 11,4,6,5,14,3,7,13,15]
-  rotations2: from_list [0,2,8,12,1,10,9, 13,4,6,5,7,3,14,11,15]
-  rotations3: from_list [0,4,1,10,8,3,9,11, 2,6,12,14,5,7,13,15]
-  rotations4: from_list [0,4,1,12,8,10,6,14, 2,9,5,13,3,11,7,15]
-  sand: from_list [0,4,8,12,4,12,12,13, 8,12,12,14,12,13,14,15]
-  stringThing: from_list [0,1,2,12,4,10,9,7,8, 6,5,11,3,13,14,15]
-  stringThing2: from_list [0,1,2,12,4,10,6,7,8, 9,5,11,3,13,14,15]
-  swapOnDiag: from_list [0,8,4,12,2,10,6,14, 1,9,5,13,3,11,7,15]
+  tron: new Rule [15,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0]
+  billiardBallMachine: new Rule [0,8,4,3,2,5,9,7,1,6,10,11,12,13,14,15]
+  bounceGas: new Rule [0,8,4,3,2,5,9,14, 1,6,10,13,12,11,7,15]
+  hppGas: new Rule [0,8,4,12,2,10,9, 14,1,6,5,13,3,11,7,15]
+  rotations: new Rule [0,2,8,12,1,10,9, 11,4,6,5,14,3,7,13,15]
+  rotations2: new Rule [0,2,8,12,1,10,9, 13,4,6,5,7,3,14,11,15]
+  rotations3: new Rule [0,4,1,10,8,3,9,11, 2,6,12,14,5,7,13,15]
+  rotations4: new Rule [0,4,1,12,8,10,6,14, 2,9,5,13,3,11,7,15]
+  sand: new Rule [0,4,8,12,4,12,12,13, 8,12,12,14,12,13,14,15]
+  stringThing: new Rule [0,1,2,12,4,10,9,7,8, 6,5,11,3,13,14,15]
+  stringThing2: new Rule [0,1,2,12,4,10,6,7,8, 9,5,11,3,13,14,15]
+  swapOnDiag: new Rule [0,8,4,12,2,10,6,14, 1,9,5,13,3,11,7,15]
   critters: make_rot_invariant_rule_from_samples [
       [0, 15], [15, 0], [1, 14], [14, 8], [3, 3], [6, 6]]
       
-  doubleRotate: from_list [0, 2, 8, 3, 1, 5, 6, 13, 4, 9, 10, 7, 12, 14, 11, 15]
+  doubleRotate: new Rule [0, 2, 8, 3, 1, 5, 6, 13, 4, 9, 10, 7, 12, 14, 11, 15]
   singleRotate: make_rot_invariant_rule_from_samples [
       [0, 0], [1, 2], [3, 3], [6, 6], [7, 7], [15, 15]]
                 
