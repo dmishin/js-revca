@@ -4,7 +4,7 @@
 math_util = require "./math_util"
 module_rules = require "./rules"
 {div, mod} = math_util
-{xor_transposition, Rules} = module_rules
+{xor_transposition, from_list} = module_rules
   
 ###
 A 2-dimensional array of bytes!, with row-first organization
@@ -150,6 +150,7 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
     @phase = 0
 
   transform_from: (x0, y0, rule) ->
+    rule_table = rule.table
     field = @field
     data = field.data
     w = field.width
@@ -163,7 +164,7 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
         #Code was inlined to increase performance
         b=a + dx; c=a + dy; d=b + dy;
         X = data[a] | (data[b] << 1) | (data[c] << 2) | (data[d] << 3)
-        Y = rule[X]
+        Y = rule_table[X]
         unless Y is X
           data[a] = Y & 1
           data[b] = (Y >> 1) & 1
@@ -175,7 +176,7 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
   #Combine given value by XOR with each block of the current phase.
   apply_xor: (value) ->
     xy0 = @phase 
-    @transform_from xy0, xy0, Rules.from_list(xor_transposition value)
+    @transform_from xy0, xy0, from_list(xor_transposition value)
     
   transform: (rule)->
     xy0 = @phase 

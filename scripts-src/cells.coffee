@@ -8,7 +8,7 @@ module_math_util = require "./math_util"
 module_reversible_ca = require "./reversible_ca"
 
 {parse_rle} = module_rle
-{Rules, Bits} = module_rules
+{Rule, Bits} = module_rules
 {Maximizer, mod, div} = module_math_util
 {MargolusNeighborehoodField, Array2d} = module_reversible_ca
 
@@ -188,7 +188,7 @@ exports.Cells = Cells =
       Cells.offset pattern, -x0, -y0
       return [pattern, x0, y0]
 
-    stable_rules = Rules.stabilize_vacuum rule
+    stable_rules = rule.stabilize_vacuum()
     vacuum_period = stable_rules.length
     pattern = @normalize pattern
                 
@@ -248,7 +248,7 @@ exports.Cells = Cells =
   # Rotate it, if rule is invariant in relation to rotation
   canonicalize_spaceship: (pattern, rule, dx, dy) ->
     if dx isnt 0 or dy isnt 0 #If it is a spaceship
-      if Rules.is_transposable_with rule, Bits.rotate #And if the rule allows rotation by 90
+      if rule.is_transposable_with(Bits.rotate) #And if the rule allows rotation by 90
         [dx, dy, t] = @_find_normalizing_rotation dx, dy
         pattern = @transform pattern, t
     [pattern, dx, dy]
@@ -295,7 +295,8 @@ exports.Point = Point =
 # Coordinates are not limited.
 # List must contain 3-tuples: x,y,v; where v!=0
 ###
-exports.evaluateLabelledCellList = evaluateLabelledCellList = (rule, cells, phase, on_join_labels=null) ->
+exports.evaluateLabelledCellList = evaluateLabelledCellList = (ruleObj, cells, phase, on_join_labels=null) ->
+  rule = ruleObj.table
   if rule[0] isnt 0
     throw new Error "Rule has instable vacuum and not supported."
   #Group cells into blocks by 4
@@ -368,7 +369,7 @@ exports.getDualTransform = getDualTransform = (rule)->
       return true
     for [name, tfm] in transforms
       blockTfm = transformMatrix2BitBlockMap tfm
-      if isDualBlockTfm rule, blockTfm, name
+      if isDualBlockTfm rule.table, blockTfm, name
         #Dual transform found!
         return [name, tfm, blockTfm]
     return [null]
@@ -391,7 +392,8 @@ exports.transformMatrix2BitBlockMap = transformMatrix2BitBlockMap = (tfm) ->
   return (tfmBitBlock(i) for i in [0..15])
 
       
-exports.evaluateCellList = evaluateCellList = (rule, cells, phase) ->
+exports.evaluateCellList = evaluateCellList = (ruleObj, cells, phase) ->
+  rule = ruleObj.table
   if rule[0] isnt 0
     throw new Error "Rule has instable vacuum and not supported."
   #Group cells into blocks by 4
@@ -440,7 +442,7 @@ exports.splitPattern = (rule, pattern, steps) ->
   label2group = {}
   group2labels = {}
   labelled_pattern = []
-  ruleset = Rules.stabilize_vacuum rule
+  ruleset = rule.stabilize_vacuum()
   #First, add label to each cell,
   #  and create individual group for each label.
   for [x,y], i in pattern

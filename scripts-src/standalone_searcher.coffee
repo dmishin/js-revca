@@ -1,7 +1,7 @@
 #!/usr/bin/env coffee
 fs = require "fs"
 {Cells, evaluateCellList, getDualTransform, splitPattern} = require "../scripts-src/cells"
-{Rules} = require "../scripts-src/rules"
+{parse} = require "../scripts-src/rules"
 stdio = require "stdio"
 {mod, div} = require "../scripts-src/math_util"
 {Array2d, MargolusNeighborehoodField} = require "./reversible_ca"
@@ -74,14 +74,14 @@ main = ->
 
   seedPercent = if opts['seed-percent']? then parseInt(opts['seed-percent'], 10)*0.01 else 0.5
 
-  rule = Rules.parse opts.rule
+  rule = parse opts.rule
   maxSteps = if opts["max-steps"]? then parseInt(opts["max-steps"],10) else 3000
   console.log "Width: #{width},height: #{height}"
   console.log "Seed size: #{seedWidth} x #{seedHeight}"
   console.log "Epoch duration: #{epochDuration}"
   console.log "Seed percent: #{seedPercent}"
 
-  stabRuleset = Rules.stabilize_vacuum rule
+  stabRuleset =  rule.stabilize_vacuum()
   console.log "Stable rulest has size #{stabRuleset.length}"
 
   field = new MargolusNeighborehoodField new Array2d width, height
