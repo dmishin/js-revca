@@ -1,8 +1,7 @@
 assert = require "assert"
 module_cells = require "../scripts-src/cells"
 {Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = module_cells
-module_rules = require "../scripts-src/rules"
-{Bits} = module_rules
+{NamedRules, from_list, Bits} = require "../scripts-src/rules"
 # mocha tests/test-math-utils.coffee --compilers coffee:coffee-script
 
 describe "Cells.areEqual(f1, f2)", ->
@@ -165,11 +164,11 @@ describe "transformMatrix2BitBlockMap( tfm )", ->
 describe "getDualTransform( rule )", ->
   {getDualTransform} = module_cells
   it "must return one of flips (hrz or vrt) for the single-rotation rule", ->
-    [name, tfm, blockTfm] = getDualTransform module_rules.NamedRules.singleRotate
+    [name, tfm, blockTfm] = getDualTransform NamedRules.singleRotate
     assert.ok (name in ["flipx", "flipy", "flipxy"]), "Name is #{name}, but must be one of flipXX"
 
   it "must return identity transform for the trivial non-changing rule", ->
-    rule = [0..15]
+    rule = from_list [0..15]
     [name, tfm, blockTfm] = getDualTransform rule
     assert.equal name, "iden"
     assert.deepEqual tfm, [1,0,0,1]
@@ -177,7 +176,7 @@ describe "getDualTransform( rule )", ->
 
 describe "Cells.getDualSpaceship( sship, rule, dx, dy) -> (sship', dx', dy')", ->
   it "must work for the single-rotation rule", ->
-    rule = module_rules.NamedRules.singleRotate
+    rule = NamedRules.singleRotate
     pattern = Cells.from_rle "3o$o$bo" #Conway glider
     expectedDualRle = "2bo$obo$b2o"
     dx = dy = 1

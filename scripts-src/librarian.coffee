@@ -106,7 +106,7 @@ findCanonicalForm = (record, rule) ->
     return pattern
     
   energyTreshold = 1e-3
-  stable_rules = rules.Rules.stabilize_vacuum rule
+  stable_rules = rule.stabilize_vacuum()
   vacuum_period = stable_rules.length
 
   bestPattern = curPattern = record.result.cells
@@ -170,9 +170,9 @@ main = ->
     process.exit 1
 
   if opts.rule
-    rule = rules.Rules.parse opts.rule
+    rule = rules.parse opts.rule
   else
-    rule = rules.Rules.from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+    rule = rules.from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
 
   #merge alll given libraries
   rle2record = mergeLibraries opts.args

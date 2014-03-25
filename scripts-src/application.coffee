@@ -1,7 +1,7 @@
 #Import modules
 # This applicaiton module will only work in the browser
   ##### Imports #####
-  {Rules, NamedRules, Rule2Name} = require "./rules"
+  {parse, NamedRules, Rule2Name} = require "./rules"
   {Cells, Point, splitPattern, getDualTransform, evaluateCellList} = require "./cells"
   {MargolusNeighborehoodField, Array2d} = require "./reversible_ca"
   {div, mod, line_pixels, rational2str, getReadableFileSizeString, cap} = require "./math_util"
@@ -171,7 +171,7 @@
 
         @library = new LibraryPane(E("pattern-report"), E("library-size"), this)
         @buffer = new BufferPane(E("active-pattern-canvas"))
-        @set_rule Rules.parse rule_string
+        @set_rule parse rule_string
         @ghost_click_detector = new GhostClickDetector()
         
         
@@ -358,7 +358,7 @@
         
       set_rule_str: (srule) ->
         try
-          @set_rule Rules.parse srule
+          @set_rule parse srule
         catch e
           alert "Failed to set rule: #{e}"
           
@@ -366,24 +366,24 @@
         @rule = rule
         @inverse_rule =
           try
-            Rules.reverse rule
+            rule.reverse()
           catch
             null
         
-        @ruleset = Rules.stabilize_vacuum rule
+        @ruleset = rule.stabilize_vacuum()
         @ruleset_phase = 0
         try
-          @inverse_ruleset = (Rules.reverse r for r in @ruleset)
+          @inverse_ruleset = (r.reverse() for r in @ruleset)
         catch e
           @inverse_ruleset = null
           
-        selectOption E("select-rule"), Rules.stringify(rule), ""
-        #console.log "Selection rule #{Rules.stringify(rule)}"
-        E("rule").value = Rules.stringify rule
+        selectOption E("select-rule"), rule.stringify(), ""
+        #console.log "Selection rule #{rule.stringify()}"
+        E("rule").value = rule.stringify()
         E("stable-sub-rules").innerHTML = ""
         show_rule_diagram rule, E("function_display")
         show_rule_properties rule, E("function_properties")
-        #console.log "Showed rule diagram for rule #{Rules.stringify(rule)}"
+        #console.log "Showed rule diagram for rule #{rule.stringify()}"
 
         #By default, enable rulesets.        
         if @ruleset.length > 1
@@ -403,7 +403,7 @@
             @ruleset_phase = mod @generation, @ruleset.length
             @showRulesetPhase()
         if (enabled and not @ruleset_enabled) or (not enabled and @ruleset_enabled)
-          vacuum_cycle = Rules.vacuum_cycle @rule
+          vacuum_cycle = @rule.vacuum_cycle()
           @gol.apply_xor vacuum_cycle[@ruleset_phase]
           @updateCanvas()
         @ruleset_enabled = enabled
@@ -422,12 +422,12 @@
         .end()
 
         dom.tag("tbody")
-        vacuum_cycle = Rules.vacuum_cycle @rule
+        vacuum_cycle = @rule.vacuum_cycle()
         for srule, i in @ruleset
            dom.tag("tr")
               .tag("td").text(i).end()
               .tag("td").tag("span").CLASS(cells_icon vacuum_cycle[i]).end().end()
-              .tag("td").text(Rules.stringify srule).end()
+              .tag("td").text(srule.stringify()).end()
               .end()
         dom.end().end()
         E("stable-sub-rules").appendChild dom.finalize()
@@ -504,7 +504,7 @@
             
           if keys.rule?
             try
-              r = NamedRules[ keys.rule ] ? Rules.parse(keys.rule, ",")
+              r = NamedRules[ keys.rule ] ? parse(keys.rule, ",")
               @set_rule r
             catch e
               alert "Incorrect rule: #{keys.rule}: #{e}"
@@ -538,7 +538,7 @@
       encode_state_in_url: ->
         urlArgs = []
 
-        srule = Rules.stringify @rule
+        srule = @rule.stringify()
         urlArgs.push "rule=#{srule}"
         
         fld = @gol.field
@@ -577,7 +577,7 @@
           
       update_controls: ->
           #Update GUI controls
-          E("rule").value = Rules.stringify @rule
+          E("rule").value = @rule.stringify()
 
           selectOrAddOption E("speed-show-every"), @step_size
           selectOrAddOption E("speed-frame-delay"), @step_delay, "#{@step_delay}ms"
@@ -1071,17 +1071,18 @@
   fill_rules = (predefined_rules) ->
     opts = E("select-rule").options
     for [name, rule], i in predefined_rules
-      opts[i] = new Option(name, Rules.stringify(rule))
+      opts[i] = new Option(name, rule.stringify())
     opts[opts.length] = new Option("(User Defined)", "")
     
   #//////////////////////////////////////////////////////////////////////////////
   # Rule analysis
   #//////////////////////////////////////////////////////////////////////////////
   cells_icon = (value) -> "cellicon icon-cells_#{ value.toString(16) }"
-  show_rule_diagram = (rule, element) ->
+  show_rule_diagram = (ruleObj, element) ->
       #rule must be array of 1 6 integers
-      throw new Error ("Function must be array of 16 elements, not\n" + rule)  unless rule.length is 16
-
+      rule = ruleObj.table
+      ruleObj.validate()
+      
       dom = new DomBuilder
       
       elements = [[("0000"), ("1111")],
@@ -1110,11 +1111,12 @@
 
   show_rule_properties = (rule, element) ->
     ######## Analysis part #########
-    symmetries = Rules.find_symmetries rule
-    population_invariance = Rules.invariance_type rule
-    invertible = Rules.is_invertible rule
+
+    symmetries = rule.find_symmetries()
+    population_invariance = rule.invariance_type()
+    invertible = rule.is_invertible()
     dualTransform = getDualTransform rule
-    vacuum_cycle = Rules.vacuum_cycle rule
+    vacuum_cycle =  rule.vacuum_cycle()
     ######### Report generatio part ############
     dom = new DomBuilder
 
@@ -1261,8 +1263,8 @@
       @updateLibrarySize()
       
     defaultLibraryForRule: (rule) ->
-      sRule = Rules.stringify rule
-      Rule2Name[ Rules.stringify rule ] ? "Default:[#{sRule}]"
+      sRule =  rule.stringify()
+      Rule2Name[ rule.stringify() ] ? "Default:[#{sRule}]"
       
     #True, if the library already have this analysis result
     has: (result)->
@@ -1496,16 +1498,16 @@
         handler e
 
     fill_rules [
-      ["Billiard Ball Machine", Rules.parse("0;8;4;3;2;5;9;7;1;6;10;11;12;13;14;15",";") ]
-      ["Bounce gas", Rules.parse("0;8;4;3;2;5;9;14; 1;6;10;13;12;11;7;15",";")],
-      ["HPP Gas", Rules.parse("0;8;4;12;2;10;9; 14;1;6;5;13;3;11;7;15",";")],
-      ["Rotations", Rules.parse("0;2;8;12;1;10;9; 11;4;6;5;14;3;7;13;15",";")],
-      ["Rotations II", Rules.parse("0;2;8;12;1;10;9; 13;4;6;5;7;3;14;11;15",";")],
-      ["Rotations III", Rules.parse("0;4;1;10;8;3;9;11; 2;6;12;14;5;7;13;15",";")],
-      ["Rotations IV", Rules.parse("0;4;1;12;8;10;6;14; 2;9;5;13;3;11;7;15",";")],
+      ["Billiard Ball Machine", parse("0;8;4;3;2;5;9;7;1;6;10;11;12;13;14;15",";") ]
+      ["Bounce gas", parse("0;8;4;3;2;5;9;14; 1;6;10;13;12;11;7;15",";")],
+      ["HPP Gas", parse("0;8;4;12;2;10;9; 14;1;6;5;13;3;11;7;15",";")],
+      ["Rotations", parse("0;2;8;12;1;10;9; 11;4;6;5;14;3;7;13;15",";")],
+      ["Rotations II", parse("0;2;8;12;1;10;9; 13;4;6;5;7;3;14;11;15",";")],
+      ["Rotations III", parse("0;4;1;10;8;3;9;11; 2;6;12;14;5;7;13;15",";")],
+      ["Rotations IV", parse("0;4;1;12;8;10;6;14; 2;9;5;13;3;11;7;15",";")],
       ["String Thing", NamedRules.stringThing],
-      ["String Thing II", Rules.parse("0;1;2;12;4;10;6;7;8; 9;5;11;3;13;14;15",";")],
-      ["Swap On Diag", Rules.parse("0;8;4;12;2;10;6;14; 1;9;5;13;3;11;7;15",";")],
+      ["String Thing II", parse("0;1;2;12;4;10;6;7;8; 9;5;11;3;13;14;15",";")],
+      ["Swap On Diag", parse("0;8;4;12;2;10;6;14; 1;9;5;13;3;11;7;15",";")],
       ["Critters", NamedRules.critters],
       ["Tron", NamedRules.tron],
       ["Double Rotate", NamedRules.doubleRotate],

@@ -8,7 +8,7 @@ module_math_util = require "./math_util"
 module_reversible_ca = require "./reversible_ca"
 
 {parse_rle} = module_rle
-{Rules, Bits} = module_rules
+{Rule, Bits} = module_rules
 {Maximizer, mod, div} = module_math_util
 {MargolusNeighborehoodField, Array2d} = module_reversible_ca
 
@@ -188,7 +188,7 @@ exports.Cells = Cells =
       Cells.offset pattern, -x0, -y0
       return [pattern, x0, y0]
 
-    stable_rules = Rules.stabilize_vacuum rule
+    stable_rules = rule.stabilize_vacuum()
     vacuum_period = stable_rules.length
     pattern = @normalize pattern
                 
@@ -248,7 +248,7 @@ exports.Cells = Cells =
   # Rotate it, if rule is invariant in relation to rotation
   canonicalize_spaceship: (pattern, rule, dx, dy) ->
     if dx isnt 0 or dy isnt 0 #If it is a spaceship
-      if Rules.is_transposable_with rule, Bits.rotate #And if the rule allows rotation by 90
+      if rule.is_transposable_with(Bits.rotate) #And if the rule allows rotation by 90
         [dx, dy, t] = @_find_normalizing_rotation dx, dy
         pattern = @transform pattern, t
     [pattern, dx, dy]
@@ -295,7 +295,8 @@ exports.Point = Point =
 # Coordinates are not limited.
 # List must contain 3-tuples: x,y,v; where v!=0
 ###
-exports.evaluateLabelledCellList = evaluateLabelledCellList = (rule, cells, phase, on_join_labels=null) ->
+exports.evaluateLabelledCellList = evaluateLabelledCellList = (ruleObj, cells, phase, on_join_labels=null) ->
+  rule = ruleObj.table
   if rule[0] isnt 0
     throw new Error "Rule has instable vacuum and not supported."
   #Group cells into blocks by 4
@@ -342,38 +343,8 @@ exports.evaluateLabelledCellList = evaluateLabelledCellList = (rule, cells, phas
       if d and (d isnt merged_label) then on_join_labels merged_label, d
   transformed
 
-#Returns dual transformation matrix, or none, if dual transform does not exists
-# Matrix is returned as array of 4 elements, [t00, t01, t10, t11]
-exports.getDualTransform = getDualTransform = (rule)->
-    #All possible transfomation matrices and their names
-    transforms = [
-      ["iden",  [1,0,0,1 ], ],
-      ["rot90", [0,1,-1,0]],
-      ["rot180", [-1,0,0,-1]],
-      ["rot270", [0,-1,1,0]],
-      ["flipx", [-1,0,0,1]],
-      ["flipy", [1,0,0,-1]],
-      ["flipxy", [0,1,1,0]],
-      ["flipixy", [0,-1,-1,0]]]
-
-    isDualBlockTfm = (f, t, name) ->
-      # check that
-      # T F T^-1 === F^-1
-      #   (i.e. duality condition)
-      # It can be re-forlumated as:
-      # FTF === T
-      for x in [0..15]
-        if f[t[f[x]]] isnt t[x]
-          return false
-      return true
-    for [name, tfm] in transforms
-      blockTfm = transformMatrix2BitBlockMap tfm
-      if isDualBlockTfm rule, blockTfm, name
-        #Dual transform found!
-        return [name, tfm, blockTfm]
-    return [null]
-      
-#Returns array of 16 items: transposition of possible bit block values, induced by the affine transform.       
+#Returns array of 16 items: transposition of possible bit block values,
+# induced by the affine transform.       
 exports.transformMatrix2BitBlockMap = transformMatrix2BitBlockMap = (tfm) ->
   boxPoints = [[-1,0], [0,0], [-1,-1], [0,-1]] #Coordinates of cells inside one block; assuming that rotation center is at (-1/2, -1/2)
   boxPointsT = Cells.transform boxPoints, tfm, false  #need_normalize
@@ -390,8 +361,41 @@ exports.transformMatrix2BitBlockMap = transformMatrix2BitBlockMap = (tfm) ->
     return y
   return (tfmBitBlock(i) for i in [0..15])
 
+tfmRecord = (name, mtx) -> [name, mtx, transformMatrix2BitBlockMap mtx]
+transforms = [
+  tfmRecord("iden",   [1,0,0,1 ]),
+  tfmRecord("rot90",  [0,1,-1,0]),
+  tfmRecord("rot180", [-1,0,0,-1]),
+  tfmRecord("rot270", [0,-1,1,0]),
+  tfmRecord("flipx",  [-1,0,0,1]),
+  tfmRecord("flipy",  [1,0,0,-1]),
+  tfmRecord("flipxy", [0,1,1,0]),
+  tfmRecord("flipixy",[0,-1,-1,0])]
+
+#Returns dual transformation matrix, or none, if dual transform does not exists
+# Matrix is returned as array of 4 elements, [t00, t01, t10, t11]
+exports.getDualTransform = getDualTransform = (rule)->
+    #All possible transfomation matrices and their names
+    isDualBlockTfm = (f, t, name) ->
+      # check that
+      # T F T^-1 === F^-1
+      #   (i.e. duality condition)
+      # It can be re-forlumated as:
+      # FTF === T
+      for x in [0..15]
+        if f[t[f[x]]] isnt t[x]
+          return false
+      return true
+    for [name, tfm, blockTfm] in transforms
+      if isDualBlockTfm rule.table, blockTfm, name
+        #Dual transform found!
+        return [name, tfm, blockTfm]
+    return [null]
       
-exports.evaluateCellList = evaluateCellList = (rule, cells, phase) ->
+
+      
+exports.evaluateCellList = evaluateCellList = (ruleObj, cells, phase) ->
+  rule = ruleObj.table
   if rule[0] isnt 0
     throw new Error "Rule has instable vacuum and not supported."
   #Group cells into blocks by 4
@@ -440,7 +444,7 @@ exports.splitPattern = (rule, pattern, steps) ->
   label2group = {}
   group2labels = {}
   labelled_pattern = []
-  ruleset = Rules.stabilize_vacuum rule
+  ruleset = rule.stabilize_vacuum()
   #First, add label to each cell,
   #  and create individual group for each label.
   for [x,y], i in pattern

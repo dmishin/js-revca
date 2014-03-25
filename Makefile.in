@@ -9,7 +9,7 @@ scripts/minified.js: scripts/bundle.js
 	uglifyjs --screw-ie8 scripts/bundle.js > scripts/minified.js
 
 test:
-	mocha tests/test*.coffee --compilers coffee:coffee-script
+	mocha tests/test*.coffee --compilers coffee:coffee-script/register
 
 scripts/bundle.js: everything
 	browserify scripts/application.js -o scripts/bundle.js

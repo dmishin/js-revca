@@ -1,11 +1,12 @@
 assert = require "assert"
 {Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = require "../scripts-src/cells"
+{from_list} = require "../scripts-src/rules"
 
 
 
 describe "splitPattern( rule, pattern, steps): separate non-interacting sub-patterns", ->
   #Single rotation rule.
-  rule = [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+  rule = from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
   it "must work with simple P12 glider o$obo$o", ->
     fig = Cells.from_rle "o$obo$o"
     groups = splitPattern rule, fig, 12
@@ -32,7 +33,7 @@ describe "splitPattern( rule, pattern, steps): separate non-interacting sub-patt
 
 describe "evalueateCellList( rule, pattern, phase ): evaluate pattern, given by a cell list", ->
   #Single rotation rule.
-  rule = [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+  rule = from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
   it "must tolerate empty list", ->
     out = evaluateCellList rule, [], 0
     assert.deepEqual out, []
@@ -59,7 +60,7 @@ describe "evalueateCellList( rule, pattern, phase ): evaluate pattern, given by 
     
 describe "evaluateLabelledCellList( rule, pattern, phase ): evaluate pattern, given by a cell list", ->
   #Single rotation rule.
-  rule = [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+  rule = from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
   it "must tolerate empty list", ->
     out = evaluateCellList rule, [], 0
     assert.deepEqual out, []
