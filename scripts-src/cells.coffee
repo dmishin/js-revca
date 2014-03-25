@@ -343,38 +343,8 @@ exports.evaluateLabelledCellList = evaluateLabelledCellList = (ruleObj, cells, p
       if d and (d isnt merged_label) then on_join_labels merged_label, d
   transformed
 
-#Returns dual transformation matrix, or none, if dual transform does not exists
-# Matrix is returned as array of 4 elements, [t00, t01, t10, t11]
-exports.getDualTransform = getDualTransform = (rule)->
-    #All possible transfomation matrices and their names
-    transforms = [
-      ["iden",  [1,0,0,1 ], ],
-      ["rot90", [0,1,-1,0]],
-      ["rot180", [-1,0,0,-1]],
-      ["rot270", [0,-1,1,0]],
-      ["flipx", [-1,0,0,1]],
-      ["flipy", [1,0,0,-1]],
-      ["flipxy", [0,1,1,0]],
-      ["flipixy", [0,-1,-1,0]]]
-
-    isDualBlockTfm = (f, t, name) ->
-      # check that
-      # T F T^-1 === F^-1
-      #   (i.e. duality condition)
-      # It can be re-forlumated as:
-      # FTF === T
-      for x in [0..15]
-        if f[t[f[x]]] isnt t[x]
-          return false
-      return true
-    for [name, tfm] in transforms
-      blockTfm = transformMatrix2BitBlockMap tfm
-      if isDualBlockTfm rule.table, blockTfm, name
-        #Dual transform found!
-        return [name, tfm, blockTfm]
-    return [null]
-      
-#Returns array of 16 items: transposition of possible bit block values, induced by the affine transform.       
+#Returns array of 16 items: transposition of possible bit block values,
+# induced by the affine transform.       
 exports.transformMatrix2BitBlockMap = transformMatrix2BitBlockMap = (tfm) ->
   boxPoints = [[-1,0], [0,0], [-1,-1], [0,-1]] #Coordinates of cells inside one block; assuming that rotation center is at (-1/2, -1/2)
   boxPointsT = Cells.transform boxPoints, tfm, false  #need_normalize
@@ -390,6 +360,38 @@ exports.transformMatrix2BitBlockMap = transformMatrix2BitBlockMap = (tfm) ->
       y = y | (1 << cellsTransposition[i] ) #add mask of the transformed point to the output
     return y
   return (tfmBitBlock(i) for i in [0..15])
+
+tfmRecord = (name, mtx) -> [name, mtx, transformMatrix2BitBlockMap mtx]
+transforms = [
+  tfmRecord("iden",   [1,0,0,1 ]),
+  tfmRecord("rot90",  [0,1,-1,0]),
+  tfmRecord("rot180", [-1,0,0,-1]),
+  tfmRecord("rot270", [0,-1,1,0]),
+  tfmRecord("flipx",  [-1,0,0,1]),
+  tfmRecord("flipy",  [1,0,0,-1]),
+  tfmRecord("flipxy", [0,1,1,0]),
+  tfmRecord("flipixy",[0,-1,-1,0])]
+
+#Returns dual transformation matrix, or none, if dual transform does not exists
+# Matrix is returned as array of 4 elements, [t00, t01, t10, t11]
+exports.getDualTransform = getDualTransform = (rule)->
+    #All possible transfomation matrices and their names
+    isDualBlockTfm = (f, t, name) ->
+      # check that
+      # T F T^-1 === F^-1
+      #   (i.e. duality condition)
+      # It can be re-forlumated as:
+      # FTF === T
+      for x in [0..15]
+        if f[t[f[x]]] isnt t[x]
+          return false
+      return true
+    for [name, tfm, blockTfm] in transforms
+      if isDualBlockTfm rule.table, blockTfm, name
+        #Dual transform found!
+        return [name, tfm, blockTfm]
+    return [null]
+      
 
       
 exports.evaluateCellList = evaluateCellList = (ruleObj, cells, phase) ->
