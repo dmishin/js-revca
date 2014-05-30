@@ -1,7 +1,7 @@
 #!/usr/bin/env coffee
 fs = require "fs"
 {Cells, evaluateCellList, getDualTransform, splitPattern} = require "./cells"
-{parse} = require "./rules"
+{parse, NamedRules} = require "./rules"
 stdio = require "stdio"
 {mod, div} = require "./math_util"
 {Array2d, MargolusNeighborehoodField} = require "./reversible_ca"
@@ -63,8 +63,7 @@ main = ->
     process.stderr.write "Output file not specified\n"
     process.exit 1
   outputPath = opts.args[0]
-    
-  console.log opts
+
   #Now extract the values
   [width, height] = parseSizePair opts.size, [256, 256]
   [seedWidth, seedHeight] = parseSizePair opts['seed-size'], [width>>1, height>>1]
@@ -72,7 +71,15 @@ main = ->
 
   seedPercent = if opts['seed-percent']? then parseInt(opts['seed-percent'], 10)*0.01 else 0.5
 
-  rule = parse opts.rule
+  if /(\d+,){15}\d+/.test opts.rule
+    rule = parse opts.rule
+  else
+    rule = NamedRules[opts.rule]
+    unless rule?
+      process.stderr.write "Incorrect rule. Must be either 16 comma-separated integers or a name. Availabele names are:\n"
+      for ruleName of NamedRules
+        process.stderr.write " - #{ruleName}\n"
+      process.exit 1
   maxSteps = if opts["max-steps"]? then parseInt(opts["max-steps"],10) else 3000
   console.log "Width: #{width},height: #{height}"
   console.log "Seed size: #{seedWidth} x #{seedHeight}"
