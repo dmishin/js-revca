@@ -1459,7 +1459,7 @@
         x0 = gol.snap_below x
         y0 = gol.snap_below y
         fig = f.pick_pattern_at x, y, x0, y0, true, @search_radius, @max_size #pick and erase
-        if fig.length <= @max_size
+        if fig.length < @max_size
           @on_pattern fig
       for y in [0...@search_area] by 1
         for x in [0...f.width] by 1
