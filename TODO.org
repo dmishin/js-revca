@@ -13,7 +13,7 @@
 **** DONE Random fill
 **** DONE Disable selection layer, when it is not used (it slows down output)
 **** DONE Eraser tool
-*** WONTDO ? Scrolling, continuous player
+*** WONTDO Scrolling, continuous player
     Instead, SVG-based player was implemented.
 
 ** DONE Change field size
@@ -36,11 +36,11 @@
     - SYmmetries
     - Invariants (population)
     - Dula transform
-** DONE Glider analyser
-   Select a glider and then find its canonical form, period and speed
+** DONE Spaceship analyser
+   Select a spaceship and then find its canonical form, period and speed
    
 ** DONE Make key modules work both in browser and in Node.js
-
+   
 ** Rule stabilization
    Status: feature is implemented and added to main branch
    vacuum stabilization
