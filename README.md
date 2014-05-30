@@ -36,6 +36,16 @@ Source
 
 Most of the code is written in CoffeeScript.
 
+Requirements
+------------
+To build minified code, following NPM tools are required:
+1. *coffee-script*: compile coffescript code
+2. *browserify*: prepare application code for using in browser
+2. *uglify-js*: minification of the JS
+3. *mocha*: required for running tests
+
+These tools are nto included, and must be installed separately.
+
 
 Credits
 -------

@@ -1,0 +1,8 @@
+# Dependences
+node_modules
+
+# Temporal files
+*~
+
+# Other files
+manual_tests.js
