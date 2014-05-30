@@ -46,8 +46,8 @@ onPattern = (rule, maxSteps) -> (pattern) ->
     if result.period?
       if result.dx isnt 0 or result.dy isnt 0
         #@library.put result, rule
-        console.log Cells.to_rle result.cells
-
+        console.log result.period + "\t" + (Cells.to_rle result.cells)
+	
         # console.log "#### Added ss: dx=#{result.
 ##################
 # top-level code #
@@ -98,8 +98,9 @@ main = ->
     for generation in [0...epochDuration] by vacuumPeriod
       for subRule in stabRuleset
         field.transform subRule
-    #pick spaceships
-    catcher.scan field
+      #pick spaceships
+      catcher.scan field
 main()
 
 #0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15
+#./scripts-src/standalone_searcher.coffee -r 0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15 aaa
