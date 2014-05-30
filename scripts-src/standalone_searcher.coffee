@@ -89,7 +89,10 @@ main = ->
   console.log "Appending data to #{outputPath}"
   outputStream = fs.openSync outputPath, 'a'
   maxLen = 20
-  
+
+  timeStart = Date.now()
+  patternsCount = 0
+
   while true
     console.log "Epoch # #{epochIndex} started"
     epochIndex += 1
@@ -102,8 +105,12 @@ main = ->
       #pick spaceships
       #catcher.scan field
       scanForPatterns field, vacuumPeriod, 4, maxLen, (pattern)->
-        fs.write outputStream, JSON.stringify(pattern)+"\n"
-        console.log pattern.length
+        fs.write outputStream, JSON.stringify({g: generation, p:pattern})+"\n"
+        #console.log pattern.length
+        patternsCount += 1
+    console.log "#################################"
+    performance = patternsCount / (Date.now() - timeStart) * 1000
+    console.log "Throughput: #{performance.toFixed(2)} patterns/s" 
 
 main()
 
