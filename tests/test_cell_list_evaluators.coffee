@@ -31,7 +31,7 @@ describe "splitPattern( rule, pattern, steps): separate non-interacting sub-patt
     assert.ok (expected3 in rles), "Bottom glider must be present in #{rles_text}"
 
 
-describe "evalueateCellList( rule, pattern, phase ): evaluate pattern, given by a cell list", ->
+describe "evaluateCellList( rule, pattern, phase ): evaluate pattern, given by a cell list", ->
   #Single rotation rule.
   rule = from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
   it "must tolerate empty list", ->
@@ -52,6 +52,15 @@ describe "evalueateCellList( rule, pattern, phase ): evaluate pattern, given by 
     
   it "must successfully evaluate a simple glider", ->
     glider = Cells.from_rle "o$obo$o" #period 12 glider
+    fig = glider
+    for i in [0...12]
+      fig = evaluateCellList rule, fig, i%2
+    glider1 = Cells.sortXY fig
+    assert.deepEqual( Cells.offset(glider, 2, 0), glider1 )
+    
+  it "must work, when cell indices are negative", ->
+    glider = Cells.from_rle "o$obo$o" #period 12 glider
+    Cells.offset glider, -100, -200
     fig = glider
     for i in [0...12]
       fig = evaluateCellList rule, fig, i%2

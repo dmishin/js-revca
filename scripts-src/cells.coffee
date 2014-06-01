@@ -9,7 +9,7 @@ module_reversible_ca = require "./reversible_ca"
 
 {parse_rle} = module_rle
 {Rule, Bits} = module_rules
-{Maximizer, mod, div} = module_math_util
+{Maximizer, mod2} = module_math_util
 {MargolusNeighborehoodField, Array2d} = module_reversible_ca
 
 exports.Cells = Cells =
@@ -58,8 +58,8 @@ exports.Cells = Cells =
   #Move cells to origin    
   normalizeXY: (lst1) ->
     [xmin, ymin] = @bounds lst1
-    xmin -= mod(xmin, 2)
-    ymin -= mod(ymin, 2)
+    xmin -= mod2 xmin
+    ymin -= mod2 ymin
     @offset lst1, -xmin, -ymin
 
   #Shift all cells by 1 and normalize coordinates
@@ -179,7 +179,7 @@ exports.Cells = Cells =
     max_size = options.max_size ? 1024
     
     snap_below = (x,generation) ->
-      x - mod(x + generation, 2)
+      x - mod2(x + generation)
                         
     offsetToOrigin = (pattern, bounds, generation) ->
       [x0,y0] = bounds
@@ -303,7 +303,7 @@ exports.evaluateLabelledCellList = evaluateLabelledCellList = (ruleObj, cells, p
   # Indices are:
   # 0 1
   # 2 3
-  block2cells = {} #block key -> [val1, val2, val3, val4]
+  block2cells = {} #block key -> [val1, val2, val3, val4, block_index_x, block_index_y]
   
   #Collect cells by blocks
   for [x,y,v] in cells
@@ -402,24 +402,30 @@ exports.evaluateCellList = evaluateCellList = (ruleObj, cells, phase) ->
   # Indices are:
   # 0 1
   # 2 3
-  block2cells = {} #block key -> [val1, val2, val3, val4]
+  block2cells = {} #block key -> [block state, block_index_x, block_index_y]
   
   #Collect cells by blocks
   for [x,y] in cells
     x+=phase
     y+=phase
-    b_x = x >> 1 #faster than x - dx
+    #indices of a block
+    b_x = x >> 1
     b_y = y >> 1
+    #block key
     key = ""+b_x+" "+b_y
+    
     block = block2cells[key] ? (block2cells[key] = [0, b_x, b_y])
-    block[0] |= (1 << ((x&1) + (y&1)*2)) #Mask of this cell in the block
+    #put this cell to the block
+    block[0] |= (1 << ((x&1) + (y&1)*2))
     
   #Transform and de-collect them
   transformed = []
   for _, [x_code, b_x, b_y] of block2cells
     b_x = (b_x<<1) - phase
     b_y = (b_y<<1) - phase
+    #Get transformed block state
     y_code = rule[ x_code ]
+    #and decompose block into separate cells
     if y_code & 1
       transformed.push [b_x, b_y]
     if y_code & 2
