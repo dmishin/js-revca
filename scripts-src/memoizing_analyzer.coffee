@@ -4,7 +4,7 @@
 # Each pattern is an array of [x,y] pairs
 {Maximizer, mod, div} = require "./math_util"
 {Bits} = require "./rules"
-{Cells, transformMatrix2BitBlockMap} = require "./cells"
+{Cells, evaluateCellList, transformMatrix2BitBlockMap} = require "./cells"
 #Creates a string for the pattern.
 patternKey = (pattern) -> JSON.stringify pattern  
 
@@ -33,7 +33,27 @@ exports.MemoAnalyser = class MemoAnalyser
     @maxSize = 100
     @symmetries = ruleSpatialSymmetries rule
 
-  analyze: (pattern) -> #result
+  registerResult: (pattern, result, mainKey) ->
+      #Register a pattern with given result, under all keys
+      pattern2result = @pattern2result
+      pattern2result[mainKey] = result
+      for tfm in @symmetries
+        transformedKey = patternKey Cells.transform pattern, tfm
+        if transformedKey isnt mainKey
+          #assert that key either not present, or refers the same result
+          #if pattern2result[transformedKey]?
+          #  
+          pattern2result[transformedKey] = result
+
+  unwrapResult: (result) ->
+      console.log "#### Result found:"+JSON.stringify(result)
+      #Result may be a real result object, or a reference to another. Dereference, if needed
+      if (referenced = result.refersTo)?
+        @unwrapResult referenced
+      else
+        result
+
+  analyse: (pattern) -> #result
     #Perform analysys of the pattern. 
     #Pattern must correspond to the initial phase of the ruleset
 
@@ -48,24 +68,6 @@ exports.MemoAnalyser = class MemoAnalyser
       x - mod(x + fieldPhase, 2)
 
 
-    registerResult: (pattern, result, mainKey) ->
-      #Register a pattern with given result, under all keys
-      pattern2result = @pattern2result
-      pattern2result[mainKey] = result
-      for tfm in @symmetries
-        transformedKey = patternKey Cells.transform pattern, tfm
-        if transformedKey isnt mainKey
-          #assert that key either not present, or refers the same result
-          #if pattern2result[transformedKey]?
-          #  
-          pattern2result[transformedKey] = result
-
-    unwrapResult: (result) ->
-      #Result may be a real result object, or a reference to another. Dereference, if needed
-      if (referenced = result.refersTo)?
-        @unwrapResult referenced
-      else
-        result
 
     #modifies the pattern inplace. Returns coordinates of the pattern's origin
     translateToOrigin = (pattern, fieldPhase) ->
@@ -77,7 +79,7 @@ exports.MemoAnalyser = class MemoAnalyser
 
     ruleset = @ruleset
     vacuum_period = ruleset.length
-    pattern = @normalize pattern
+    pattern = Cells.normalize pattern
                 
     #Shift pattern to the origin. Initialfield phase is always 0.
     translateToOrigin pattern, 0
@@ -87,7 +89,7 @@ exports.MemoAnalyser = class MemoAnalyser
     if (result = @pattern2result[key])?
       return @unwrapResult result
     else
-      result = {} #result would be calculated later - now only make an empty placeholder
+      result = {resolution:null} #result would be calculated later - now only make an empty placeholder
       @registerResult pattern, result, key
                 
     bestPatternSearch = new Maximizer Cells.energy
@@ -122,14 +124,16 @@ exports.MemoAnalyser = class MemoAnalyser
       #Maybe, we already had this value?
       if (knownResult = @pattern2result[key])?
         #Make current result to point to the cached one.
-        result.refersTo = knownResult 
-        return @unwrapResult knownResult
+        if knownResult.resolution isnt null
+          console.log "#### known result:"+JSON.stringify(knownResult)
+          result.refersTo = knownResult 
+          return @unwrapResult knownResult
       else
         #previously unknown pattern. Register its result (not yet calculated)
         @registerResult curPattern, result, key
 
       #maybe, analysis has finished?
-      if @areEqual pattern, curPattern
+      if Cells.areEqual pattern, curPattern
         return @makePeriodFoundResult result, dx, dy, iter, bestPatternSearch.getArg()
 
       #no cycle. Fine.
@@ -144,6 +148,7 @@ exports.MemoAnalyser = class MemoAnalyser
     @makeCycleNotFoundResult result
 
   makePeriodFoundResult: (result, dx, dy, period, bestPattern)->
+    #console.log "#### period found"
     [bestPattern, result.dx, result.dy] =
          Cells.canonicalize_spaceship bestPattern, @rule, dx, dy
     result.period = period
@@ -151,12 +156,15 @@ exports.MemoAnalyser = class MemoAnalyser
     return result
 
   makePatternToWideResult: (result)->
+    #console.log "#### pattern too wide"
     result.resolution = "pattern too large"
     result
 
   makePatternTooBigResult: (result)->   
+    #console.log "#### pattern too big"
     result.resolution = "pattern too populated"
     result
   makeCycleNotFoundResult: (result)->
+    #console.log "#### nop cycle found"
     result.resolution = "cycle not found"
     result
