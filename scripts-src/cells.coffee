@@ -37,6 +37,15 @@ exports.Cells = Cells =
       y0 = Math.min(y0, y)
       y1 = Math.max(y1, y)
     [x0, y0, x1, y1]
+  #Returns bounds (inclusive) for the cell list
+  topLeft: (lst) ->
+    return [0, 0]  if lst.length is 0
+    [x0, y0] = lst[0]
+    for i in [1 ... lst.length] by 1
+      [x,y] = lst[i]
+      x0 = Math.min(x0, x)
+      y0 = Math.min(y0, y)
+    [x0, y0]
   
   transform: (lst, tfm, need_normalize = true) ->
     #transform cell block: rotate or flip
