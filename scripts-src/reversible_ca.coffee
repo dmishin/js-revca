@@ -3,7 +3,7 @@
 #Import section: add support for node.js
 math_util = require "./math_util"
 module_rules = require "./rules"
-{div, mod} = math_util
+{mod, mod2} = math_util
 {xor_transposition, from_list} = module_rules
   
 ###
@@ -181,22 +181,22 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
   transform: (rule)->
     xy0 = @phase 
     @transform_from xy0, xy0, rule
-    @phase = mod @phase+1, 2
+    @phase = mod2 @phase+1
 
   untransform: (irule) ->
-    xy0 = mod @phase-1, 2
+    xy0 = mod2 @phase-1
     @transform_from xy0, xy0, irule
-    @phase = mod @phase-1, 2
+    @phase = mod2 @phase-1
 
     
   clear: ->
     @field.fill 0
 
   snap_below: (x) ->
-    x - mod(x + @phase, 2)
+    x - mod2(x + @phase)
 
   snap_upper: (x) ->
-    x + mod(x + @phase, 2)
+    x + mod2(x + @phase)
 
   snap_box: ([x0,y0,x1,y1]) ->
     [@snap_below(x0), @snap_below(y0), @snap_upper(x1), @snap_upper(y1)]

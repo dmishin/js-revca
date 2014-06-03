@@ -32,6 +32,12 @@
   ###
   exports.div = (x, y) -> (x / y) | 0
 
+  #mathematical [x/2]
+  #for negative values, returns: div2(-1) = -1, div2(-2) = -1
+  exports.div2 = (x) -> x >> 1
+  #mathematical modulo 2
+  exports.mod2 = (x) -> x & 1
+
   #integer sign.
   exports.isign = isign = (x) ->
     if x > 0
