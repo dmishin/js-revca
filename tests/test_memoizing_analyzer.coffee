@@ -79,3 +79,42 @@ describe "MemoAnalyser::analyse", ->
     assert (result1 is result4), "result1 == result4"
 
     
+  it "must count hit number for patterns", ->
+    analyser = new MemoAnalyser NamedRules.singleRotate
+    pattern1 = Cells.from_rle "$2o2$2o"
+    pattern2 = Cells.from_rle "obo$obo" #same pattern, rotated 90
+
+    result1 = analyser.analyse pattern1
+    assert.equal result1.hits, 1, "must have 1 hit for the first occurence"
+    #same pattern
+    result1_1 = analyser.analyse pattern1
+    assert.equal result1_1.hits, 2, "must have 2 hits after 2 tries"
+
+    #same pattern, rotated
+    result2 = analyser.analyse pattern2
+    assert.equal result2.hits, 3, "must have 3 hits after 3 tries"
+
+describe "MemoAnalyser::truncateTable", ->
+  it "must do nothing, when max table size is big enough", ->
+    analyser = new MemoAnalyser NamedRules.singleRotate
+    pattern = Cells.from_rle "$2o2$2o"
+    result1 = analyser.analyse pattern
+    assert.equal result1.hits, 1
+
+    analyser.truncateTable 1000
+    result2 = analyser.analyse pattern
+    assert.equal result1, result2
+    assert.equal result2.hits, 2
+    
+  it "must completely clear cache, when max table size is 0", ->
+    analyser = new MemoAnalyser NamedRules.singleRotate
+    pattern = Cells.from_rle "$2o2$2o"
+    result1 = analyser.analyse pattern
+    assert.equal result1.hits, 1
+
+    analyser.truncateTable 0 #clear cache
+    result2 = analyser.analyse pattern
+    assert.ok  not (result1 is result2), "after clear cache, results must be different"    
+    assert.equal result2.hits, 1
+    
+    

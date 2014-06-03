@@ -30,6 +30,14 @@ ruleSpatialSymmetries = (rule)-> #list of matrices, except identity matrix
             symmetries.push tfm
   return symmetries
 
+unwrapResult = (result) ->
+      #console.log "#### Result found:"+JSON.stringify(result)
+      #Result may be a real result object, or a reference to another. Dereference, if needed
+      if (referenced = result.refersTo)?
+        referenced
+      else
+        result
+
 exports.MemoAnalyser = class MemoAnalyser
   constructor: (@rule)->
     @ruleset = rule.stabilize_vacuum()
@@ -52,15 +60,13 @@ exports.MemoAnalyser = class MemoAnalyser
           #  
           pattern2result[transformedKey] = result
 
-  unwrapResult: (result) ->
-      #console.log "#### Result found:"+JSON.stringify(result)
-      #Result may be a real result object, or a reference to another. Dereference, if needed
-      if (referenced = result.refersTo)?
-        referenced
-      else
-        result
 
-  analyse: (pattern) -> #result
+  analyse: (pattern) ->
+    result = @_analyse pattern
+    result.hits += 1
+    return result
+
+  _analyse: (pattern) -> #result
     #Perform analysys of the pattern. 
     #Pattern must correspond to the initial phase of the ruleset
 
@@ -73,8 +79,6 @@ exports.MemoAnalyser = class MemoAnalyser
     #returns maximal value y, such that (y mod 2 === fieldPhase) && y <= x
     snap_below = (x, fieldPhase) ->
       x - mod(x + fieldPhase, 2)
-
-
 
     #modifies the pattern inplace. Returns coordinates of the pattern's origin
     translateToOrigin = (pattern, fieldPhase) ->
@@ -94,7 +98,7 @@ exports.MemoAnalyser = class MemoAnalyser
     Cells.sortXY pattern
     key = patternKey pattern
     if (result = @pattern2result[key])?
-      return @unwrapResult result
+      return unwrapResult result
     else
       result = {resolution:null} #result would be calculated later - now only make an empty placeholder
       @registerResult pattern, result, key
@@ -133,7 +137,7 @@ exports.MemoAnalyser = class MemoAnalyser
         #Make current result to point to the cached one.
         if knownResult.resolution isnt null
           #console.log "#### known result:"+JSON.stringify(knownResult)
-          return (result.refersTo = @unwrapResult knownResult)
+          return (result.refersTo = unwrapResult knownResult)
       else
         #previously unknown pattern. Register its result (not yet calculated)
         @registerResult curPattern, result, key
@@ -160,6 +164,7 @@ exports.MemoAnalyser = class MemoAnalyser
     result.resolution = Resolution.HAS_PERIOD
     result.period = period
     result.cells = bestPattern
+    result.hits = 0
     return result
 
   makePatternToWideResult: (result)->
@@ -170,8 +175,25 @@ exports.MemoAnalyser = class MemoAnalyser
   makePatternTooBigResult: (result)->   
     #console.log "#### pattern too big"
     result.resolution = Resolution.OVERPOPUPATION
+    result.hits = 0
     result
   makeCycleNotFoundResult: (result)->
     #console.log "#### no cycle found"
     result.resolution = Resolution.NO_PERIOD
+    result.hits = 0
     result
+
+
+  #Truncate memo table to the given number of records, removing items with the least hit count
+  truncateTable: (maxRecords) ->
+    if maxRecords < 0
+      throw new Error "Number of records must be positive"
+    pattern2result = @pattern2result
+    keysWithHits = ([unwrapResult(result).hits, key] for key, result of pattern2result)
+    #sort keys by hit count, more hits go first
+    keysWithHits.sort (kh1, kh2) -> kh2[0]-kh1[0]
+    #remove the rest keys
+    for i in [maxRecords ... keysWithHits.length] by 1
+      key = keysWithHits[i][1]
+      delete pattern2result[key]
+    return
