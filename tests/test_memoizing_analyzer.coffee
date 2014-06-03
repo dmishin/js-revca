@@ -1,6 +1,6 @@
 assert = require "assert"
 
-{MemoAnalyser} = require "../scripts-src/memoizing_analyzer"
+{Resolution, MemoAnalyser} = require "../scripts-src/memoizing_analyzer"
 
 {Cells, evaluateCellList, evaluateLabelledCellList, splitFigure} = require "../scripts-src/cells"
 
@@ -31,6 +31,7 @@ describe "MemoAnalyser::analyse", ->
 
     result = analyser.analyse pattern
     assert result
+    assert.equal result.resolution, Resolution.HAS_PERIOD
     assert.equal result.dx, 2
     assert.equal result.dy, 0
     assert.equal result.period, 12

@@ -8,6 +8,13 @@
 #Creates a string for the pattern.
 patternKey = (pattern) -> JSON.stringify pattern  
 
+exports.Resolution = Resolution = Object.freeze
+  HAS_PERIOD: "period found"
+  NO_PERIOD :   "no period found"
+  OVERPOPUPATION: "population too large"
+  TOO_WIDE: "size to large"
+  
+
 ruleSpatialSymmetries = (rule)-> #list of matrices, except identity matrix
   #dumb algorithm: just check every transform. Who cares - it is called once.
   symmetries = []
@@ -49,7 +56,7 @@ exports.MemoAnalyser = class MemoAnalyser
       #console.log "#### Result found:"+JSON.stringify(result)
       #Result may be a real result object, or a reference to another. Dereference, if needed
       if (referenced = result.refersTo)?
-        @unwrapResult referenced
+        referenced
       else
         result
 
@@ -125,9 +132,8 @@ exports.MemoAnalyser = class MemoAnalyser
       if (knownResult = @pattern2result[key])?
         #Make current result to point to the cached one.
         if knownResult.resolution isnt null
-          console.log "#### known result:"+JSON.stringify(knownResult)
-          result.refersTo = knownResult 
-          return @unwrapResult knownResult
+          #console.log "#### known result:"+JSON.stringify(knownResult)
+          return (result.refersTo = @unwrapResult knownResult)
       else
         #previously unknown pattern. Register its result (not yet calculated)
         @registerResult curPattern, result, key
@@ -151,21 +157,21 @@ exports.MemoAnalyser = class MemoAnalyser
     #console.log "#### period found"
     [bestPattern, result.dx, result.dy] =
          Cells.canonicalize_spaceship bestPattern, @rule, dx, dy
-    result.resolution = "period found"
+    result.resolution = Resolution.HAS_PERIOD
     result.period = period
     result.cells = bestPattern
     return result
 
   makePatternToWideResult: (result)->
     #console.log "#### pattern too wide"
-    result.resolution = "pattern too large"
+    result.resolution = Resolution.TOO_WIDE
     result
 
   makePatternTooBigResult: (result)->   
     #console.log "#### pattern too big"
-    result.resolution = "pattern too populated"
+    result.resolution = Resolution.OVERPOPUPATION
     result
   makeCycleNotFoundResult: (result)->
     #console.log "#### no cycle found"
-    result.resolution = "cycle not found"
+    result.resolution = Resolution.NO_PERIOD
     result
