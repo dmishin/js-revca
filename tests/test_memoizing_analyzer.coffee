@@ -59,4 +59,22 @@ describe "MemoAnalyser::analyse", ->
 
     assert (result1 is result2), "Analysis must return the same object for the second call"
 
+
+  it "must detect the same spaceship, rotated", ->
+    analyser = new MemoAnalyser NamedRules.singleRotate
+    pattern1 = Cells.from_rle "$2o2$2o"
+    pattern2 = Cells.from_rle "obo$obo" #same pattern, rotated 90
+    pattern3 = Cells.from_rle "2o2$2o"  #same pattern, rotated 180
+    pattern4 = Cells.from_rle "bobo$bobo"  #same pattern, rotated 270
+
+    #results
+    result1 = analyser.analyse pattern1
+    result2 = analyser.analyse pattern2
+    result3 = analyser.analyse pattern3
+    result4 = analyser.analyse pattern4
+
+    assert (result1 is result2), "result1 == result2"
+    assert (result1 is result3), "result1 == result3"
+    assert (result1 is result4), "result1 == result4"
+
     

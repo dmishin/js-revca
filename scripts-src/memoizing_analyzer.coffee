@@ -46,7 +46,7 @@ exports.MemoAnalyser = class MemoAnalyser
           pattern2result[transformedKey] = result
 
   unwrapResult: (result) ->
-      console.log "#### Result found:"+JSON.stringify(result)
+      #console.log "#### Result found:"+JSON.stringify(result)
       #Result may be a real result object, or a reference to another. Dereference, if needed
       if (referenced = result.refersTo)?
         @unwrapResult referenced
@@ -151,6 +151,7 @@ exports.MemoAnalyser = class MemoAnalyser
     #console.log "#### period found"
     [bestPattern, result.dx, result.dy] =
          Cells.canonicalize_spaceship bestPattern, @rule, dx, dy
+    result.resolution = "period found"
     result.period = period
     result.cells = bestPattern
     return result
@@ -165,6 +166,6 @@ exports.MemoAnalyser = class MemoAnalyser
     result.resolution = "pattern too populated"
     result
   makeCycleNotFoundResult: (result)->
-    #console.log "#### nop cycle found"
+    #console.log "#### no cycle found"
     result.resolution = "cycle not found"
     result
