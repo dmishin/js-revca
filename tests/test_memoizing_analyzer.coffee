@@ -8,7 +8,7 @@ assert = require "assert"
  NamedRules} = require "../scripts-src/rules"
 
 
-describe "MemoAnalyser", ->
+describe "MemoAnalyser::constructor", ->
   it "must find 3 spatial invariant transforms (rotations) for a SingleRotate rule",->
     analyser = new MemoAnalyser NamedRules.singleRotate
     assert.equal analyser.symmetries.length, 3
@@ -18,6 +18,7 @@ describe "MemoAnalyser", ->
     assert.equal analyser.symmetries.length, 7
 
 
+describe "MemoAnalyser::analyse", ->
   it "must detect spaceship's parameters: offset, period", ->
     analyser = new MemoAnalyser NamedRules.singleRotate
     pattern = Cells.from_rle "$2o2$2o"
@@ -34,3 +35,28 @@ describe "MemoAnalyser", ->
     assert.equal result.dy, 0
     assert.equal result.period, 12
 
+  it "must detect the same spaceship with the same result", ->
+    analyser = new MemoAnalyser NamedRules.singleRotate
+    pattern = Cells.from_rle "$2o2$2o"
+
+    #initial result
+    result1 = analyser.analyse pattern
+
+    #second try
+    result2 = analyser.analyse pattern
+
+    assert (result1 is result2), "Analysis must retuen the same object for the second call"
+
+  it "must detect the same spaceship in different phases", ->
+    analyser = new MemoAnalyser NamedRules.singleRotate
+    pattern1 = Cells.from_rle "$2o2$2o"
+    pattern2 = Cells.from_rle "o$obo$o" #same pattern at generation 5
+
+    #initial result
+    result1 = analyser.analyse pattern1
+    #second try
+    result2 = analyser.analyse pattern2
+
+    assert (result1 is result2), "Analysis must return the same object for the second call"
+
+    
