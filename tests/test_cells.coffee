@@ -36,6 +36,15 @@ describe "Cells.bounds(fig)", ->
     bnds = Cells.bounds []
     assert.deepEqual bnds, [0,0,0,0]
 
+describe "Cells.topLeft(fig)", ->
+  it "must return top-left bound of a cell list, inclusive: [x0,y0]", ->
+    cells = [[1,0],[0,1],[0,0],[1,1], [-1,-2], [2,3]]
+    topLeft = Cells.topLeft cells
+    assert.deepEqual topLeft, [-1, -2]
+  it "must tolerate empty pattern", ->
+    bnds = Cells.topLeft []
+    assert.deepEqual bnds, [0,0]
+
 describe "Cells.transform(fig, tfm): transform cell coordinates relative to point (0.5,0.5) and *normalize* result", ->
   cells = [[0,0],[1,2]]
   cells_text = JSON.stringify cells
