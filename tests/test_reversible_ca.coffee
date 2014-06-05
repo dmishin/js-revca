@@ -1,5 +1,6 @@
 assert = require "assert"
 {Array2d, MargolusNeighborehoodField} = require "../scripts-src/reversible_ca"
+rules = require "../scripts-src/rules"
 {Cells} = require "../scripts-src/cells"
 
 describe "class Array2d: array of bytes", ->
@@ -193,3 +194,92 @@ describe "Array2d::pick_pattern_at x, y, x0, y0, erase=false, range = 4, max_siz
     assert.equal picked.length, 2
     for xy in picked
       assert cell_in_list xy, cells, "Cell #{JSON.stringify xy} must be in the original figure #{JSON.stringify cells}"
+
+
+##Put pattern, given as a list of strings. '#' is for one
+makeArray2d = (width, height, rows) ->
+  array2d = new Array2d width, height
+  for row, y in rows
+    for x in [0 ... row.length] by 1
+      array2d.set x,y, (if row.charAt(x) is '#' then 1 else 0)
+  return array2d
+
+describe "makeArray2d", ->
+  it "must create Array2d with given pattern", ->
+    pattern = [ '#####.',
+                '##..#.',
+                '.###..',
+                '.....#']
+    arr = makeArray2d 6, 4, pattern
+    testCell = (x,y,v) ->
+        got = arr.get(x,y)
+        assert.equal got, v, "Array[#{x},#{y}] = #{got} != #{v}"
+    testCell 0,0,1
+    testCell 1,0,1
+    testCell 2,0,1
+    testCell 5,0,0
+
+    testCell 0,1,1
+    testCell 0,2,0
+    testCell 0,3,0
+
+    testCell 5,3,1
+    testCell 4,3,0
+    testCell 5,2,0
+
+
+describe "MargolusNeighborehoodField.transform rule", ->
+  rule = rules.from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15] #single rotation rule
+
+  it "must leave empty field empty, when rule is single rotation", ->
+    cells = new Array2d 4, 4
+    cells.fill 0
+    field = new MargolusNeighborehoodField cells
+    field.transform rule
+    
+    cellsExpected = new Array2d 4, 4
+    cellsExpected.fill 0
+
+    assert.deepEqual cells, cellsExpected
+  it "must transform pattern in the phase 0", ->
+    #letters only designate blocks, they correspond to 0 too.
+    initialPattern = [ 'a#cc..',
+                       'aa##..',
+                       '..#b..',
+                       '..bb..',
+                       '....dd',
+                       '....d#']
+    expectedPattern =[ 'aacc..',
+                       'a###..',
+                       '..b#..',
+                       '..bb..',
+                       '....dd',
+                       '....#d']
+
+    cells = makeArray2d 6,6, initialPattern
+    field = new MargolusNeighborehoodField cells
+    field.transform rule
+    assert.deepEqual field.field, makeArray2d(6,6,expectedPattern)
+
+  it "must transform pattern in the phase 1, including those across edge", ->
+    initialPattern = [ 'a#d..a',
+                       '.b##c.',
+                       '.b#cc.',
+                       '......',
+                       '......',
+                       'add..#']
+                
+    expectedPattern =[ 'add..a',
+                       '.b#c#.',
+                       '.b#cc.',
+                       '......',
+                       '......',
+                       '##d..a']
+                
+    cells = makeArray2d 6,6, initialPattern
+    field = new MargolusNeighborehoodField cells
+    field.phase = 1 #update phase
+    field.transform rule
+    assert.deepEqual field.field, makeArray2d(6,6,expectedPattern)
+    
+    

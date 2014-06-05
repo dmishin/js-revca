@@ -149,7 +149,9 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
     throw "Field size must be even, not " + field.width + "x" + field.height  if field.width % 2 isnt 0 or field.height % 2 isnt 0
     @phase = 0
 
-  transform_from: (xy0, rule) ->
+  #implementation of the transform. Does not changes phase.
+  _transform: (rule) ->
+    xy0 = @phase
     rule_table = rule.table
     field = @field
     data = field.data
@@ -174,16 +176,16 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
     return
 
   #Combine given value by XOR with each block of the current phase.
-  apply_xor: (value) ->
-    @transform_from @phase, from_list(xor_transposition value)
+  apply_xor: (value) -> @_transform from_list xor_transposition value
     
   transform: (rule)->
-    @transform_from @phase, rule
+    @_transform rule
     @phase ^= 1
 
   untransform: (irule) ->
+    #it is important to switch phase *before* transforming, since we are going back in time. Order is reverse compared to `transform`.
     @phase ^= 1
-    @transform_from @phase, irule
+    @_transform irule
     
   clear: ->
     @field.fill 0
