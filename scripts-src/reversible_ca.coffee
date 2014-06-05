@@ -149,17 +149,17 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
     throw "Field size must be even, not " + field.width + "x" + field.height  if field.width % 2 isnt 0 or field.height % 2 isnt 0
     @phase = 0
 
-  transform_from: (x0, y0, rule) ->
+  transform_from: (xy0, rule) ->
     rule_table = rule.table
     field = @field
     data = field.data
     w = field.width
     h = field.height
     a = 0 #cell index
-    for y in [y0 ... h] by 2
+    for y in [xy0 ... h] by 2
       dy = (if (y + 1 < h) then w else (w * (1 - h)))
-      a = y*w+x0
-      for x in [x0 ... w] by 2
+      a = y*w+xy0
+      for x in [xy0 ... w] by 2
         dx = (if (x + 1 < w) then 1 else (1 - w))
         #Code was inlined to increase performance
         b=a + dx; c=a + dy; d=b + dy;
@@ -171,23 +171,19 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
           data[c] = (Y >> 2) & 1
           data[d] = (Y >> 3) & 1
         a += 2
-    null #Return null to increase performance
+    return
 
   #Combine given value by XOR with each block of the current phase.
   apply_xor: (value) ->
-    xy0 = @phase 
-    @transform_from xy0, xy0, from_list(xor_transposition value)
+    @transform_from @phase, from_list(xor_transposition value)
     
   transform: (rule)->
-    xy0 = @phase 
-    @transform_from xy0, xy0, rule
-    @phase = mod2 @phase+1
+    @transform_from @phase, rule
+    @phase ^= 1
 
   untransform: (irule) ->
-    xy0 = mod2 @phase-1
-    @transform_from xy0, xy0, irule
-    @phase = mod2 @phase-1
-
+    @phase ^= 1
+    @transform_from @phase, irule
     
   clear: ->
     @field.fill 0
