@@ -283,3 +283,54 @@ describe "MargolusNeighborehoodField.transform rule", ->
     assert.deepEqual field.field, makeArray2d(6,6,expectedPattern)
     
     
+describe "MargolusNeighborehoodField::snap_below", ->
+  it "must return even number <= x, if field phase is 0", ->
+    fld = new MargolusNeighborehoodField new Array2d 4, 4
+    assert.equal fld.phase, 0
+    assert.equal fld.snap_below(0), 0
+    assert.equal fld.snap_below(1), 0
+    assert.equal fld.snap_below(2), 2
+    assert.equal fld.snap_below(3), 2
+    assert.equal fld.snap_below(-1), -2
+    assert.equal fld.snap_below(-2), -2
+    assert.equal fld.snap_below(-1000), -1000
+            
+  it "must return odd number <= x, if field phase is 1", ->
+    fld = new MargolusNeighborehoodField new Array2d 4, 4
+    fld.phase = 1
+    assert.equal fld.snap_below(0), -1
+    assert.equal fld.snap_below(1), 1
+    assert.equal fld.snap_below(2), 1
+    assert.equal fld.snap_below(3), 3
+    assert.equal fld.snap_below(-1), -1
+    assert.equal fld.snap_below(-2), -3
+    assert.equal fld.snap_below(-1000), -1001
+    assert.equal fld.snap_below(1000), 999
+
+    
+describe "MargolusNeighborehoodField::snap_upper", ->
+  it "must return even number >= x, if field phase is 0", ->
+    fld = new MargolusNeighborehoodField new Array2d 4, 4
+    assert.equal fld.phase, 0
+    assert.equal fld.snap_upper(0), 0
+    assert.equal fld.snap_upper(1), 2
+    assert.equal fld.snap_upper(2), 2
+    assert.equal fld.snap_upper(3), 4
+    assert.equal fld.snap_upper(-1), 0
+    assert.equal fld.snap_upper(-2), -2
+    assert.equal fld.snap_upper(-1000), -1000
+            
+  it "must return odd number <= x, if field phase is 1", ->
+    fld = new MargolusNeighborehoodField new Array2d 4, 4
+    fld.phase = 1
+    assert.equal fld.snap_upper(0), 1
+    assert.equal fld.snap_upper(1), 1
+    assert.equal fld.snap_upper(2), 3
+    assert.equal fld.snap_upper(3), 3
+    assert.equal fld.snap_upper(-1), -1
+    assert.equal fld.snap_upper(-2), -1
+    assert.equal fld.snap_upper(-3), -3
+    assert.equal fld.snap_upper(-1000), -999
+    assert.equal fld.snap_upper(1000), 1001
+
+    
