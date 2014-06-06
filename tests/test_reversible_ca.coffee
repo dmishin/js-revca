@@ -230,7 +230,7 @@ describe "makeArray2d", ->
 
 describe "MargolusNeighborehoodField.transform rule", ->
   rule = rules.from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15] #single rotation rule
-
+        
   it "must leave empty field empty, when rule is single rotation", ->
     cells = new Array2d 4, 4
     cells.fill 0
@@ -261,7 +261,7 @@ describe "MargolusNeighborehoodField.transform rule", ->
     field.transform rule
     assert.deepEqual field.field, makeArray2d(6,6,expectedPattern)
 
-  it "must transform pattern in the phase 1, including those across edge", ->
+  it "must transform pattern in the phase 1, including blocks across the edge", ->
     initialPattern = [ 'a#d..a',
                        '.b##c.',
                        '.b#cc.',
