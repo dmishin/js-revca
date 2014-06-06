@@ -29,15 +29,7 @@ ruleSpatialSymmetries = (rule)-> #list of matrices, except identity matrix
           if rule.is_transposable_with ((x) -> blockTfm[x])
             symmetries.push tfm
   return symmetries
-
-unwrapResult = (result) ->
-      #console.log "#### Result found:"+JSON.stringify(result)
-      #Result may be a real result object, or a reference to another. Dereference, if needed
-      if (referenced = result.refersTo)?
-        referenced
-      else
-        result
-
+  
 exports.MemoAnalyser = class MemoAnalyser
   constructor: (@rule)->
     @ruleset = rule.stabilize_vacuum()
@@ -47,23 +39,34 @@ exports.MemoAnalyser = class MemoAnalyser
     @maxPopulation = 1024
     @maxSize = 100
     @symmetries = ruleSpatialSymmetries rule
+    @frozen = false
+    @doubleHitCount = 0
+    @currentPatternKeys = []
 
-  registerResult: (pattern, result, mainKey) ->
-      #Register a pattern with given result, under all keys
-      pattern2result = @pattern2result
-      pattern2result[mainKey] = result
-      for tfm in @symmetries
-        transformedKey = patternKey Cells.transform pattern, tfm
-        if transformedKey isnt mainKey
-          #assert that key either not present, or refers the same result
-          #if pattern2result[transformedKey]?
-          #  
-          pattern2result[transformedKey] = result
+  freeze: ->
+    @frozen = true
+    @truncateTable
 
+  stashKeys: (pattern, mainKey) ->
+    keys = @currentPatternKeys
+    keys.push mainKey
+    for tfm in @symmetries
+      transformedKey = patternKey Cells.transform pattern, tfm
+      keys.push transformedKey
+    return
+    
+  writeResult: (result) ->
+    pattern2result = @pattern2result
+    for key in @currentPatternKeys
+      pattern2result[key] = result
+    @currentPatternKeys = []
+    return
 
   analyse: (pattern) ->
     result = @_analyse pattern
     result.hits += 1
+    if result.hits is 2
+      @doubleHitCount += 1
     return result
 
   _analyse: (pattern) -> #result
@@ -98,10 +101,10 @@ exports.MemoAnalyser = class MemoAnalyser
     Cells.sortXY pattern
     key = patternKey pattern
     if (result = @pattern2result[key])?
-      return unwrapResult result
+      #console.log "#### FIrst hit!"
+      return result
     else
-      result = {resolution:null} #result would be calculated later - now only make an empty placeholder
-      @registerResult pattern, result, key
+      @stashKeys pattern, key
                 
     bestPatternSearch = new Maximizer Cells.energy
     bestPatternSearch.put pattern
@@ -134,62 +137,75 @@ exports.MemoAnalyser = class MemoAnalyser
       key = patternKey curPattern
       #Maybe, we already had this value?
       if (knownResult = @pattern2result[key])?
-        #Make current result to point to the cached one.
-        if knownResult.resolution isnt null
-          #console.log "#### known result:"+JSON.stringify(knownResult)
-          return (result.refersTo = unwrapResult knownResult)
-      else
-        #previously unknown pattern. Register its result (not yet calculated)
-        @registerResult curPattern, result, key
+        #Write current result to the stashed keys
+        #console.log "#### known result:"+JSON.stringify(knownResult)
+        result = knownResult
+        break
 
       #maybe, analysis has finished?
       if Cells.areEqual pattern, curPattern
-        return @makePeriodFoundResult result, dx, dy, iter, bestPatternSearch.getArg()
+        result = @makePeriodFoundResult dx, dy, iter, bestPatternSearch.getArg()
+        break
+        
+      #previously unknown pattern. Remember its keys
+      @stashKeys curPattern, key
 
       #no cycle. Fine.
       bestPatternSearch.put curPattern
       if curPattern.length > maxPopulation
-        return @makePatternTooBigResult result
+        result = @makePatternTooBigResult()
+        break
       if Math.max( bounds[2]-bounds[0], bounds[3]-bounds[1]) > maxSize
-        return @makePatternToWideResult result
+        result = @makePatternToWideResult()
+        break
 
-    #After the given number of iterations, nothing was found.
-    #Give up.
-    @makeCycleNotFoundResult result
+    unless result?
+      #After the given number of iterations, nothing was found.
+      #Give up.
+      result = @makeCycleNotFoundResult()
 
-  makePeriodFoundResult: (result, dx, dy, period, bestPattern)->
-    #console.log "#### period found"
-    [bestPattern, result.dx, result.dy] =
-         Cells.canonicalize_spaceship bestPattern, @rule, dx, dy
-    result.resolution = Resolution.HAS_PERIOD
-    result.period = period
-    result.cells = bestPattern
-    result.hits = 0
+    @writeResult result
     return result
 
-  makePatternToWideResult: (result)->
+
+  makePeriodFoundResult: (dx, dy, period, bestPattern)->
+    #console.log "#### period found"
+    [bestPattern, dx0, dy0] =
+         Cells.canonicalize_spaceship bestPattern, @rule, dx, dy
+    return {
+      resolution: Resolution.HAS_PERIOD
+      dx: dx0
+      dy: dy0
+      period: period
+      cells: bestPattern
+      hits: 0
+    }
+    
+  makePatternToWideResult: ->
     #console.log "#### pattern too wide"
-    result.resolution = Resolution.TOO_WIDE
-    result
-
-  makePatternTooBigResult: (result)->   
+    return {
+      resolution: Resolution.TOO_WIDE
+      hits: 0
+    }
+  makePatternTooBigResult: ->   
     #console.log "#### pattern too big"
-    result.resolution = Resolution.OVERPOPUPATION
-    result.hits = 0
-    result
-  makeCycleNotFoundResult: (result)->
+    return {
+      resolution: Resolution.OVERPOPUPATION
+      hits: 0
+    }
+  makeCycleNotFoundResult: ->
     #console.log "#### no cycle found"
-    result.resolution = Resolution.NO_PERIOD
-    result.hits = 0
-    result
-
+    return {
+      resolution: Resolution.NO_PERIOD
+      hits: 0
+    }
 
   #Truncate memo table to the given number of records, removing items with the least hit count
   truncateTable: (maxRecords) ->
     if maxRecords < 0
       throw new Error "Number of records must be positive"
     pattern2result = @pattern2result
-    keysWithHits = ([unwrapResult(result).hits, key] for key, result of pattern2result)
+    keysWithHits = ([result.hits, key] for key, result of pattern2result)
     #sort keys by hit count, more hits go first
     keysWithHits.sort (kh1, kh2) -> kh2[0]-kh1[0]
     #remove the rest keys
