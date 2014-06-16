@@ -117,7 +117,8 @@ main = ->
         patternsCount += 1
     console.log "#################################"
     performance = patternsCount / (Date.now() - timeStart) * 1000
-    console.log "Throughput: #{performance.toFixed(2)} patterns/s" 
+    console.log "Throughput: #{performance.toFixed(2)} patterns/s"
+  return
 
 main()
 
