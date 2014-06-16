@@ -112,8 +112,7 @@ main = ->
       #pick spaceships
       #catcher.scan field
       scanForPatterns field, vacuumPeriod, 4, maxLen, (pattern)->
-        fs.write outputStream, JSON.stringify({g: generation, p:pattern})+"\n"
-        #console.log pattern.length
+        fs.writeSync outputStream, JSON.stringify({g: generation, p:pattern})+"\n"
         patternsCount += 1
     console.log "#################################"
     performance = patternsCount / (Date.now() - timeStart) * 1000
