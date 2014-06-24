@@ -95,7 +95,11 @@ if __name__=="__main__":
 
     totalCount = total(data)
 
-    mkImage = imageMaker('')
+    outdir = os.path.splitext(ofileName)[0]+"_files"
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    mkImage = imageMaker(outdir)
     parameters = [
         Parameter('RLE', lambda r: r['key']),
         Parameter('Image', lambda r: '<img src="%s"/>'%(mkImage(r)), header_class='sortable_nosort'),
