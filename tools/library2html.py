@@ -4,6 +4,8 @@ from xml.etree.ElementTree import ElementTree, Element, SubElement, Comment, tos
 from optparse import OptionParser
 import sys
 import json
+import os
+import rle2svg
 
 def gliderType(dx, dy):
   if dx == 0 and dy == 0:
@@ -32,16 +34,6 @@ class Parameter:
     def value(self, record):
         return '<td>%s</td>'%(self.getter(record))
 
-"""
-def Getter(path):
-    parts = path.split('/')
-    def get(record):
-        elem = record
-        for part in parts:
-            if elem is None: return None
-            elem = elem.get(part)
-"""        
-
 def gcd(a,b):
     "Greatest common divisor"
     while True:                
@@ -60,8 +52,26 @@ def rational2str(n,d):
         return '%d/%d'%(n,d)
     else:
         return str(n)
+
+
+def imageMaker(folder):
+    def getter(record):
+        rle = record['key']
+        fname = os.path.join(folder, rle+".svg")
+        cells = record['result']['cells']
+        fs_x = max(c[0] for c in cells)+1
+        fs_y = max(c[1] for c in cells)+1
+        tree = rle2svg.CreateField(cells,fs_x,fs_y, 12)
+        with open(fname, 'wb') as ofile:
+            tree.write(ofile, encoding="utf-8", xml_declaration=True)
+        return fname
+    return getter
+        
 if __name__=="__main__":
     parser = OptionParser(usage = "%prog [options] library.json\nConvert library to html file")
+    parser.add_option("-o", "--output", dest="output", default=None,
+                      help="write HTML to FILE, default is name of input", metavar="FILE")
+
 
     (options, args) = parser.parse_args()
     
@@ -73,6 +83,11 @@ if __name__=="__main__":
         infile = args[0]
 
 
+    ofileName = options.output
+    if ofileName is None:
+        ofileName = os.path.splitext(os.path.basename(infile))[0]  + '.html'
+        
+
     with open(infile,'r') as hfile:
         data = json.load(hfile)
 
@@ -80,8 +95,10 @@ if __name__=="__main__":
 
     totalCount = total(data)
 
+    mkImage = imageMaker('')
     parameters = [
         Parameter('RLE', lambda r: r['key']),
+        Parameter('Image', lambda r: '<img src="%s"/>'%(mkImage(r)), header_class='sortable_nosort'),
         Parameter('Size', lambda r: len(r['result']['cells'])),
         Parameter('Period', lambda r: r['result']['period']),
         Parameter('dx', lambda r: r['result']['dx']),
@@ -93,20 +110,21 @@ if __name__=="__main__":
         Parameter('Probability', lambda r: '%0.3g'%(r['count'] / totalCount) )
     ]        
     
+    with open(ofileName,'w') as ofile:
 
-    print('<html><body>')
-    print('<table><thead><tr>')
-    for param in parameters:
-        print (param.header())
-    
-    print('</tr></thead>')
-    print('<tbody>')
+        ofile.write('<html><body>')
+        ofile.write('<table><thead><tr>')
+        for param in parameters:
+            ofile.write (param.header())
 
-    for record in data:
-        print ('<tr>')
-        print (''.join(param.value(record) for param in parameters))
-        print ('</tr>')
-    print('</tbody>')
-    print('</table>')
+        ofile.write('</tr></thead>')
+        ofile.write('<tbody>')
 
-    print('</body></html>')
+        for record in data:
+            ofile.write ('<tr>')
+            ofile.write (''.join(param.value(record) for param in parameters))
+            ofile.write ('</tr>')
+        ofile.write('</tbody>')
+        ofile.write('</table>')
+
+        ofile.write('</body></html>')
