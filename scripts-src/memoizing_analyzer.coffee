@@ -126,7 +126,8 @@ exports.MemoAnalyser = class MemoAnalyser
         #Make current result to point to the cached one.
         if knownResult.resolution isnt null
           console.log "#### known result:"+JSON.stringify(knownResult)
-          result.refersTo = knownResult 
+          result.refersTo = knownResult
+          delete result.resolution
           return @unwrapResult knownResult
       else
         #previously unknown pattern. Register its result (not yet calculated)
