@@ -187,15 +187,15 @@ main = ->
     process.stderr.write "Re-calculating canonical forms of spaceships in the library\n"
     rle2record = recalculateCanonicalForm rle2record, rule
 
-  if opts.output?
-    fs.writeFileSync opts.output, stringifyLibrary(rle2record)
-  else
-    process.stdout.write stringifyLibrary rle2record
-
 
   [dualTfmName, dualTfm, dualBlockTfm] = getDualTransform rule
   if dualTfmName
     process.stderr.write "Rule has dual transform: #{dualTfmName}\n"
     rle2record = mergeDualSpaceships rle2record, rule, dualTfm
+
+  if opts.output?
+    fs.writeFileSync opts.output, stringifyLibrary(rle2record)
+  else
+    process.stdout.write stringifyLibrary rle2record
 
 main()
