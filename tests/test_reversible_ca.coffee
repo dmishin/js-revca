@@ -229,7 +229,7 @@ describe "makeArray2d", ->
 
 
 describe "MargolusNeighborehoodField.transform rule", ->
-  rule = rules.from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15] #single rotation rule
+  rule = rules.from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15] #single rotation rule
         
   it "must leave empty field empty, when rule is single rotation", ->
     cells = new Array2d 4, 4

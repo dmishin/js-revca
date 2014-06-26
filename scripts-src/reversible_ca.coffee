@@ -2,9 +2,8 @@
 #requires math_util.js
 #Import section: add support for node.js
 math_util = require "./math_util"
-module_rules = require "./rules"
 {mod, mod2} = math_util
-{xor_transposition, from_list} = module_rules
+{xor_transposition, from_list_elem} = require "./rules"
   
 ###
 A 2-dimensional array of bytes!, with row-first organization
@@ -176,7 +175,7 @@ exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
     return
 
   #Combine given value by XOR with each block of the current phase.
-  apply_xor: (value) -> @_transform from_list xor_transposition value
+  apply_xor: (value) -> @_transform from_list_elem xor_transposition value
     
   transform: (rule)->
     @_transform rule

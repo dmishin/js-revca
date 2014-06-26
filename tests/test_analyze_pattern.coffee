@@ -3,8 +3,8 @@ assert = require "assert"
 {from_list} = require "../scripts-src/rules"
 
 
-single_rot = from_list [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
-critters = from_list [15,14,13,3,11,5,6,1,7,9,10,2,12,4,8,0]
+single_rot = from_list [[0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]]
+critters = from_list [[15,14,13,3,11,5,6,1,7,9,10,2,12,4,8,0]]
 
 describe "Cells.analyze() : analyze patterns", ->
   it "must detect block pattern correctly", ->

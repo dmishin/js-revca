@@ -199,7 +199,7 @@ exports.Cells = Cells =
       return [pattern, x0, y0]
 
     stable_rules = rule.stabilize_vacuum()
-    vacuum_period = stable_rules.length
+    vacuum_period = stable_rules.size() #ruleset size
     pattern = @normalize pattern
                 
     #Shift pattern to the origin
@@ -221,7 +221,7 @@ exports.Cells = Cells =
     for iter in [vacuum_period .. max_iters] by vacuum_period
       #TODO: evaluate cell list, always assuming initial, 0 phase
       phase = 0
-      for stable_rule in stable_rules
+      for stable_rule in stable_rules.rules
         curPattern = evaluateCellList stable_rule, curPattern, phase
         phase ^= 1
         
@@ -396,11 +396,19 @@ exports.getDualTransform = getDualTransform = (rule)->
         if f[t[f[x]]] isnt t[x]
           return false
       return true
-    for [name, tfm, blockTfm] in transforms
-      if isDualBlockTfm rule.table, blockTfm, name
-        #Dual transform found!
-        return [name, tfm, blockTfm]
-    return [null]
+    possibleTfms = transforms[..]
+    for elemRule in rule.rules
+      filtered = []
+      for record in possibleTfms
+        [name, tfm, blockTfm] = record
+        if isDualBlockTfm elemRule.table, blockTfm, name
+          #Dual transform for elementary rule found!
+          filtered.push record
+      possibleTfms = filtered
+    if possibleTfms.length > 0
+      return possibleTfms[0]
+    else
+      return [null]
       
 
       
@@ -497,8 +505,8 @@ exports.splitPattern = (rule, pattern, steps) ->
   #Evaluate pattern for the given number of steps,
   # or until it merges completely.
   for iter in [0..steps] by 1
-    labelled_pattern = evaluateLabelledCellList ruleset[ruleset_phase], labelled_pattern, (iter%2), merge_labels
-    ruleset_phase = (ruleset_phase+1)%ruleset.length
+    labelled_pattern = evaluateLabelledCellList ruleset.rules[ruleset_phase], labelled_pattern, (iter%2), merge_labels
+    ruleset_phase = (ruleset_phase+1)%ruleset.size()
     if number_of_groups <= 1 #Reached total merge before complete evaluation
       break
   #Now just construct the result: list of patterns (list of lists)

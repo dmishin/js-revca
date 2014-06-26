@@ -1,7 +1,7 @@
 assert = require "assert"
 module_cells = require "../scripts-src/cells"
 {Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = module_cells
-{NamedRules, from_list, Bits} = require "../scripts-src/rules"
+{NamedRules, from_list, from_list_elem, Bits} = require "../scripts-src/rules"
 # mocha tests/test-math-utils.coffee --compilers coffee:coffee-script
 
 describe "Cells.areEqual(f1, f2)", ->
@@ -177,7 +177,7 @@ describe "getDualTransform( rule )", ->
     assert.ok (name in ["flipx", "flipy", "flipxy"]), "Name is #{name}, but must be one of flipXX"
 
   it "must return identity transform for the trivial non-changing rule", ->
-    rule = from_list [0..15]
+    rule = from_list [[0..15]]
     [name, tfm, blockTfm] = getDualTransform rule
     assert.equal name, "iden"
     assert.deepEqual tfm, [1,0,0,1]

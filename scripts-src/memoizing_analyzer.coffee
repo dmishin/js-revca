@@ -92,7 +92,7 @@ exports.MemoAnalyser = class MemoAnalyser
       return [x0, y0]
 
     ruleset = @ruleset
-    vacuum_period = ruleset.length
+    vacuum_period = ruleset.size()
     pattern = Cells.normalize pattern
                 
     #Shift pattern to the origin. Initialfield phase is always 0.
@@ -117,7 +117,7 @@ exports.MemoAnalyser = class MemoAnalyser
     for iter in [vacuum_period .. maxIters] by vacuum_period
       #evaluate cell list, always assuming initial, 0 phase
       phase = 0
-      for stable_rule in ruleset
+      for stable_rule in ruleset.rules
         curPattern = evaluateCellList stable_rule, curPattern, phase
         phase ^= 1
         
