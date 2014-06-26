@@ -71,7 +71,7 @@ main = ->
 
   seedPercent = if opts['seed-percent']? then parseInt(opts['seed-percent'], 10)*0.01 else 0.5
 
-  if /(\d+,){15}\d+/.test opts.rule
+  if /(\d+,){15}\d+(;(\d+,){15}\d+)*/.test opts.rule
     rule = parse opts.rule
   else
     rule = NamedRules[opts.rule]
