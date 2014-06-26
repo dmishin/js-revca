@@ -3,3 +3,5 @@
 \.#*
 scripts
 Makefile
+__pycache__
+*.pyc
