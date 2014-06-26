@@ -144,6 +144,7 @@
     
         #Application state and initialization
         @rule = null
+        @rule_phase = 0
         @ruleset = null
         @ruleset_enabled = false
         @ruleset_phase = 0
@@ -179,7 +180,7 @@
         RECOMMENDED_WIDTH = 800
         RECOMMENDED_HEIGHT = 600
         unless cols is @gol.field.width and rows is @gol.field.height
-          @gol = new MargolusNeighborehoodField(new Array2d(cols, rows), @rule)
+          @gol = new MargolusNeighborehoodField(new Array2d(cols, rows))
           @gol.clear()
           @view.field = @gol.field
           #Update cell size, if needed
@@ -244,16 +245,16 @@
 
       doStepSimpleRule: (step_size) ->
           for i in [0...step_size]
-            @gol.transform @rule
-            @onStep 0
-          @phase = (@phase+step_size) % @ruleset.length
+            @gol.transform @rule.rules[@rule_phase]
+            @rule_phase = mod (@rule_phase + 1), @rule.size()
+            @onStep @rule_phase
           @generation += step_size
 
       doStepRuleset: (step_size) ->
         phase = @ruleset_phase
         ruleset = @ruleset
         for i in [0...step_size]
-          @gol.transform ruleset[phase]
+          @gol.transform ruleset.rules[phase]
           @ruleset_phase = phase = (phase+1) % ruleset.length
           @onStep phase
         @generation += step_size
@@ -261,7 +262,7 @@
           
       onStep: (rulesetPhase)->
         if (gc = @spaceship_catcher)
-          if (@ruleset.length > 1) and not @ruleset_enabled
+          if (@ruleset.size() > 1) and not @ruleset_enabled
             alert "Rule is unstable, disabling catcher. Enable stabilization to make it available"
             @disable_spaceship_catcher()
           else
@@ -287,8 +288,8 @@
         phase = @ruleset_phase
         iruleset = @inverse_ruleset
         for i in [0...step_size]
-          phase = mod (phase-1), iruleset.length
-          @gol.untransform iruleset[phase]
+          phase = mod (phase-1), iruleset.size()
+          @gol.untransform iruleset.rules[phase]
           
         @ruleset_phase = phase
         @generation -= @step_size
@@ -296,8 +297,8 @@
       doReverseStepSimpleRule: (step_size)->
         irule = @inverse_rule
         for i in [0...@step_size]
-          @gol.untransform irule
-        @phase = mod (@phase-step_size), @ruleset.length
+          @rule_phase = mod (@rule_phase-1), @rule.size()
+          @gol.untransform irule.rules[@rule_phase]
         @generation -= @step_size
         
       doReverseStep: ->
@@ -342,14 +343,16 @@
           @generation = mod(@generation, 2) #Never try to change oddity of the generation
           @update_time()
           if @ruleset_enabled
-            @ruleset_phase = mod @generation, @ruleset.length
+            @ruleset_phase = mod @generation, @ruleset.size()
+          else
+            @rule_phase = mod @generation, @rule.size()
 
       #Play forward until rule phase is 0
       # Does nothing, if already 0
       nullifyRulesetPhase: ->
         if @ruleset_enabled
           old_step = @step_size
-          @step_size = mod (-@ruleset_phase), @ruleset.length
+          @step_size = mod (-@ruleset_phase), @ruleset.size()
           try
             @doStep()
           finally
@@ -364,6 +367,7 @@
           
       set_rule: (rule) ->
         @rule = rule
+        @rule_phase = 0
         @inverse_rule =
           try
             rule.reverse()
@@ -373,7 +377,7 @@
         @ruleset = rule.stabilize_vacuum()
         @ruleset_phase = 0
         try
-          @inverse_ruleset = (r.reverse() for r in @ruleset)
+          @inverse_ruleset = @ruleset.reverse()
         catch e
           @inverse_ruleset = null
           
@@ -386,7 +390,7 @@
         #console.log "Showed rule diagram for rule #{rule.stringify()}"
 
         #By default, enable rulesets.        
-        if @ruleset.length > 1
+        if @ruleset.size() > 1
           E("stablize-rule").checked = true
           @ruleset_enabled = true
           E("rule-stabilization-pane").style.display = "block"
@@ -400,7 +404,7 @@
           if not @ruleset
             alert "No ruleset present, can't be enabled"
           else
-            @ruleset_phase = mod @generation, @ruleset.length
+            @ruleset_phase = mod @generation, @ruleset.size()
             @showRulesetPhase()
         if (enabled and not @ruleset_enabled) or (not enabled and @ruleset_enabled)
           vacuum_cycle = @rule.vacuum_cycle()
@@ -470,7 +474,7 @@
             c = parseInt sz[0], 10
             r = parseInt sz[1], 10
             throw new Error "Width and height must be even"  if r % 2 isnt 0 or c % 2 isnt 0
-            @gol = new MargolusNeighborehoodField(new Array2d(c, r), @rule)
+            @gol = new MargolusNeighborehoodField(new Array2d(c, r))
             @gol.clear()
             @view = new FieldView(@gol.field)
             #console.log "Updated field width to #{keys.size}"
@@ -516,7 +520,7 @@
               alert "Rule must be specified, when using ruleset_phase"
             else
               phase = parseInt keys.ruleset_phase
-              unless phase >=0 and phase < @ruleset.length
+              unless phase >=0 and phase < @ruleset.size()
                 alert "Ruleset phase #{phase} is outside of allowed region"
               else
                 @ruleset_enabled = true
@@ -611,7 +615,7 @@
         maxSteps
         
       enable_spaceship_catcher: ->
-        if (@ruleset.length > 1) and not @ruleset_enabled
+        if (@ruleset.size() > 1) and not @ruleset_enabled
           alert "Enable rule stabilization to run catcher"
           return
         if @spaceship_catcher is null
@@ -678,13 +682,14 @@
       #Evaluate pattern several steps until its ruleset phase is 0
       #Only usable in ruleset-based evaluation
       _promoteToZeroPhase: (pattern) ->
+        #TODO
         unless @ruleset_enabled
           return pattern
         rule_phase = @ruleset_phase
         field_phase = 0
         while rule_phase isnt 0
           pattern = evaluateCellList @ruleset[rule_phase], pattern, field_phase
-          rule_phase = (rule_phase+1)%@ruleset.length
+          rule_phase = (rule_phase+1)%@ruleset.size()
           field_phase ^= 1
         if field_phase
           pattern = Cells.offset pattern,1,1
@@ -1080,8 +1085,6 @@
   cells_icon = (value) -> "cellicon icon-cells_#{ value.toString(16) }"
   show_rule_diagram = (ruleObj, element) ->
       #rule must be array of 1 6 integers
-      rule = ruleObj.table
-      ruleObj.validate()
       
       dom = new DomBuilder
       
@@ -1091,21 +1094,26 @@
         [("1001"), ("0110")],
         [("0111"), ("1011"), ("1110"), ("1101")]]
 
-      for row in elements
-        dom.tag("div").CLASS("func_row")
-        isFirst = true
-        for x_str,j in row
-          x_value = parseInt(x_str, 2)
-          y_value = rule[x_value]
-          unless y_value is x_value
-            dom.tag("span").CLASS("icon icon-separator").end()  unless isFirst
-            dom.tag("span").CLASS("func_pair")
-               .tag("span").CLASS(cells_icon(x_value)).end()
-               .tag("span").CLASS("icon icon-rarrow").end()
-               .tag("span").CLASS(cells_icon(y_value)).end()
-               .end() #func-pair
-            isFirst = false
-        dom.end() #div
+      ruleObj.validate()
+      rule = ruleObj.table
+      for elemRule in ruleObj.rules
+        rule = elemRule.table
+        for row in elements
+          dom.tag("div").CLASS("func_row")
+          isFirst = true
+          for x_str,j in row
+            x_value = parseInt(x_str, 2)
+            y_value = rule[x_value]
+            unless y_value is x_value
+              dom.tag("span").CLASS("icon icon-separator").end()  unless isFirst
+              dom.tag("span").CLASS("func_pair")
+                 .tag("span").CLASS(cells_icon(x_value)).end()
+                 .tag("span").CLASS("icon icon-rarrow").end()
+                 .tag("span").CLASS(cells_icon(y_value)).end()
+                 .end() #func-pair
+              isFirst = false
+          dom.end() #div
+        dom.tag("hr").end()
       element.innerHTML = ""
       element.appendChild dom.finalize()
 
@@ -1498,16 +1506,16 @@
         handler e
 
     fill_rules [
-      ["Billiard Ball Machine", parse("0;8;4;3;2;5;9;7;1;6;10;11;12;13;14;15",";") ]
-      ["Bounce gas", parse("0;8;4;3;2;5;9;14; 1;6;10;13;12;11;7;15",";")],
-      ["HPP Gas", parse("0;8;4;12;2;10;9; 14;1;6;5;13;3;11;7;15",";")],
-      ["Rotations", parse("0;2;8;12;1;10;9; 11;4;6;5;14;3;7;13;15",";")],
-      ["Rotations II", parse("0;2;8;12;1;10;9; 13;4;6;5;7;3;14;11;15",";")],
-      ["Rotations III", parse("0;4;1;10;8;3;9;11; 2;6;12;14;5;7;13;15",";")],
-      ["Rotations IV", parse("0;4;1;12;8;10;6;14; 2;9;5;13;3;11;7;15",";")],
+      ["Billiard Ball Machine", parse("0,8,4,3,2,5,9,7,1,6,10,11,12,13,14,15") ]
+      ["Bounce gas", parse("0,8,4,3,2,5,9,14, 1,6,10,13,12,11,7,15")],
+      ["HPP Gas", parse("0,8,4,12,2,10,9, 14,1,6,5,13,3,11,7,15")],
+      ["Rotations", parse("0,2,8,12,1,10,9, 11,4,6,5,14,3,7,13,15")],
+      ["Rotations II", parse("0,2,8,12,1,10,9, 13,4,6,5,7,3,14,11,15")],
+      ["Rotations III", parse("0,4,1,10,8,3,9,11, 2,6,12,14,5,7,13,15")],
+      ["Rotations IV", parse("0,4,1,12,8,10,6,14, 2,9,5,13,3,11,7,15")],
       ["String Thing", NamedRules.stringThing],
-      ["String Thing II", parse("0;1;2;12;4;10;6;7;8; 9;5;11;3;13;14;15",";")],
-      ["Swap On Diag", parse("0;8;4;12;2;10;6;14; 1;9;5;13;3;11;7;15",";")],
+      ["String Thing II", parse("0,1,2,12,4,10,6,7,8, 9,5,11,3,13,14,15")],
+      ["Swap On Diag", parse("0,8,4,12,2,10,6,14, 1,9,5,13,3,11,7,15")],
       ["Critters", NamedRules.critters],
       ["Tron", NamedRules.tron],
       ["Double Rotate", NamedRules.doubleRotate],
