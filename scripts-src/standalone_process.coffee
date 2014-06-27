@@ -1,3 +1,5 @@
+#!/usr/bin/env coffee
+
 fs = require "fs"
 jss = require "JSONStream"
 stdio = require "stdio"
