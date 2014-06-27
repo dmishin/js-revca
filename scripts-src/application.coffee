@@ -419,6 +419,14 @@
         subRule = @rule.rules[index]
         @rule.rules.splice index, 0, subRule
         @set_rule @rule
+        
+      _reverseSubRule: (index) ->
+        try
+          @rule.rules[index] = @rule.rules[index].reverse()
+          @set_rule @rule
+        catch e
+          alert "Failed to reverse rule: #{e}"
+        
       _createSubRuleControls: (n) ->
         container = E "table-sub-rules"
         dom = new DomBuilder
@@ -431,6 +439,7 @@
               .tag("input").CLASS("rule-input").store("subrule_input").end()
             .end()
             .tag("td")
+            .tag("button").store("subrule_reverse").text("-T").a("title","Inverse sub-rule").end()          
             .tag("button").store("subrule_duplicate").text("+").a("title","Duplicate sub-rule").end()          
           #Don't add remove button, if number of rules is 1.
           if n > 1 
@@ -442,6 +451,7 @@
             #warning: mind ?, button can be absent
             dom.vars.subrule_delete?.addEventListener "click", (e) => @_removeSubRule i
             dom.vars.subrule_duplicate.addEventListener "click", (e) => @_duplicateSubRule i
+            dom.vars.subrule_reverse.addEventListener "click", (e) => @_reverseSubRule i
             dom.vars.subrule_input.addEventListener "change", (e) => @setRuleFromControls()
             fill_rules dom.vars.subrule_select, predefinedRules
             dom.vars.subrule_select.addEventListener "change", (e) =>
