@@ -144,10 +144,10 @@
     
         #Application state and initialization
         @rule = null
-        @rule_phase = 0
-        @ruleset = null
-        @ruleset_enabled = false
-        @ruleset_phase = 0
+        @stable_rule = null
+        @rule_phase = 0        
+        @stable_enabled = false
+
         @gol = new MargolusNeighborehoodField(new Array2d(field_size ...))
         @generation = 0
         @gol.clear()
@@ -243,75 +243,63 @@
         @view.draw ctx
 
 
-      doStepSimpleRule: (step_size) ->
-          for i in [0...step_size]
-            @gol.transform @rule.rules[@rule_phase]
-            @rule_phase = mod (@rule_phase + 1), @rule.size()
-            @onStep @rule_phase
-          @generation += step_size
-
-      doStepRuleset: (step_size) ->
-        phase = @ruleset_phase
-        ruleset = @ruleset
+      doStepImpl: (rule, step_size) ->
+        phase = @rule_phase
         for i in [0...step_size]
-          @gol.transform ruleset.rules[phase]
-          @ruleset_phase = phase = (phase+1) % ruleset.length
+          @gol.transform rule.rules[phase]
+          @rule_phase = phase = (phase+1) % rule.size()
           @onStep phase
         @generation += step_size
         
+
+      getActiveRule: ->
+        if @stable_enabled
+          @stable_rule
+        else
+          @rule
           
       onStep: (rulesetPhase)->
         if (gc = @spaceship_catcher)
-          if (@ruleset.size() > 1) and not @ruleset_enabled
-            alert "Rule is unstable, disabling catcher. Enable stabilization to make it available"
+          if (@stable_rule.size() > 1) and not @stable_enabled
+            alert "Disabling catcher. Enable stabilization to make it available"
             @disable_spaceship_catcher()
           else
             gc.scan @gol
           
       doStep: ->
-          if @ruleset_enabled
-            @doStepRuleset @step_size
-          else
-            @doStepSimpleRule @step_size
+          @doStepImpl @getActiveRule(), @step_size
           @showRulesetPhase()
             
           if @spaceship_catcher? and @generation >= @spaceship_catcher.reseed_period
             @generation = 0
-            @ruleset_phase = 0
+            @rule_phase = 0
             @do_clear()
             @random_fill_selection parseFloat(E("random-fill-percent").value)*0.01
           @updateCanvas()
           @update_time()
           @recordFrame()
 
-      doReverseStepRuleset: (step_size)->
-        phase = @ruleset_phase
-        iruleset = @inverse_ruleset
+      doReverseStepImpl: (irule, step_size)->
+        phase = @rule_phase
         for i in [0...step_size]
-          phase = mod (phase-1), iruleset.size()
-          @gol.untransform iruleset.rules[phase]
-          
-        @ruleset_phase = phase
+          phase = mod (phase-1), irule.size()
+          @gol.untransform irule.rules[phase]
+        @rule_phase = phase
         @generation -= @step_size
 
-      doReverseStepSimpleRule: (step_size)->
-        irule = @inverse_rule
-        for i in [0...@step_size]
-          @rule_phase = mod (@rule_phase-1), @rule.size()
-          @gol.untransform irule.rules[@rule_phase]
-        @generation -= @step_size
-        
+      getActiveRuleInv: ->
+        if @stable_enabled
+          @inverse_stable_rule
+        else
+          @inverse_rule
+      
       doReverseStep: ->
         unless @inverse_rule
           alert "Rule is not reversible"
           @stopPlayer()
           return
-        if @ruleset_enabled
-          @doReverseStepRuleset @step_size
-        else
-          @doReverseStepSimpleRule @step_size
+        @doReverseStepImpl @getActiveRuleInv(), @step_size
         @showRulesetPhase()
-
         @updateCanvas()
         @update_time()
         @recordFrame()
@@ -342,22 +330,17 @@
       reset_time: ->
           @generation = mod(@generation, 2) #Never try to change oddity of the generation
           @update_time()
-          if @ruleset_enabled
-            @ruleset_phase = mod @generation, @ruleset.size()
-          else
-            @rule_phase = mod @generation, @rule.size()
 
       #Play forward until rule phase is 0
       # Does nothing, if already 0
       nullifyRulesetPhase: ->
-        if @ruleset_enabled
-          old_step = @step_size
-          @step_size = mod (-@ruleset_phase), @ruleset.size()
-          try
-            @doStep()
-          finally
-            @step_size = old_step
-        null
+        old_step = @step_size
+        @step_size = mod (-@rule_phase), @getActiveRule().size()
+        try
+          @doStep()
+        finally
+          @step_size = old_step
+        return
         
       set_rule_str: (srule) ->
         try
@@ -367,6 +350,7 @@
           
       set_rule: (rule) ->
         @rule = rule
+        @rule_is_stable = rule.is_vacuum_stable()
         @rule_phase = 0
         @inverse_rule =
           try
@@ -374,12 +358,11 @@
           catch
             null
         
-        @ruleset = rule.stabilize_vacuum()
-        @ruleset_phase = 0
+        @stable_rule = rule.stabilize_vacuum()
         try
-          @inverse_ruleset = @ruleset.reverse()
+          @inverse_stable_rule = @stable_rule.reverse()
         catch e
-          @inverse_ruleset = null
+          @inverse_stable_rule = null
           
         selectOption E("select-rule"), rule.stringify(), ""
         #console.log "Selection rule #{rule.stringify()}"
@@ -389,31 +372,30 @@
         show_rule_properties rule, E("function_properties")
         #console.log "Showed rule diagram for rule #{rule.stringify()}"
 
-        #By default, enable rulesets.        
-        if @ruleset.size() > 1
+        #By default, enable rulesets, if it makes any difference
+        if not @rule_is_stable
           E("stablize-rule").checked = true
-          @ruleset_enabled = true
-          E("rule-stabilization-pane").style.display = "block"
+          @stable_enabled = true
           @show_rule_stabilization()
+          E("rule-stabilization-pane").style.display = "block"
         else
-          @ruleset_enabled = false
+          @stable_enabled = false
           E("rule-stabilization-pane").style.display = "none"
 
-      enableRuleset: (enabled) ->          
-        if enabled
-          if not @ruleset
-            alert "No ruleset present, can't be enabled"
-          else
-            @ruleset_phase = mod @generation, @ruleset.size()
-            @showRulesetPhase()
-        if (enabled and not @ruleset_enabled) or (not enabled and @ruleset_enabled)
-          vacuum_cycle = @rule.vacuum_cycle()
-          @gol.apply_xor vacuum_cycle[@ruleset_phase]
-          @updateCanvas()
-        @ruleset_enabled = enabled
+      enableRuleset: (enabled) ->
+        if enabled is @stable_enabled
+          return
+          
+        @rule_phase = mod @generation, @getActiveRule().size()
+        @showRulesetPhase()
+          
+        vacuum_cycle = @rule.vacuum_cycle()
+        @gol.apply_xor vacuum_cycle[@rule_phase]
+        @updateCanvas()
+        @stable_enabled = enabled
           
       showRulesetPhase: ->
-        phase = @ruleset_phase
+        phase = @rule_phase
         E("vacuum-phase").innerHTML = phase
     
       show_rule_stabilization: ->
@@ -427,7 +409,7 @@
 
         dom.tag("tbody")
         vacuum_cycle = @rule.vacuum_cycle()
-        for srule, i in @ruleset
+        for srule, i in @stable_rule.rules
            dom.tag("tr")
               .tag("td").text(i).end()
               .tag("td").tag("span").CLASS(cells_icon vacuum_cycle[i]).end().end()
@@ -520,11 +502,11 @@
               alert "Rule must be specified, when using ruleset_phase"
             else
               phase = parseInt keys.ruleset_phase
-              unless phase >=0 and phase < @ruleset.size()
+              unless phase >=0 and phase < @stable_rule.size()
                 alert "Ruleset phase #{phase} is outside of allowed region"
               else
-                @ruleset_enabled = true
-                @ruleset_phase = phase
+                @stable_enabled = true
+                @rule_phase = phase
                 @showRulesetPhase()
                 
           if keys.frame_delay?
@@ -558,8 +540,8 @@
         urlArgs.push "size=#{fld.width}x#{fld.height}"
         urlArgs.push "cell_size=#{@view.cell_size},#{@view.grid_width}"
         urlArgs.push "phase=#{@gol.phase}"
-        if @ruleset_enabled
-          urlArgs.push "ruleset_phase=#{@ruleset_phase}"
+        if @stable_enabled
+          urlArgs.push "ruleset_phase=#{@rule_phase}"
 
         loc = ""+window.location
         if (anchorStartsAt = loc.indexOf "#") isnt -1
@@ -615,7 +597,7 @@
         maxSteps
         
       enable_spaceship_catcher: ->
-        if (@ruleset.size() > 1) and not @ruleset_enabled
+        if (@stable_rule.size() > 1) and not @stable_enabled
           alert "Enable rule stabilization to run catcher"
           return
         if @spaceship_catcher is null
@@ -680,16 +662,14 @@
       gifRecorderClear: -> E("gif-output").innerHTML = ""
 
       #Evaluate pattern several steps until its ruleset phase is 0
-      #Only usable in ruleset-based evaluation
       _promoteToZeroPhase: (pattern) ->
         #TODO
-        unless @ruleset_enabled
-          return pattern
-        rule_phase = @ruleset_phase
-        field_phase = 0
+        rule_phase = @rule_phase
+        field_phase = 0 #Assume that pattern it shifted to be in the 0 field phase.
+        rule = @getActiveRule()
         while rule_phase isnt 0
-          pattern = evaluateCellList @ruleset[rule_phase], pattern, field_phase
-          rule_phase = (rule_phase+1)%@ruleset.size()
+          pattern = evaluateCellList rule.rules[rule_phase], pattern, field_phase
+          rule_phase = (rule_phase+1)%rule.size()
           field_phase ^= 1
         if field_phase
           pattern = Cells.offset pattern,1,1
