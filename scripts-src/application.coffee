@@ -1593,11 +1593,6 @@
     E("reset-timer").onclick = -> golApp.reset_time()
     E("nullify-phase").onclick = -> golApp.nullifyRulesetPhase()
 
-    #Rule set manually
-    E("set_rule").onclick = ->
-      golApp.setRuleFromControls()
-      
-      
     #RUle set from the editor
     E("select-style").onchange = ->
       sz = parseInt E("select-style").value, 10
