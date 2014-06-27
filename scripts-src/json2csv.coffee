@@ -1,3 +1,4 @@
+#!/usr/bin/env coffee
 fs = require "fs"
 #process = require "process"
 cells = require "../scripts-src/cells"
