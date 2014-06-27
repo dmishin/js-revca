@@ -1235,7 +1235,7 @@
 
     if invertible
       dom.tag "p"
-      if vacuum_cycle.length == 1
+      if rule.is_vacuum_stable()
         dom.text "Rule has stable vacuum."
       else
         dom.text "Rule has periodic vacuum with period #{vacuum_cycle.length}. The period is:"
