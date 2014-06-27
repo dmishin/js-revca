@@ -138,7 +138,17 @@
     </div>
     <div id="rule-info-pane" class="panel">
       <h2>Rule</h2>
-      Edit rule: <input id="rule"/> <button id="set_rule">(Set)</button>
+      Edit rule: 
+      <table id="table-sub-rules">
+	<thead>
+	  <tr> <th>#</th> <th>Code</th> <th></th>
+	  </tr>
+	<tbody>
+	</tbody>
+      </table>
+
+      <button id="set_rule">(Set)</button>
+
       <div id="rule-stabilization-pane" style="display:none">
 	<label>Hide vacuum changes:<input type="checkbox" name="stablize-rule" id="stablize-rule" title="When checked, difference between evolution of the actual field and vacuum is calculated. This speeds up calculation and improves speed"></input></label>
 	<br/>

@@ -172,9 +172,9 @@
 
         @library = new LibraryPane(E("pattern-report"), E("library-size"), this)
         @buffer = new BufferPane(E("active-pattern-canvas"))
+        @subRuleControls = []
         @set_rule parse rule_string
         @ghost_click_detector = new GhostClickDetector()
-        
         
       setSize: (cols, rows) ->
         RECOMMENDED_WIDTH = 800
@@ -348,6 +348,14 @@
         catch e
           alert "Failed to set rule: #{e}"
           
+      _updateRuleControls: ->
+        rule = @rule
+        if rule.size() isnt @subRuleControls.length
+          #need to rebuild controls for sub-rules
+          @_createSubRuleControls rule.size()
+        for control, i in @subRuleControls
+          control.input.value = rule.rules[i].stringify()
+        
       set_rule: (rule) ->
         @rule = rule
         @rule_is_stable = rule.is_vacuum_stable()
@@ -363,10 +371,13 @@
           @inverse_stable_rule = @stable_rule.reverse()
         catch e
           @inverse_stable_rule = null
+        #Updating GUI according to the rule
+
+        @_updateRuleControls()
           
         selectOption E("select-rule"), rule.stringify(), ""
         #console.log "Selection rule #{rule.stringify()}"
-        E("rule").value = rule.stringify()
+
         E("stable-sub-rules").innerHTML = ""
         show_rule_diagram rule, E("function_display")
         show_rule_properties rule, E("function_properties")
@@ -381,7 +392,49 @@
         else
           @stable_enabled = false
           E("rule-stabilization-pane").style.display = "none"
-
+      setRuleFromControls: ->
+        ruleStr = (c.input.value for c in @subRuleControls).join ";"
+        @set_rule_str ruleStr
+        
+      _removeSubRule: (index) ->
+        @rule.rules.splice index, 1
+        @set_rule @rule
+      _duplicateSubRule: (index)->
+        subRule = @rule.rules[index]
+        @rule.rules.splice index, 0, subRule
+        @set_rule @rule
+      _createSubRuleControls: (n) ->
+        container = E "table-sub-rules"
+        dom = new DomBuilder
+        dom.tag("tbody")
+        controls = []
+        for i in [0...n] by 1
+          dom.tag("tr")
+            .tag("td").text(i+1).end()
+            .tag("td")
+              .tag("input").CLASS("rule-input").store("subrule_input").end()
+            .end()
+            .tag("td")
+            .tag("button").store("subrule_duplicate").text("+").a("title","Duplicate sub-rule").end()          
+          #Don't add remove button, if number of rules is 1.
+          if n > 1 
+            dom.tag("button").store("subrule_delete").text("-").a("title","Remove sub-rule").end()
+          dom.end().end() #td, tr
+          #assign event handlers
+          do (i) =>
+            #warning: mind ?, button can be absent
+            dom.vars.subrule_delete?.addEventListener "click", (e) => @_removeSubRule i
+            dom.vars.subrule_duplicate.addEventListener "click", (e) => @_duplicateSubRule i
+            dom.vars.subrule_input.addEventListener "change", (e) => @setRuleFromControls()
+          #store controls
+          controls.push
+            input: dom.vars.subrule_input
+            delete_button: dom.vars.subrule_delete #can be undefined
+        dom.end()
+        container.innerHTML = ""
+        container.appendChild dom.finalize()
+        @subRuleControls = controls
+        
       enableRuleset: (enabled) ->
         if enabled is @stable_enabled
           return
@@ -563,7 +616,7 @@
           
       update_controls: ->
           #Update GUI controls
-          E("rule").value = @rule.stringify()
+          @_updateRuleControls()
 
           selectOrAddOption E("speed-show-every"), @step_size
           selectOrAddOption E("speed-frame-delay"), @step_delay, "#{@step_delay}ms"
@@ -1520,7 +1573,7 @@
 
     #Rule set manually
     E("set_rule").onclick = ->
-      golApp.set_rule_str E("rule").value
+      golApp.setRuleFromControls()
       
       
     #RUle set from the editor

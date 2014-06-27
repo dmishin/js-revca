@@ -194,7 +194,7 @@ body {
 #catcher-max-spaceship-size{
     width: 3em;
 }
-#rule {
+.rule-input {
     width: 16em;
 }
 #list-existing-libraries {
