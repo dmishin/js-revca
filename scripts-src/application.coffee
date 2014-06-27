@@ -137,7 +137,21 @@
     for eName in eventNames
       element.addEventListener eName, handler
     null
-      
+  predefinedRules = [
+      ["Billiard Ball Machine", parse("0,8,4,3,2,5,9,7,1,6,10,11,12,13,14,15") ]
+      ["Bounce gas", parse("0,8,4,3,2,5,9,14, 1,6,10,13,12,11,7,15")],
+      ["HPP Gas", parse("0,8,4,12,2,10,9, 14,1,6,5,13,3,11,7,15")],
+      ["Rotations", parse("0,2,8,12,1,10,9, 11,4,6,5,14,3,7,13,15")],
+      ["Rotations II", parse("0,2,8,12,1,10,9, 13,4,6,5,7,3,14,11,15")],
+      ["Rotations III", parse("0,4,1,10,8,3,9,11, 2,6,12,14,5,7,13,15")],
+      ["Rotations IV", parse("0,4,1,12,8,10,6,14, 2,9,5,13,3,11,7,15")],
+      ["String Thing", NamedRules.stringThing],
+      ["String Thing II", parse("0,1,2,12,4,10,6,7,8, 9,5,11,3,13,14,15")],
+      ["Swap On Diag", parse("0,8,4,12,2,10,6,14, 1,9,5,13,3,11,7,15")],
+      ["Critters", NamedRules.critters],
+      ["Tron", NamedRules.tron],
+      ["Double Rotate", NamedRules.doubleRotate],
+      ["Single Rotate", NamedRules.singleRotate]]      
   # Main application class
   class GolApplication
       constructor: (field_size, rule_string, container_id, canvas_id, overlay_id, time_display_id) ->
@@ -355,6 +369,8 @@
           @_createSubRuleControls rule.size()
         for control, i in @subRuleControls
           control.input.value = rule.rules[i].stringify()
+          selectOption control.select, @rule.rules[i].stringify(), ""            
+
         
       set_rule: (rule) ->
         @rule = rule
@@ -419,6 +435,7 @@
           #Don't add remove button, if number of rules is 1.
           if n > 1 
             dom.tag("button").store("subrule_delete").text("-").a("title","Remove sub-rule").end()
+          dom.tag("select").store("subrule_select").end()
           dom.end().end() #td, tr
           #assign event handlers
           do (i) =>
@@ -426,9 +443,18 @@
             dom.vars.subrule_delete?.addEventListener "click", (e) => @_removeSubRule i
             dom.vars.subrule_duplicate.addEventListener "click", (e) => @_duplicateSubRule i
             dom.vars.subrule_input.addEventListener "change", (e) => @setRuleFromControls()
+            fill_rules dom.vars.subrule_select, predefinedRules
+            dom.vars.subrule_select.addEventListener "change", (e) =>
+              sel = e.target or e.srcElement
+              if sel.value isnt ""
+                r = parse sel.value
+                @rule.rules[i] = r.rules[0]
+                @set_rule @rule
+
           #store controls
           controls.push
             input: dom.vars.subrule_input
+            select: dom.vars.subrule_select
             delete_button: dom.vars.subrule_delete #can be undefined
         dom.end()
         container.innerHTML = ""
@@ -1106,8 +1132,8 @@
     _bindEvents: ->
       addDelayedListener E("rle-encoded"), ["keypress", "blur", "change"], 200, => @fromRle()
 
-  fill_rules = (predefined_rules) ->
-    opts = E("select-rule").options
+  fill_rules = (select, predefined_rules) ->
+    opts = select.options
     for [name, rule], i in predefined_rules
       opts[i] = new Option(name, rule.stringify())
     opts[opts.length] = new Option("(User Defined)", "")
@@ -1545,21 +1571,7 @@
         golApp.ghost_click_detector.onTouch()
         handler e
 
-    fill_rules [
-      ["Billiard Ball Machine", parse("0,8,4,3,2,5,9,7,1,6,10,11,12,13,14,15") ]
-      ["Bounce gas", parse("0,8,4,3,2,5,9,14, 1,6,10,13,12,11,7,15")],
-      ["HPP Gas", parse("0,8,4,12,2,10,9, 14,1,6,5,13,3,11,7,15")],
-      ["Rotations", parse("0,2,8,12,1,10,9, 11,4,6,5,14,3,7,13,15")],
-      ["Rotations II", parse("0,2,8,12,1,10,9, 13,4,6,5,7,3,14,11,15")],
-      ["Rotations III", parse("0,4,1,10,8,3,9,11, 2,6,12,14,5,7,13,15")],
-      ["Rotations IV", parse("0,4,1,12,8,10,6,14, 2,9,5,13,3,11,7,15")],
-      ["String Thing", NamedRules.stringThing],
-      ["String Thing II", parse("0,1,2,12,4,10,6,7,8, 9,5,11,3,13,14,15")],
-      ["Swap On Diag", parse("0,8,4,12,2,10,6,14, 1,9,5,13,3,11,7,15")],
-      ["Critters", NamedRules.critters],
-      ["Tron", NamedRules.tron],
-      ["Double Rotate", NamedRules.doubleRotate],
-      ["Single Rotate", NamedRules.singleRotate]]
+    fill_rules E("select-rule"), predefinedRules
 
     
     fastButton "clear_field", -> golApp.do_clear()
