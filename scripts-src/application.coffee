@@ -260,7 +260,7 @@
           
       onStep: (rulesetPhase)->
         if (gc = @spaceship_catcher)
-          if (@stable_rule.size() > 1) and not @stable_enabled
+          if (not @rule_is_stable) and not @stable_enabled
             alert "Disabling catcher. Enable stabilization to make it available"
             @disable_spaceship_catcher()
           else
@@ -597,7 +597,7 @@
         maxSteps
         
       enable_spaceship_catcher: ->
-        if (@stable_rule.size() > 1) and not @stable_enabled
+        if (not @rule_is_stable) and not @stable_enabled
           alert "Enable rule stabilization to run catcher"
           return
         if @spaceship_catcher is null
@@ -1075,8 +1075,14 @@
         [("0111"), ("1011"), ("1110"), ("1101")]]
 
       ruleObj.validate()
-      rule = ruleObj.table
-      for elemRule in ruleObj.rules
+      dom.tag("table").CLASS("library-table")
+         .tag("thead")
+         .tag("tr").tag("th").text("Phase").end().tag("th").text("Diagram").end()
+         .end().end()
+         .tag("tbody")
+        
+      for elemRule, i in ruleObj.rules
+        dom.tag("tr").tag("td").text(i+1).end().tag("tr")
         rule = elemRule.table
         for row in elements
           dom.tag("div").CLASS("func_row")
@@ -1093,7 +1099,8 @@
                  .end() #func-pair
               isFirst = false
           dom.end() #div
-        dom.tag("hr").end()
+        dom.end().end() #td/tr
+      dom.end().end() #tbody/table
       element.innerHTML = ""
       element.appendChild dom.finalize()
 
