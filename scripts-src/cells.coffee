@@ -1,16 +1,11 @@
 #//////////////////////////////////////////////////////////////////////////////
-# Configuration analysis
+# Patterns
 #//////////////////////////////////////////////////////////////////////////////
 #Import section
-module_rle = require "./rle"
-module_rules = require "./rules"
-module_math_util = require "./math_util"
-module_reversible_ca = require "./reversible_ca"
-
-{parse_rle} = module_rle
-{Rule, Bits} = module_rules
-{Maximizer, mod2} = module_math_util
-{MargolusNeighborehoodField, Array2d} = module_reversible_ca
+{parse_rle, to_rle} = require "./rle"
+{Rule, Bits} = require "./rules"
+{Maximizer, mod2} = require "./math_util"
+{MargolusNeighborehoodField, Array2d} = require "./reversible_ca"
 
 exports.Cells = Cells =
   #Collection of methodw for working with cell lists
@@ -94,47 +89,12 @@ exports.Cells = Cells =
     for [xi, yi], i in lst
       if xi is x and yi is y
         return i
-    return null
+    return
+    
   ###
   Convert list of alive cells to RLE. List of cells must be sorted by Y, then by X, and coordinates of origin must be at (0,0)
   ###
-  to_rle: (cells) ->
-    #COnvert sorted (by y) list of alive cells to RLE encoding
-    rle = ""
-    count = 0
-    
-    appendNumber = (n, c) ->
-      rle += n  if n > 1
-      rle += c
-
-    endWritingBlock = ->
-      if count > 0
-        appendNumber count, "o"
-        count = 0
-
-    x = -1
-    y = 0
- 
-    for [xi, yi], i in cells
-      dy = yi - y
-      throw new Error "Cell list are not sorted by Y"  if dy < 0
-      
-      if dy > 0 #different row
-        endWritingBlock()
-        appendNumber dy, "$"
-        x = -1
-        y = yi
-      dx = xi - x
-      throw new Error "Cell list is not sorted by X"  if dx <= 0
-      if dx is 1
-        count++ #continue current horizontal line
-      else if dx > 1 #line broken
-        endWritingBlock()
-        appendNumber dx - 1, "b"  #write whitespace before next block
-        count = 1 #and remember the current cell
-      x = xi
-    endWritingBlock()
-    rle
+  to_rle: to_rle
 
   ###
   Convert RLE-encoded configutaion back to cell list
@@ -171,11 +131,14 @@ exports.Cells = Cells =
     e/((x1-x0+1)*(y1-y0+1))
 
   _rotations: [[1, 0, 0, 1], [0, 1, -1, 0], [-1, 0, 0, -1], [0, -1, 1, 0]] #Different rotations
-  
+
+  transformVector: ([dx,dy], t) ->
+    [dx * t[0] + dy * t[1],
+     dx * t[2] + dy * t[3]]
+    
   _find_normalizing_rotation: (dx, dy) ->
     for t in @_rotations
-      dx1 = dx * t[0] + dy * t[1]
-      dy1 = dx * t[2] + dy * t[3]
+      [dx1, dy1] = @transformVector [dx, dy], t
       if dx1 > 0 and dy1 >= 0 #important: different comparisions
         return [dx1, dy1, t]
     throw new Error "Impossible to rotate vector (#{dx},#{dy}) to the positive direction"
