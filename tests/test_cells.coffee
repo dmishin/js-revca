@@ -70,7 +70,7 @@ describe "Cells.transform(fig, tfm): transform cell coordinates relative to poin
 
 
 
-describe "Cells.parse_rle( rle_string ) parse standard RLE string into list of cells", ->
+describe "Cells.from_rle( rle_string ) parse standard RLE string into list of cells", ->
   it "must tolerate empty RLE", ->
     assert.deepEqual (Cells.from_rle ""), []
   it "must decode simple RLEs", ->
@@ -85,7 +85,7 @@ describe "Cells.parse_rle( rle_string ) parse standard RLE string into list of c
     rle = "$bo"
     assert.deepEqual (Cells.from_rle rle), [[1,1]]
 
-  it "must ignore trailing whitespaces", ->
+  it "must ignore trailing empty cells", ->
     rle = "$"
     assert.deepEqual (Cells.from_rle rle), []
     rle = "b"
@@ -101,10 +101,18 @@ describe "Cells.parse_rle( rle_string ) parse standard RLE string into list of c
     rle = "2o$obo$o"
     glider = [[0,0],[1,0],[0,1],[2,1],[0,2]]
     assert.deepEqual (Cells.from_rle rle), glider
-
+    
   it "must repeat counts, bigger than 10", ->
     rle = "20$30bo"
     assert.deepEqual (Cells.from_rle rle), [[30, 20]]
+  it "must ignore everything after !", ->
+    rle = "$bo!oo"
+    assert.deepEqual (Cells.from_rle rle), [[1,1]]
+  it "must ignore whitespaces", ->
+    # original: 2o$obo$o
+    rle = "  2\n\ro  $ o\t\t\tbo$o   "
+    glider = [[0,0],[1,0],[0,1],[2,1],[0,2]]
+    assert.deepEqual (Cells.from_rle rle), glider
 
 describe "Cells.to_rle( cells_list ): convert *sorted* list of cells to RLE code", ->
   it "must tolerate empty data", ->

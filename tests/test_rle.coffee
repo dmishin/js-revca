@@ -14,7 +14,7 @@ describe ("rle.remove_whitespaces(s)"), ->
     assert.equal (rws " a "), "a"
     assert.equal (rws "     "), ""
     assert.equal (rws "he\t\nllo"), "hello"    
-    assert.equal (rws "hello \n"), "hello"    
+    assert.equal (rws "hello \n"), "hello"
 
 describe "to_rle( cells_list ): convert *sorted* list of cells to RLE code", ->
   to_rle = module_rle.to_rle
@@ -50,3 +50,6 @@ describe "to_rle( cells_list ): convert *sorted* list of cells to RLE code", ->
     rle = "2o$obo$o"
     glider = [[0,0],[1,0],[0,1],[2,1],[0,2]]
     assert.equal (to_rle glider), rle
+
+  
+    

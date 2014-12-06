@@ -9,9 +9,13 @@ exports.parse_rle = (rle_string, put_cell) ->
   y = 0
   curCount = 0
   for i in [0 ... rle_string.length]
-    c = rle_string.charAt(i)
+    c = rle_string.charAt i
     if "0" <= c <= "9"
       curCount = curCount * 10 + parseInt(c,10)
+    else if c in [" ", "\n", "\r", "\t"]
+      continue
+    else if c is "!"
+      return
     else
       count = Math.max(curCount, 1)
       curCount = 0
@@ -27,7 +31,7 @@ exports.parse_rle = (rle_string, put_cell) ->
             x+=1
         else
           throw new Error "Unexpected character '#{c}' at position #{i}"
-  null
+  return
   
 exports.remove_whitespaces = remove_whitespaces = (s) -> s.replace /\s+/g, ""
 
