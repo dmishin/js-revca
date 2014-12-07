@@ -15,6 +15,29 @@ describe "Cells.areEqual(f1, f2)", ->
     assert.ok not Cells.areEqual [[1,1],[2,3]], [[1,1],[2,4]]
     assert.ok not Cells.areEqual [[1,1],[2,3]], [[1,1],[3,3]]
 
+describe "Cells.shiftEqual(f1, f2)", ->
+  it "must be true, when cell lists are equal", ->
+    assert.deepEqual Cells.shiftEqual([], [], 0), [0,0]
+    assert.deepEqual Cells.shiftEqual([], [], 1), [1,1]
+  it "must work for 1-cell", ->
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[1,1]], 0), [0,0]
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[1,1]], 1), null
+
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[3,3]], 0), [2,2]
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[3,3]], 1), null
+
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[0,0]], 0), null
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[0,0]], 1), [-1,-1]
+
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[3,5]], 0), [2,4]
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[3,5]], 1), null
+                
+  it "must work for 2-cell", ->
+    assert.deepEqual Cells.shiftEqual([[1,1],[2,3]], [[3,3],[4,5]], 0), [2,2]
+    assert.deepEqual Cells.shiftEqual([[1,1],[2,3]], [[3,-1],[4,1]], 0), [2,-2]
+    assert.deepEqual Cells.shiftEqual([[1,1],[2,3]], [[3,3],[4,5]], 1), null
+    assert.deepEqual Cells.shiftEqual([[1,1],[2,3]], [[3,-1],[4,1]], 1), null
+
 describe "Cells.sortXY(fig)", ->
   it "must inplace sort cell list, first by y, then by x", ->
     cells = [[1,0],[0,1],[0,0],[1,1]]
