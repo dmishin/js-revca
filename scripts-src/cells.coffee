@@ -19,7 +19,7 @@ exports.Cells = Cells =
 
   shiftEqual: (p1, p2, oddity) ->
     return null if p1.length isnt p2.length
-    return null if p1.length is 0
+    return [oddity, oddity] if p1.length is 0
     [x0, y0] = p1[0]
     [x1, y1] = p2[0]
     dx = x1-x0

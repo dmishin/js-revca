@@ -285,74 +285,13 @@ finishCollision = (rule, field, time) ->
 analyzeFragment = (rule, pattern, time, options={})->
   analysys = determinePeriod rule, pattern, time, options
   if analysys.cycle
+    console.log "####      Pattern analysys: #{JSON.stringify analysys}"    
     res = library.classifyPattern pattern, analysys.dx, analysys.dy, analysys.period
     console.log "####      Classification: #{JSON.stringify res}"
   
 #detect periodicity in pattern
 # Returns period and offset
 determinePeriod = (rule, pattern, time, options={})->
-    max_iters = options.max_iters ? 2048
-    max_population = options.max_population ? 1024
-    max_size = options.max_size ? 1024
-    
-    snap_below = (x,generation) ->
-      x - mod2(x + generation)
-                        
-    offsetToOrigin = (pattern, bounds, generation) ->
-      [x0,y0] = bounds
-      x0 = snap_below x0, generation
-      y0 = snap_below y0, generation
-      Cells.offset pattern, -x0, -y0
-      return [pattern, x0, y0]
-
-    stable_rules = [rule]
-    vacuum_period = stable_rules.length #ruleset size
-    Cells.sortXY pattern
-                
-    #Shift pattern to the origin
-    [pattern, x00, y00] = offsetToOrigin pattern, Cells.bounds(pattern), time
-                
-    #start search
-    cycle_found = false
-    curPattern = pattern
-    dx = 0
-    dy = 0
-    
-    result = {x0: x00, y0:y00, t0: time}
-    for iter in [vacuum_period .. max_iters] by vacuum_period
-      phase = 0
-      for stable_rule in stable_rules
-        curPattern = evaluateCellList stable_rule, curPattern, phase
-        phase ^= 1
-        
-      Cells.sortXY curPattern
-      #After evaluation, pattern is in unknown phase. Remove offset and transform back to phase 0
-      bounds = Cells.bounds curPattern
-      [curPattern, x0, y0] = offsetToOrigin curPattern, bounds, phase
-      dx += x0
-      dy += y0
-   
-      if Cells.areEqual pattern, curPattern
-        cycle_found = true
-        break
-      if curPattern.length > max_population
-        result.error = "pattern grew too big"
-        break
-      if Math.max( bounds[2]-bounds[0], bounds[3]-bounds[1]) > max_size
-        result.error = "pattern dimensions grew too big"
-        break
-
-    #Return results
-    result.cycle = cycle_found
-    if cycle_found
-      result.dx = dx
-      result.dy = dy
-      result.period = iter
-    return result
-
-#detect periodicity in pattern
-# Returns period and offset
-determinePeriod1 = (rule, pattern, time, options={})->
     pattern = Cells.copy pattern
     Cells.sortXY pattern
     max_iters = options.max_iters ? 2048
@@ -360,7 +299,7 @@ determinePeriod1 = (rule, pattern, time, options={})->
     max_size = options.max_size ? 1024
         
     #wait for the cycle  
-    result = {t0: time, cycle: false}
+    result = {cycle: false}
     patternEvolution rule, pattern, time, (curPattern, t) ->
       Cells.sortXY curPattern
       dt = t-time
@@ -486,8 +425,6 @@ pattern1 = Cells.from_rle "$2o2$2o"
 v1 = patternDelta determinePeriod rule, pattern1, 0
 
 console.log "#### dp:  #{JSON.stringify determinePeriod rule, pattern1, 0}"
-console.log "#### dp1: #{JSON.stringify determinePeriod1 rule, pattern1, 0}"
-throw new Error "stop"
 
 #1-cell
 pattern2 = Cells.from_rle "oo"
