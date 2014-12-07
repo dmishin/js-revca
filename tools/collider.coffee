@@ -7,21 +7,9 @@ fs = require "fs"
 {Cells, evaluateCellList, getDualTransform, splitPattern} = require "../scripts-src/cells"
 {Rule, from_list_elem} = require "../scripts-src/rules"
 stdio = require "stdio"
-{mod2} = require "../scripts-src/math_util"
+{mod,mod2} = require "../scripts-src/math_util"
 
-
-
-#single rotate - for test
-rule = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
-
-#2-block
-pattern1 = Cells.from_rle "$2o2$2o"
-v1 = [2, 0, 12] #dx, dy, p
-
-#1-cell
-pattern2 = [[1,1]]
-v2 = [0, 0, 4]
-
+library = null
 
 #GIven 2 3-vectors, return 3-ort, that forms full basis with both vectors
 opposingOrt = (v1, v2) ->
@@ -58,7 +46,7 @@ restoreComponent = (vec, index) ->
   v = vec[..]
   v.splice index, 0, 0
   return v  
-    
+
 isCompleteBasis = (v1, v2, v3) ->
   #determinant. copipe from maxima
   det = v1[0]*(v2[1]*v3[2]-v3[1]*v2[2])-v1[1]*(v2[0]*v3[2]-v3[0]*v2[2])+(v2[0]*v3[1]-v3[0]*v2[1])*v1[2]
@@ -190,7 +178,7 @@ normalizedRle = (fld) ->
   Cells.normalize ff
   Cells.to_rle ff
   
-  
+
 
 doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=10, waitForCollision=10)->
   params = collisionParameters [0,0,0], v1, offset, v2  
@@ -242,7 +230,7 @@ doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=1
   
   fld1 = fld2 = null #They are not needed anymore
   
-  finishCollision rule, coll.field, time
+  finishCollision rule, coll.field, coll.time
 
 simulateUntilCollision = (rule, fld1, fld2, time, timeGiveUp) ->
   fld  = fld1.concat fld2  
@@ -269,11 +257,243 @@ simulateUntilCollision = (rule, fld1, fld2, time, timeGiveUp) ->
 #simulate patern until it decomposes into several simple patterns
 finishCollision = (rule, field, time) ->
   console.log "#### Collision RLE: #{normalizedRle field}"
+  growthLimit = field.length + 15 #when to try to separate pattern
+
+  while true
+    field = evaluateCellList rule, field, mod2(time)
+    time += 1
+    [x0, y0, x1,y1] = Cells.bounds field
+    size = Math.max (x1-x0), (y1-y0)
+    #console.log "####    T:#{time}, s:#{size}, R:#{normalizedRle field}"
+    if size > growthLimit
+      console.log "#### At time #{time}, pattern growed to #{size}: #{normalizedRle field}"
+      break
+  #now try to split result into several patterns
+  parts = separatePatternParts field
+  console.log "#### Detected #{parts.length} parts"
+  if parts.length is 1
+    console.log "#### only one part, try more time"
+    return finishCollision rule, field, time
+  for part, i in parts
+    console.log "####   #{i}. #{normalizedRle part}"
+    #now analyze this part
+    res = analyzeFragment rule, part, time
+    console.log "####        #{JSON.stringify res}"
+
+    
+
+analyzeFragment = (rule, pattern, time, options={})->
+  analysys = determinePeriod rule, pattern, time, options
+  if analysys.cycle
+    res = library.classifyPattern pattern, analysys.dx, analysys.dy, analysys.period
+    console.log "####      Classification: #{JSON.stringify res}"
   
+#detect periodicity in pattern
+# Returns period and offset
+determinePeriod = (rule, pattern, time, options={})->
+    max_iters = options.max_iters ? 2048
+    max_population = options.max_population ? 1024
+    max_size = options.max_size ? 1024
+    
+    snap_below = (x,generation) ->
+      x - mod2(x + generation)
+                        
+    offsetToOrigin = (pattern, bounds, generation) ->
+      [x0,y0] = bounds
+      x0 = snap_below x0, generation
+      y0 = snap_below y0, generation
+      Cells.offset pattern, -x0, -y0
+      return [pattern, x0, y0]
+
+    stable_rules = [rule]
+    vacuum_period = stable_rules.length #ruleset size
+    Cells.sortXY pattern
+                
+    #Shift pattern to the origin
+    [pattern, x00, y00] = offsetToOrigin pattern, Cells.bounds(pattern), time
+                
+    #start search
+    cycle_found = false
+    curPattern = pattern
+    dx = 0
+    dy = 0
+    
+    result = {x0: x00, y0:y00, t0: time}
+    for iter in [vacuum_period .. max_iters] by vacuum_period
+      phase = 0
+      for stable_rule in stable_rules
+        curPattern = evaluateCellList stable_rule, curPattern, phase
+        phase ^= 1
         
+      Cells.sortXY curPattern
+      #After evaluation, pattern is in unknown phase. Remove offset and transform back to phase 0
+      bounds = Cells.bounds curPattern
+      [curPattern, x0, y0] = offsetToOrigin curPattern, bounds, phase
+      dx += x0
+      dy += y0
+   
+      if Cells.areEqual pattern, curPattern
+        cycle_found = true
+        break
+      if curPattern.length > max_population
+        result.error = "pattern grew too big"
+        break
+      if Math.max( bounds[2]-bounds[0], bounds[3]-bounds[1]) > max_size
+        result.error = "pattern dimensions grew too big"
+        break
+
+    #Return results
+    result.cycle = cycle_found
+    if cycle_found
+      result.dx = dx
+      result.dy = dy
+      result.period = iter
+    return result
+
+#detect periodicity in pattern
+# Returns period and offset
+determinePeriod1 = (rule, pattern, time, options={})->
+    pattern = Cells.copy pattern
+    Cells.sortXY pattern
+    max_iters = options.max_iters ? 2048
+    max_population = options.max_population ? 1024
+    max_size = options.max_size ? 1024
+        
+    #wait for the cycle  
+    result = {t0: time, cycle: false}
+    patternEvolution rule, pattern, time, (curPattern, t) ->
+      Cells.sortXY curPattern
+      dt = t-time
+      eq = Cells.shiftEqual pattern, curPattern, mod2 dt
+      if eq
+        result.cycle = true
+        [result.dx, result.dy] = eq
+        result.period = dt
+        return false
+      if curPattern.length > max_population
+        result.error = "pattern grew too big"
+        return false
+      bounds = Cells.bounds curPattern
+      if Math.max( bounds[2]-bounds[0], bounds[3]-bounds[1]) > max_size
+        result.error = "pattern dimensions grew too big"
+        return false
+      return true #continue evaluation
+    return result
+
+snap_below = (x,generation) ->
+  x - mod2(x + generation)
+
+#move pattern to 0,                                             
+offsetToOrigin = (pattern, generation) ->
+  [x0,y0] = Cells.topLeft pattern
+  x0 = snap_below x0, generation
+  y0 = snap_below y0, generation
+  Cells.offset pattern, -x0, -y0
+  return [x0, y0]
+
+#Continuousely evaluate the pattern
+# Only returns pattern in ruleset phase 0.
+patternEvolution = (rule, pattern, time, callback)->
+  stable_rules = [rule]
+  vacuum_period = stable_rules.length #ruleset size
+  curPattern = pattern
+  while true
+    phase = mod2 time
+    sub_rule_idx = mod time, vacuum_period
+    curPattern = evaluateCellList stable_rules[sub_rule_idx], curPattern, phase
+    time += 1
+    if mod(time, vacuum_period) is 0
+      break unless callback curPattern, time
+  return
+
+class Library
+  constructor: (@rule) ->
+    @rle2pattern = {}
+     
+  #Assumes that pattern is in its canonical form
+  addPattern: (pattern, delta) ->
+    rle = Cells.to_rle pattern
+    if @rle2pattern.hasOwnProperty rle
+      throw new Error "Pattern already present: #{rle}"
+    @rle2pattern[rle] = delta
+  
+  classifyPattern: (pattern, dx, dy, period) ->
+    #determine canonical ofrm ofthe pattern, present in the library;
+    # return its offset
+
+    #first: rotate the pattern caninically, if it is moving
+    if dx isnt 0 or dy isnt 0
+      [dx1, dy1, tfm] = Cells._find_normalizing_rotation dx, dy
+      pattern1 = Cells.transform pattern, tfm, false #no need to normalize
+    return
+    
+
+#geometrically separate pattern into several parts
+# returns: list of sub-patterns
+separatePatternParts = (pattern, range=4) ->
+  
+    mpattern = {} #set of visited coordinates
+    key = (x,y) -> ""+x+"#"+y
+    has_cell = (x,y) -> mpattern.hasOwnProperty key x, y
+    erase = (x,y) -> delete mpattern[ key x, y ]
+    
+    #convert pattern to map-based repersentation
+    for xy in pattern
+      mpattern[key xy...] = xy
+      
+    cells = []
+    
+    #return true, if max size reached.
+    do_pick_at = (x,y)->
+      erase x, y
+      cells.push [x,y]
+      for dy in [-range..range] by 1
+        y1 = y+dy
+        for dx in [-range..range] by 1
+          continue if dy is 0 and dx is 0
+          x1 = x+dx
+          if has_cell x1, y1
+            do_pick_at x1, y1
+      return
+      
+    parts = []
+    while true
+      hadPattern = false
+      for _k, xy of mpattern
+        hadPattern = true #found at least one non-picked cell
+        do_pick_at xy ...
+        break
+      if hadPattern
+        parts.push cells
+        cells = []
+      else
+        break
+    return parts
+    
 #in margolus neighborhood, not all offsets produce the same pattern
 isValidOffset = ([dx, dy, dt]) -> ((dx+dt)%2 is 0) and ((dy+dt)%2 is 0)
 ############################
+
+patternDelta = (analysysResult)->
+  unless analysysResult.cycle then throw new Error "Pattern has no period"
+  [analysysResult.dx, analysysResult.dy, analysysResult.period]
+  
+#single rotate - for test
+rule = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+
+#2-block
+pattern1 = Cells.from_rle "$2o2$2o"
+v1 = patternDelta determinePeriod rule, pattern1, 0
+
+console.log "#### dp:  #{JSON.stringify determinePeriod rule, pattern1, 0}"
+console.log "#### dp1: #{JSON.stringify determinePeriod1 rule, pattern1, 0}"
+throw new Error "stop"
+
+#1-cell
+pattern2 = Cells.from_rle "oo"
+v2 = patternDelta determinePeriod rule, pattern2, 0
+
+library = new Library rule
 
 console.log "Two velocities: #{v1}, #{v2}"
 [freeIndex, freeOrt] = opposingOrt v1, v2

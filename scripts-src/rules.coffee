@@ -39,7 +39,6 @@ exports.Rule = class Rule
     for r1i, i in @rules
       return false if not r1i.equals(rules2[i])
     true
-    
   ###
   # Inverse ruleset, raise exception if impossible
   ###

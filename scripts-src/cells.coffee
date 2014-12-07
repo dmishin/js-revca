@@ -16,6 +16,24 @@ exports.Cells = Cells =
       xy2 = l2[i]
       return false if xy1[0] isnt xy2[0] or xy1[1] isnt xy2[1]
     true
+
+  shiftEqual: (p1, p2, oddity) ->
+    return null if p1.length isnt p2.length
+    return null if p1.length is 0
+    [x0, y0] = p1[0]
+    [x1, y1] = p2[0]
+    dx = x1-x0
+    dy = y1-y0
+    if (mod2(dx+oddity) isnt 0) or mod2(dy+oddity) isnt 0
+      return null #wrong oddity
+    
+    for i in [1...p1.length] by 1
+      [x0, y0] = p1[i]
+      [x1, y1] = p2[i]
+      if (x1-x0 isnt dx) or (y1-y0 isnt dy)
+        return null
+    return [dx,dy]
+    
   copy: (lst) -> ( xy[..] for xy in lst )
   #Sort list of cells, first by X then by Y
   sortXY: (lst) ->
@@ -129,6 +147,7 @@ exports.Cells = Cells =
         return [dx1, dy1, t]
     throw new Error "Impossible to rotate vector (#{dx},#{dy}) to the positive direction"
 
+  
   analyze: (pattern, rule, options={}) ->
     throw new Error ("Pattern undefined")  unless pattern
     throw new Error ("Rule undefined")  unless rule
