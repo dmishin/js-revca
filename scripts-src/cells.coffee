@@ -16,7 +16,7 @@ exports.Cells = Cells =
       xy2 = l2[i]
       return false if xy1[0] isnt xy2[0] or xy1[1] isnt xy2[1]
     true
-
+  copy: (lst) -> ( xy[..] for xy in lst )
   #Sort list of cells, first by X then by Y
   sortXY: (lst) ->
     lst.sort ([x1,y1],[x2,y2]) -> (y1-y2) or (x1-x2)
@@ -103,20 +103,6 @@ exports.Cells = Cells =
     cells = []
     parse_rle rle, (x, y) -> cells.push [x, y]
     cells
-
-  #
-  #var cc=[[1,0],[2,0],[2,1],[2,2]];
-  #//   0123
-  #// 0  ##
-  #// 1   #
-  #// 2   #
-  #var rle_=cellList2Rle(cc);
-  #var rle_expect="b2o$2bo$2bo";
-  #if (rle_ !== rle_expect){
-  #    alert("RLE wrong:"+rle_+"\nExpected:"+rle_expect);
-  #}
-  #
-  #
 
   #Energy fucntion to calculate canonical form
   # Energy is bigger for the more compact configurations.
