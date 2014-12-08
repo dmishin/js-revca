@@ -278,7 +278,6 @@ finishCollision = (rule, field, time) ->
     console.log "####   #{i}. #{normalizedRle part}"
     #now analyze this part
     res = analyzeFragment rule, part, time
-    console.log "####        #{JSON.stringify res}"
 
     
 
@@ -301,8 +300,9 @@ determinePeriod = (rule, pattern, time, options={})->
     #wait for the cycle  
     result = {cycle: false}
     patternEvolution rule, pattern, time, (curPattern, t) ->
-      Cells.sortXY curPattern
       dt = t-time
+      if dt is 0 then return true
+      Cells.sortXY curPattern
       eq = Cells.shiftEqual pattern, curPattern, mod2 dt
       if eq
         result.cycle = true
@@ -339,10 +339,10 @@ patternEvolution = (rule, pattern, time, callback)->
   while true
     phase = mod2 time
     sub_rule_idx = mod time, vacuum_period
+    if sub_rule_idx is 0
+      break unless callback curPattern, time
     curPattern = evaluateCellList stable_rules[sub_rule_idx], curPattern, phase
     time += 1
-    if mod(time, vacuum_period) is 0
-      break unless callback curPattern, time
   return
 
 class Library
@@ -355,16 +355,53 @@ class Library
     if @rle2pattern.hasOwnProperty rle
       throw new Error "Pattern already present: #{rle}"
     @rle2pattern[rle] = delta
-  
+    
+  addRle: (rle) ->
+    pattern = Cells.from_rle rle
+    analysys = determinePeriod @rule, pattern, 0
+    if not analysys.cycle then throw new Error "Pattern #{rle} is not periodic!"
+    console.log "#### add anal: #{JSON.stringify analysys}"
+    @addPattern pattern, patternDelta analysys
+      
   classifyPattern: (pattern, dx, dy, period) ->
     #determine canonical ofrm ofthe pattern, present in the library;
     # return its offset
-
+    
     #first: rotate the pattern caninically, if it is moving
     if dx isnt 0 or dy isnt 0
       [dx1, dy1, tfm] = Cells._find_normalizing_rotation dx, dy
       pattern1 = Cells.transform pattern, tfm, false #no need to normalize
-    return
+      result = @_classifyNormalizedPattern pattern1, dx1, dy1, period
+      result.transform = tfm
+    else
+      #it is not a spaceship - no way to find a normal rotation. Check all 4 rotations.
+      for tfm in Cells._rotations
+        pattern1 = Cells.transform pattern, tfm, false
+        result = @_classifyNormalizedPattern pattern1, 0, 0, period
+        if result.found
+          result.transform = tfm
+          break
+    return result
+
+  _classifyNormalizedPattern: (pattern, dx, dy, period) ->
+    #console.log "#### Classifying: #{JSON.stringify pattern}"
+    result = {found:false}
+    self = this
+    patternEvolution @rule, pattern, 0, (p, t)->
+      p = Cells.copy p
+      [dx, dy] = offsetToOrigin p, t
+      Cells.sortXY p
+      rle = Cells.to_rle p
+      #console.log "####    T:#{t}, rle:#{rle}"
+      if self.rle2pattern.hasOwnProperty rle
+        result.x = dx
+        result.y = dy
+        result.t = t
+        result.rle = rle
+        result.found=true
+        return false
+      return t < period
+    return result
     
 
 #geometrically separate pattern into several parts
@@ -427,10 +464,12 @@ v1 = patternDelta determinePeriod rule, pattern1, 0
 console.log "#### dp:  #{JSON.stringify determinePeriod rule, pattern1, 0}"
 
 #1-cell
-pattern2 = Cells.from_rle "oo"
+pattern2 = Cells.from_rle "o"
 v2 = patternDelta determinePeriod rule, pattern2, 0
 
 library = new Library rule
+library.addRle "$2o2$2o"
+library.addRle "o"
 
 console.log "Two velocities: #{v1}, #{v2}"
 [freeIndex, freeOrt] = opposingOrt v1, v2
