@@ -170,6 +170,68 @@ exports.Cells = Cells =
     [x0,y0,x1,y1] = Cells.bounds lst
     e/((x1-x0+1)*(y1-y0+1))
 
+  energy1: (lst) ->
+    xy2item = {}
+    xs = 0
+    ys = 0
+    for [x,y] in lst
+      xy2item["#{x}$#{y}"]=true
+      xs += x
+      ys += y
+    xs /= lst.length
+    ys /= lst.length
+    #weighted number of neighbores. 2 for the diagonal ones and 3 for the orthogonal
+    # Total max is 3*4+2*4 = 20.
+    numneigh = (x,y)->
+      s = 0
+      for dx in [-1 .. 1]
+        for dy in [-1..1]
+          if (dx is 0) and (dy is 0)
+            continue
+          if xy2item["#{x+dx}$#{y+dy}"]
+            s += if ((dx is 0) or (dy is 0)) then 3 else 2
+      return s
+    #the more "alone" the point is, the more energy it has.
+    # also, the farther it is from the center, the more energy it has
+    e = 0
+    for [x,y] in lst
+      #d = Math.abs(x-xs) + Math.abs(y-ys)
+      #e += d / (numneigh(x,y)+1)
+      e += 1 / (numneigh(x,y)+1)
+
+    #reduce energy for the symmetric patterns
+    is_symmetric = (kx, ky, flp)->
+      for [x,y] in lst
+        dx = x-xs
+        dy = y-ys
+        if flp
+          tmp=dx
+          dx =dy
+          dy=tmp
+        xt = (xs + dx*kx) | 0
+        yt = (ys + dy*ky) | 0
+        if not xy2item["#{xt}$#{yt}"]
+          return false
+      return true
+      
+    symmetries = 0
+    if is_symmetric(1,-1,false)
+      symmetries += 1
+    if is_symmetric(-1,1, false)
+      symmetries += 1
+    if is_symmetric(1,1,true)
+      symmetries += 1
+    if is_symmetric(-1,-1,true)
+      symmetries += 1
+    if is_symmetric(-1,-1, false)
+      symmetries += 1
+    
+    #finally,prefer the patterns that are grouped in a small area.
+    #[x0,y0,x1,y1] = Cells.bounds lst
+    #return -e*((x1-x0+1)*(y1-y0+1))
+    #the more symmetries it has, the less is symmetry energy
+    return -(e + (30000)/(symmetries + 1)) #10000 is the weight of a symmetry factor
+
   _rotations: [[1, 0, 0, 1], [0, 1, -1, 0], [-1, 0, 0, -1], [0, -1, 1, 0]] #Different rotations
   
   _find_normalizing_rotation: (dx, dy) ->
