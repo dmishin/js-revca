@@ -284,8 +284,10 @@ finishCollision = (rule, field, time) ->
 analyzeFragment = (rule, pattern, time, options={})->
   analysys = determinePeriod rule, pattern, time, options
   if analysys.cycle
-    console.log "####      Pattern analysys: #{JSON.stringify analysys}"    
-    res = library.classifyPattern pattern, analysys.dx, analysys.dy, analysys.period
+    console.log "####      Pattern analysys: #{JSON.stringify analysys}"
+
+    
+    res = library.classifyPattern pattern, time, analysys.dx, analysys.dy, analysys.period
     console.log "####      Classification: #{JSON.stringify res}"
   
 #detect periodicity in pattern
@@ -361,9 +363,12 @@ class Library
     analysys = determinePeriod @rule, pattern, 0
     if not analysys.cycle then throw new Error "Pattern #{rle} is not periodic!"
     console.log "#### add anal: #{JSON.stringify analysys}"
-    @addPattern pattern, patternDelta analysys
+    [dx,dy,p]=delta=patternDelta analysys
+    unless (dx>0 and dy>=0) or (dx is 0 and dy is 0)
+      throw new Error "Pattern #{rle} moves in wrong direction: #{dx},#{dy}"
+    @addPattern pattern, delta
       
-  classifyPattern: (pattern, dx, dy, period) ->
+  classifyPattern: (pattern, time, dx, dy, period) ->
     #determine canonical ofrm ofthe pattern, present in the library;
     # return its offset
     
@@ -371,36 +376,37 @@ class Library
     if dx isnt 0 or dy isnt 0
       [dx1, dy1, tfm] = Cells._find_normalizing_rotation dx, dy
       pattern1 = Cells.transform pattern, tfm, false #no need to normalize
-      result = @_classifyNormalizedPattern pattern1, dx1, dy1, period
+      result = @_classifyNormalizedPattern pattern1, time, dx1, dy1, period
       result.transform = tfm
     else
       #it is not a spaceship - no way to find a normal rotation. Check all 4 rotations.
       for tfm in Cells._rotations
         pattern1 = Cells.transform pattern, tfm, false
-        result = @_classifyNormalizedPattern pattern1, 0, 0, period
+        result = @_classifyNormalizedPattern pattern1, time, 0, 0, period
         if result.found
           result.transform = tfm
           break
     return result
 
-  _classifyNormalizedPattern: (pattern, dx, dy, period) ->
-    #console.log "#### Classifying: #{JSON.stringify pattern}"
+  _classifyNormalizedPattern: (pattern, time, dx, dy, period) ->
+    #console.log "#### Classifying: #{JSON.stringify pattern} at #{time}"
     result = {found:false}
     self = this
-    patternEvolution @rule, pattern, 0, (p, t)->
+    patternEvolution @rule, pattern, time, (p, t)->
       p = Cells.copy p
       [dx, dy] = offsetToOrigin p, t
       Cells.sortXY p
       rle = Cells.to_rle p
       #console.log "####    T:#{t}, rle:#{rle}"
       if self.rle2pattern.hasOwnProperty rle
+        #console.log "####      found! #{rle}"
         result.x = dx
         result.y = dy
         result.t = t
         result.rle = rle
         result.found=true
         return false
-      return t < period
+      return (t-time) < period
     return result
     
 
@@ -469,7 +475,14 @@ v2 = patternDelta determinePeriod rule, pattern2, 0
 
 library = new Library rule
 library.addRle "$2o2$2o"
+library.addRle "bo$2b2o$3bo"
+library.addRle "2bobo$b2o"
+library.addRle "b2o2$2o"
+library.addRle "bo$bo$2o"
+library.addRle "o$o2$o$o"
+
 library.addRle "o"
+library.addRle "oo"
 
 console.log "Two velocities: #{v1}, #{v2}"
 [freeIndex, freeOrt] = opposingOrt v1, v2
