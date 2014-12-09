@@ -4,7 +4,7 @@
 # Make collision table
 
 fs = require "fs"
-{Cells, evaluateCellList, getDualTransform, splitPattern} = require "../scripts-src/cells"
+{Cells, inverseTfm, evaluateCellList, getDualTransform, splitPattern} = require "../scripts-src/cells"
 {Rule, from_list_elem} = require "../scripts-src/rules"
 stdio = require "stdio"
 {mod,mod2} = require "../scripts-src/math_util"
@@ -189,7 +189,7 @@ doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=1
   if params.dist > collisionTreshold
     #console.log "#### Too far, nearest approach #{params.dist} > #{collisionTreshold}"
     return
-  #console.log "#### colliding with offset #{JSON.stringify offset}"
+  
   #console.log "#### CP: #{JSON.stringify params}"
   #console.log "#### AP: #{JSON.stringify ap}"
   
@@ -225,6 +225,10 @@ doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=1
   if not coll.collided
     #console.log "#### No interaction detected until T=#{timeGiveUp}. Give up."
     return
+    
+  console.log "#### colliding:"
+  console.log "#### 1)  #{normalizedRle p1} at x=0, y=0, t=0"
+  console.log "#### 2)  #{normalizedRle p2} at x=#{offset[0]}, y=#{offset[1]}, t=#{offset[2]}"
   #console.log "#### Got hit at T=#{coll.time}  (give up at #{timeGiveUp})"
   timeCollisionStart = coll.time
   
@@ -386,6 +390,8 @@ class Library
         if result.found
           result.transform = tfm
           break
+    #reverse-transform position
+    [[result.x0, result.y0]] = Cells.transform [[result.x, result.y]], inverseTfm(result.transform)
     return result
 
   _classifyNormalizedPattern: (pattern, time, dx, dy, period) ->
