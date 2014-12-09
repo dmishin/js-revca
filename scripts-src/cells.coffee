@@ -350,6 +350,13 @@ transforms = [
   tfmRecord("flipxy", [0,1,1,0]),
   tfmRecord("flipixy",[0,-1,-1,0])]
 
+exports.inverseTfm = inverseTfm = (tfm) ->
+  [a00,a01, a10,a11] = tfm
+  d = a00*a11 - a01*a10
+  if d is 0 then throw new Error "Singular matrix"
+  id = 1/d
+  return [a11*id, -a01*id, -a10*id, a00*id]
+
 #Returns dual transformation matrix, or none, if dual transform does not exists
 # Matrix is returned as array of 4 elements, [t00, t01, t10, t11]
 exports.getDualTransform = getDualTransform = (rule)->

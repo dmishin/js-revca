@@ -1,6 +1,6 @@
 assert = require "assert"
 module_cells = require "../scripts-src/cells"
-{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = module_cells
+{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern, inverseTfm} = module_cells
 {NamedRules, from_list, from_list_elem, Bits} = require "../scripts-src/rules"
 # mocha tests/test-math-utils.coffee --compilers coffee:coffee-script
 
@@ -91,7 +91,15 @@ describe "Cells.transform(fig, tfm): transform cell coordinates relative to poin
     expected = [[3,0],[1,1]]
     assert.deepEqual  (Cells.transform cells, t), expected
 
-
+describe "inverseTfm(tfm): inverse transform matrix", ->
+  assert.deepEqual inverseTfm([1,0,0,1]), [1,0,0,1]
+  assert.deepEqual inverseTfm([-1,0,0,1]), [-1,0,0,1]
+  assert.deepEqual inverseTfm([1,0,0,-1]), [1,0,0,-1]
+  assert.deepEqual inverseTfm([-1,0,0,-1]), [-1,0,0,-1]
+  
+  assert.deepEqual inverseTfm([0,1,1,0]), [0,1,1,0]
+  assert.deepEqual inverseTfm([0,-1,1,0]), [0,1,-1,0]
+  
 
 describe "Cells.from_rle( rle_string ) parse standard RLE string into list of cells", ->
   it "must tolerate empty RLE", ->
