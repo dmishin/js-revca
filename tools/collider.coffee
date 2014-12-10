@@ -179,16 +179,27 @@ normalizedRle = (fld) ->
   Cells.to_rle ff
   
 
-
-doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=10, waitForCollision=10)->
+# Collide 2 patterns: p1 and p2,
+#    p1 at [0,0,0] and p2 at `offset`.
+#    startDist::int average initial distance to put patterns at. Should be large enought for patterns not to intersect
+#    collisionTreshold:: if patterns don't come closer than this distance, don't consider them colliding.
+#    waitForCollision::int How many generations to wait after the approximate nearest approach, until the interaction would start.
+#
+#  Returned value: object
+#    collision::bool true if collision
+#    timeStart::int first generation, where interaction has started
+#    products::[ ProductDesc ]  list of collision products (patterns with their positions and classification
+doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=20)->
+  waitForCollision = v1[2] + v2[2] #sum of periods
   params = collisionParameters [0,0,0], v1, offset, v2  
   ap = approachParameters [0,0,0], v1, offset, v2, startDist
+  collision = {collision:false}
   if not ap.approach
     #console.log "#### No approach, nearest approach: #{params.dist}"
-    return
+    return collision
   if params.dist > collisionTreshold
     #console.log "#### Too far, nearest approach #{params.dist} > #{collisionTreshold}"
-    return
+    return collision
   
   #console.log "#### CP: #{JSON.stringify params}"
   #console.log "#### AP: #{JSON.stringify ap}"
@@ -224,17 +235,20 @@ doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=1
   
   if not coll.collided
     #console.log "#### No interaction detected until T=#{timeGiveUp}. Give up."
-    return
+    return collision
     
   console.log "#### colliding:"
   console.log "#### 1)  #{normalizedRle p1} at x=0, y=0, t=0"
   console.log "#### 2)  #{normalizedRle p2} at x=#{offset[0]}, y=#{offset[1]}, t=#{offset[2]}"
-  #console.log "#### Got hit at T=#{coll.time}  (give up at #{timeGiveUp})"
+  console.log "####     collision at T=#{coll.time}  (give up at #{timeGiveUp})"
+  collision.timeStart = coll.time
+  collision.collision = true
   timeCollisionStart = coll.time
   
   fld1 = fld2 = null #They are not needed anymore
   
-  finishCollision rule, coll.field, coll.time
+  collision.products = finishCollision rule, coll.field, coll.time
+  return collision
 
 simulateUntilCollision = (rule, fld1, fld2, time, timeGiveUp) ->
   fld  = fld1.concat fld2  
@@ -259,6 +273,7 @@ simulateUntilCollision = (rule, fld1, fld2, time, timeGiveUp) ->
   }
 
 #simulate patern until it decomposes into several simple patterns
+# Return list of collision products
 finishCollision = (rule, field, time) ->
   console.log "#### Collision RLE: #{normalizedRle field}"
   growthLimit = field.length + 15 #when to try to separate pattern
