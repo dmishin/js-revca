@@ -100,6 +100,8 @@ elementaryCell = (v1, v2) ->
 
 #Calculate parameters of the collision:
 # collision time, nearest node points, collision distance.
+#  pos : position [x, y, t]
+#  delta : velocity and period [dx, dy, dt]
 collisionParameters = (pos0, delta0, pos1, delta1) ->
   #pos and delta are 3-vectors: (x,y,t)
   #
@@ -136,8 +138,8 @@ collisionParameters = (pos0, delta0, pos1, delta1) ->
     tcoll: tcoll  #when nearest approach occurs
   }
 
+#Calculate time, when 2 spaceship approach to the specified distance.
 approachParameters = (pos0, delta0, pos1, delta1, approachDistance) ->
-  #Calculate time, when 2 spaceship approach to the specified distance.
   [dx, dy, dt] = vecDiff pos0, pos1
   [vx0, vy0, p0] = delta0
   [vx1, vy1, p1] = delta1
@@ -146,11 +148,11 @@ approachParameters = (pos0, delta0, pos1, delta1, approachDistance) ->
   #solve( [deltax^2 + deltay^2 = dd^2, deltat=0], [a,b] );
   dd = approachDistance
   D = (p0**2*vy1**2-2*p0*p1*vy0*vy1+p1**2*vy0**2+p0**2*vx1**2-2*p0*p1*vx0*vx1+p1**2*vx0**2)
-
+  #thanks maxima. 
   Q2 = (-dt**2*vx0**2+2*dt*dx*p0*vx0+(dd**2-dx**2)*p0**2)*vy1**2+(((2*dt**2*vx0-2*dt*dx*p0)*vx1-2*dt*dx*p1*vx0+(2*dx**2-2*dd**2)*p0*p1)*vy0+(2*dx*dy*p0**2-2*dt*dy*p0*vx0)*vx1+2*dt*dy*p1*vx0**2-2*dx*dy*p0*p1*vx0)*vy1+(-dt**2*vx1**2+2*dt*dx*p1*vx1+(dd**2-dx**2)*p1**2)*vy0**2+(2*dt*dy*p0*vx1**2+(-2*dt*dy*p1*vx0-2*dx*dy*p0*p1)*vx1+2*dx*dy*p1**2*vx0)*vy0+(dd**2-dy**2)*p0**2*vx1**2+(2*dy**2-2*dd**2)*p0*p1*vx0*vx1+(dd**2-dy**2)*p1**2*vx0**2
 
   if Q2 < 0
-    #Approach not possible
+    #Approach not possible, spaceships are not coming close enough
     return {approach: false}
     
   Q = Math.sqrt(Q2)
@@ -168,7 +170,7 @@ approachParameters = (pos0, delta0, pos1, delta1, approachDistance) ->
   npos1 = vecSum pos1, vecScale(delta1, ib)
   return {
     approach: true
-    npos0 : npos0
+    npos0 : npos0 #nearest positions before approach
     npos1 : npos1
     tapp : tapp
   }
@@ -179,9 +181,23 @@ normalizedRle = (fld) ->
   Cells.to_rle ff
   
 
+evalToTime = (rule, fld, t0, tend) ->
+  if t > tend then throw new Error "assert: bad time"
+  for t in [t0 ... tend] by 1
+    fld = evaluateCellList rule, fld, mod2(t)
+  return fld
+
+#put the pattern to the specified time and position, and return its state at time t
+patternAtTime = (rule, pattern, posAndTime, t) ->
+  pattern = Cells.copy pattern
+  [x0,y0,t0] = posAndTime
+  Cells.offset pattern, x0, y0
+  evalToTime rule, pattern, t0, t
+  
 # Collide 2 patterns: p1 and p2,
 #    p1 at [0,0,0] and p2 at `offset`.
-#    startDist::int average initial distance to put patterns at. Should be large enought for patterns not to intersect
+#    initialSeparation::int approximate initial distance to put patterns at. Should be large enought for patterns not to intersect
+#    offset: [dx, dy, dt] - initial offset of the pattern p2 (p1 at 000)
 #    collisionTreshold:: if patterns don't come closer than this distance, don't consider them colliding.
 #    waitForCollision::int How many generations to wait after the approximate nearest approach, until the interaction would start.
 #
@@ -189,10 +205,10 @@ normalizedRle = (fld) ->
 #    collision::bool true if collision
 #    timeStart::int first generation, where interaction has started
 #    products::[ ProductDesc ]  list of collision products (patterns with their positions and classification
-doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=20)->
+doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTreshold=20)->
   waitForCollision = v1[2] + v2[2] #sum of periods
   params = collisionParameters [0,0,0], v1, offset, v2  
-  ap = approachParameters [0,0,0], v1, offset, v2, startDist
+  ap = approachParameters [0,0,0], v1, offset, v2, initialSeparation
   collision = {collision:false}
   if not ap.approach
     #console.log "#### No approach, nearest approach: #{params.dist}"
@@ -205,29 +221,11 @@ doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=2
   #console.log "#### AP: #{JSON.stringify ap}"
   
   #Create the initial field. Put 2 patterns: p1 and p2 at initial time 
-  fld1 = Cells.copy p1
-  fld2 = Cells.copy p2
-  
-  Cells.offset fld1, ap.npos0[0], ap.npos0[1]
-  Cells.offset fld2, ap.npos1[0], ap.npos1[1]
-  
-  time1 = ap.npos0[2]
-  time2 = ap.npos1[2]
-
   #nwo promote them to the same time, using list evaluation
-  tmax = Math.max time1, time2
+  time = Math.max ap.npos0[2], ap.npos1[2]
+  fld1 = patternAtTime rule, p1, ap.npos0, time
+  fld2 = patternAtTime rule, p2, ap.npos1, time
   
-  evalToTime = (fld, t, tend) ->
-    if t > tend then throw new Error "assert: bad time"
-    while t < tend
-      fld = evaluateCellList rule, fld, mod2(t)
-      t += 1
-    return fld
-    
-  fld1 = evalToTime fld1, time1, tmax
-  fld2 = evalToTime fld2, time2, tmax
-  time = tmax
-
   #OK, collision prepared. Now simulate both spaceships separately and
   # together, waiting while interaction occurs
   timeGiveUp = params.tcoll + waitForCollision #when to stop waiting for some interaction
@@ -250,6 +248,8 @@ doCollision = (rule, p1, v1, p2, v2, offset, startDist = 30, collisionTreshold=2
   collision.products = finishCollision rule, coll.field, coll.time
   return collision
 
+#Simulate 2 patterns until they collide.
+# Return first oment of time, when patterns started interacting.
 simulateUntilCollision = (rule, fld1, fld2, time, timeGiveUp) ->
   fld  = fld1.concat fld2  
   while time < timeGiveUp
@@ -304,13 +304,14 @@ analyzeFragment = (rule, pattern, time, options={})->
   analysys = determinePeriod rule, pattern, time, options
   if analysys.cycle
     console.log "####      Pattern analysys: #{JSON.stringify analysys}"
-
-    
-    res = library.classifyPattern pattern, time, analysys.dx, analysys.dy, analysys.period
+    res = library.classifyPattern pattern, time, analysys.delta...
     console.log "####      Classification: #{JSON.stringify res}"
-  
+    
 #detect periodicity in pattern
-# Returns period and offset
+# Returns :
+#   cycle::bool - is cycle found
+#   error::str - if not cycle, says error
+#   delta::[dx, dy, dt] - velocity and period, if cycle
 determinePeriod = (rule, pattern, time, options={})->
     pattern = Cells.copy pattern
     Cells.sortXY pattern
@@ -327,8 +328,8 @@ determinePeriod = (rule, pattern, time, options={})->
       eq = Cells.shiftEqual pattern, curPattern, mod2 dt
       if eq
         result.cycle = true
-        [result.dx, result.dy] = eq
-        result.period = dt
+        eq.push dt
+        result.delta = eq
         return false
       if curPattern.length > max_population
         result.error = "pattern grew too big"
@@ -382,7 +383,7 @@ class Library
     analysys = determinePeriod @rule, pattern, 0
     if not analysys.cycle then throw new Error "Pattern #{rle} is not periodic!"
     console.log "#### add anal: #{JSON.stringify analysys}"
-    [dx,dy,p]=delta=patternDelta analysys
+    [dx,dy,p]=delta=analysys.delta
     unless (dx>0 and dy>=0) or (dx is 0 and dy is 0)
       throw new Error "Pattern #{rle} moves in wrong direction: #{dx},#{dy}"
     @addPattern pattern, delta
@@ -477,22 +478,15 @@ separatePatternParts = (pattern, range=4) ->
 isValidOffset = ([dx, dy, dt]) -> ((dx+dt)%2 is 0) and ((dy+dt)%2 is 0)
 ############################
 
-patternDelta = (analysysResult)->
-  unless analysysResult.cycle then throw new Error "Pattern has no period"
-  [analysysResult.dx, analysysResult.dy, analysysResult.period]
-  
 #single rotate - for test
 rule = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
 
 #2-block
-pattern1 = Cells.from_rle "$2o2$2o"
-v1 = patternDelta determinePeriod rule, pattern1, 0
+pattern2 = Cells.from_rle "$2o2$2o"
+pattern1 = Cells.from_rle "o"
 
-console.log "#### dp:  #{JSON.stringify determinePeriod rule, pattern1, 0}"
-
-#1-cell
-pattern2 = Cells.from_rle "o"
-v2 = patternDelta determinePeriod rule, pattern2, 0
+v2 = (determinePeriod rule, pattern2, 0).delta
+v1 = (determinePeriod rule, pattern1, 0).delta
 
 library = new Library rule
 library.addRle "$2o2$2o"
