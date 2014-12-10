@@ -230,6 +230,7 @@ doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTr
   # together, waiting while interaction occurs
   timeGiveUp = params.tcoll + waitForCollision #when to stop waiting for some interaction
   coll = simulateUntilCollision rule, fld1, fld2, time, timeGiveUp
+  fld1 = fld2 = null #They are not needed anymore
   
   if not coll.collided
     #console.log "#### No interaction detected until T=#{timeGiveUp}. Give up."
@@ -237,15 +238,16 @@ doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTr
     
   console.log "#### colliding:"
   console.log "#### 1)  #{normalizedRle p1} at [0, 0, 0]"
-  console.log "#### 2)  #{normalizedRle p2} at {JSON.stringify offset}"
+  console.log "#### 2)  #{normalizedRle p2} at #{JSON.stringify offset}"
   console.log "####     collision at T=#{coll.time}  (give up at #{timeGiveUp})"
   collision.timeStart = coll.time
   collision.collision = true
-  timeCollisionStart = coll.time
   
-  fld1 = fld2 = null #They are not needed anymore
   
   collision.products = finishCollision rule, coll.field, coll.time
+  for product, i in collision.products
+    console.log "####   #{i+1}) #{JSON.stringify product}"
+
   return collision
 
 #Simulate 2 patterns until they collide.
@@ -293,20 +295,25 @@ finishCollision = (rule, field, time) ->
   if parts.length is 1
     console.log "#### only one part, try more time"
     return finishCollision rule, field, time
+    
+  results = []
   for part, i in parts
-    console.log "####   #{i}. #{normalizedRle part}"
     #now analyze this part
     res = analyzeFragment rule, part, time
-
-    
+    for r in res
+      results.push r
+  return results
 
 analyzeFragment = (rule, pattern, time, options={})->
   analysys = determinePeriod rule, pattern, time, options
   if analysys.cycle
-    console.log "####      Pattern analysys: #{JSON.stringify analysys}"
+    #console.log "####      Pattern analysys: #{JSON.stringify analysys}"
     res = library.classifyPattern pattern, time, analysys.delta...
-    console.log "####      Classification: #{JSON.stringify res}"
-    
+    [res]
+  else
+    console.log "####      Pattern not decomposed completely: #{normalizedRle pattern} #{time}"
+    finishCollision rule, pattern, time
+      
 #detect periodicity in pattern
 # Returns :
 #   cycle::bool - is cycle found
@@ -406,12 +413,14 @@ class Library
         if result.found
           result.transform = inverseTfm tfm
           break
+          
     #reverse-transform position
     [x,y,t] = result.pos
     #console.log "#### Original pos: #{JSON.stringify result.pos}"
     [x,y] = Cells.transformVector [x,y], result.transform, false #no normalize!
     #console.log "#### after inverse rotate: #{JSON.stringify [x,y,t]}"
     result.pos = [x,y,t]
+    result.delta = [dx,dy,period]
     return result
 
   _classifyNormalizedPattern: (pattern, time, dx, dy, period) ->
@@ -431,6 +440,15 @@ class Library
         result.found=true
         return false
       return (t-time) < period
+      
+    if not result.found
+      p = Cells.copy pattern
+      [dx, dy] = offsetToOrigin p, time
+      Cells.sortXY p
+      result.pos = [dx, dy, time]
+      result.rle = Cells.to_rle p
+      result.found = false
+      result.transform = [1,0,0,1]
     return result
     
 
@@ -485,7 +503,7 @@ rule = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
 
 #2-block
 pattern2 = Cells.from_rle "$2o2$2o"
-pattern1 = Cells.from_rle "o"
+pattern1 = Cells.from_rle "2o"
 
 v2 = (determinePeriod rule, pattern2, 0).delta
 v1 = (determinePeriod rule, pattern1, 0).delta
