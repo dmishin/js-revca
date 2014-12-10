@@ -236,8 +236,8 @@ doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTr
     return collision
     
   console.log "#### colliding:"
-  console.log "#### 1)  #{normalizedRle p1} at x=0, y=0, t=0"
-  console.log "#### 2)  #{normalizedRle p2} at x=#{offset[0]}, y=#{offset[1]}, t=#{offset[2]}"
+  console.log "#### 1)  #{normalizedRle p1} at [0, 0, 0]"
+  console.log "#### 2)  #{normalizedRle p2} at {JSON.stringify offset}"
   console.log "####     collision at T=#{coll.time}  (give up at #{timeGiveUp})"
   collision.timeStart = coll.time
   collision.collision = true
@@ -275,8 +275,8 @@ simulateUntilCollision = (rule, fld1, fld2, time, timeGiveUp) ->
 #simulate patern until it decomposes into several simple patterns
 # Return list of collision products
 finishCollision = (rule, field, time) ->
-  console.log "#### Collision RLE: #{normalizedRle field}"
-  growthLimit = field.length + 15 #when to try to separate pattern
+  #console.log "#### Collision RLE: #{normalizedRle field}"
+  growthLimit = field.length*3 + 8  #when to try to separate pattern
 
   while true
     field = evaluateCellList rule, field, mod2(time)
@@ -285,7 +285,7 @@ finishCollision = (rule, field, time) ->
     size = Math.max (x1-x0), (y1-y0)
     #console.log "####    T:#{time}, s:#{size}, R:#{normalizedRle field}"
     if size > growthLimit
-      console.log "#### At time #{time}, pattern growed to #{size}: #{normalizedRle field}"
+      #console.log "#### At time #{time}, pattern grew to #{size}: #{normalizedRle field}"
       break
   #now try to split result into several patterns
   parts = separatePatternParts field
@@ -397,17 +397,21 @@ class Library
       [dx1, dy1, tfm] = Cells._find_normalizing_rotation dx, dy
       pattern1 = Cells.transform pattern, tfm, false #no need to normalize
       result = @_classifyNormalizedPattern pattern1, time, dx1, dy1, period
-      result.transform = tfm
+      result.transform = inverseTfm tfm
     else
       #it is not a spaceship - no way to find a normal rotation. Check all 4 rotations.
       for tfm in Cells._rotations
         pattern1 = Cells.transform pattern, tfm, false
         result = @_classifyNormalizedPattern pattern1, time, 0, 0, period
         if result.found
-          result.transform = tfm
+          result.transform = inverseTfm tfm
           break
     #reverse-transform position
-    [[result.x0, result.y0]] = Cells.transform [[result.x, result.y]], inverseTfm(result.transform)
+    [x,y,t] = result.pos
+    #console.log "#### Original pos: #{JSON.stringify result.pos}"
+    [x,y] = Cells.transformVector [x,y], result.transform, false #no normalize!
+    #console.log "#### after inverse rotate: #{JSON.stringify [x,y,t]}"
+    result.pos = [x,y,t]
     return result
 
   _classifyNormalizedPattern: (pattern, time, dx, dy, period) ->
@@ -422,9 +426,7 @@ class Library
       #console.log "####    T:#{t}, rle:#{rle}"
       if self.rle2pattern.hasOwnProperty rle
         #console.log "####      found! #{rle}"
-        result.x = dx
-        result.y = dy
-        result.t = t
+        result.pos = [dx, dy, t]
         result.rle = rle
         result.found=true
         return false
