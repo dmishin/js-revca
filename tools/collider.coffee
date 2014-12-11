@@ -549,8 +549,8 @@ class Library
       for tfm in Cells._rotations
         pattern1 = Cells.transform pattern, tfm, false
         result = @_classifyNormalizedPattern pattern1, time, 0, 0, period
+        result.transform = inverseTfm tfm
         if result.found
-          result.transform = inverseTfm tfm
           break
           
     #reverse-transform position
@@ -666,7 +666,7 @@ runCollider = ->
   
   #2-block
   pattern1 = Cells.from_rle "$2o2$2o"
-  pattern2 = Cells.from_rle "o"
+  pattern2 = Cells.from_rle "oo"
   
   v2 = (determinePeriod rule, pattern2, 0).delta
   v1 = (determinePeriod rule, pattern1, 0).delta
