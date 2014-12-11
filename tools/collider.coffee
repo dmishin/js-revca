@@ -311,9 +311,10 @@ doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTr
   collision.collision = true
   
   
-  collision.products = finishCollision rule, coll.field, coll.time
+  {products, verifyTime, verifyField} = finishCollision rule, coll.field, coll.time
+  collision.products = products
   #findEmergeTime = (rule, products, minimalTime) ->
-  collision.timeEnd = findEmergeTime rule, collision.products, collision.timeStart
+  collision.timeEnd = findEmergeTime rule, collision.products, collision.timeStart, verifyField, verifyTime
   #Update positions of products
   for product in collision.products
     product.pos = firstPositionAfter product.pos, product.delta, collision.timeEnd+1
@@ -362,11 +363,14 @@ simulateUntilCollision = (rule, patterns, time, timeGiveUp) ->
 
 ### Given the rule and the list of collition products (with their positions)
 #   find a moment of time when they emerged.
+# verifyField, verifyTime: knwon state of the field, for verification.
 ###
-findEmergeTime = (rule, products, minimalTime) ->
+findEmergeTime = (rule, products, minimalTime, verifyField, verifyTime) ->
   invRule = rule.reverse()
   #Time position of the latest fragment
   maxTime = Math.max (p.pos[2] for p in products)...
+  if verifyTime? and maxTime < verifyTime
+    throw new Error "Something is strange: maximal time of fragments smaller than verification time"
   #Prepare all fragments, at time maxTime
   patterns = for product in products
     #console.log "#### Product: #{JSON.stringify product}"
@@ -376,14 +380,29 @@ findEmergeTime = (rule, products, minimalTime) ->
     pattern = Cells.transform product.pattern, product.transform, false
     patternAtTime rule, pattern, initialPos, maxTime
 
-  #console.log "#### Generated #{patterns.length} patterns at time #{maxTime}:"
-  #console.log "#### #{normalizedRle [].concat(patterns...)}"
+  if verifyTime?
+    allPatterns = [].concat(patterns...)
+    patternEvolution invRule, allPatterns, 1-maxTime, (p, t)->
+      if t is (1 - verifyTime)
+        console.log "#### verifying. At time #{1-t} "
+        console.log "####    Expected: #{normalizedRle verifyField}"
+        console.log "####    Got     : #{normalizedRle p}"
+        Cells.sortXY p
+        Cells.sortXY verifyField
+        if not Cells.areEqual verifyField, p
+          throw new Error "Verification failed: reconstructed backward collision did not match expected"
+        return false
+      else
+        return true
+
+  console.log "#### Generated #{patterns.length} patterns at time #{maxTime}:"
+  console.log "#### #{normalizedRle [].concat(patterns...)}"
   
   #Now simulate it inverse in time
   invCollision = simulateUntilCollision invRule, patterns, -maxTime+1, -minimalTime
   if not invCollision.collided
     throw new Error "Something is wrong: patterns did not collided in inverse time"
-  return -invCollision.time    
+  return 1-invCollision.time    
   
 #simulate patern until it decomposes into several simple patterns
 # Return list of collision products
@@ -398,12 +417,15 @@ finishCollision = (rule, field, time) ->
     size = Math.max (x1-x0), (y1-y0)
     #console.log "####    T:#{time}, s:#{size}, R:#{normalizedRle field}"
     if size > growthLimit
-      #console.log "#### At time #{time}, pattern grew to #{size}: #{normalizedRle field}"
+      console.log "#### At time #{time}, pattern grew to #{size}: #{normalizedRle field}"
+      verifyTime = time
+      verifyField = field
       break
   #now try to split result into several patterns
   parts = separatePatternParts field
   #console.log "#### Detected #{parts.length} parts"
   if parts.length is 1
+    #TODO: increase growth limit?
     #console.log "#### only one part, try more time"
     return finishCollision rule, field, time
     
@@ -413,7 +435,11 @@ finishCollision = (rule, field, time) ->
     res = analyzeFragment rule, part, time
     for r in res
       results.push r
-  return results
+      
+  return{
+    products: results
+    verifyTime: verifyTime
+    verifyField: field}
 
 analyzeFragment = (rule, pattern, time, options={})->
   analysys = determinePeriod rule, pattern, time, options
@@ -423,7 +449,7 @@ analyzeFragment = (rule, pattern, time, options={})->
     [res]
   else
     console.log "####      Pattern not decomposed completely: #{normalizedRle pattern} #{time}"
-    finishCollision rule, pattern, time
+    finishCollision(rule, pattern, time).products
       
 #detect periodicity in pattern
 # Returns :
@@ -473,6 +499,7 @@ offsetToOrigin = (pattern, generation) ->
 #Continuousely evaluate the pattern
 # Only returns pattern in ruleset phase 0.
 patternEvolution = (rule, pattern, time, callback)->
+  #pattern = Cells.copy pattern
   stable_rules = [rule]
   vacuum_period = stable_rules.length #ruleset size
   curPattern = pattern
@@ -529,7 +556,7 @@ class Library
     #reverse-transform position
     [x,y,t] = result.pos
     #console.log "#### Original pos: #{JSON.stringify result.pos}"
-    [x,y] = Cells.transformVector [x,y], result.transform, false #no normalize!
+    [x,y] = Cells.transformVector [x,y], result.transform #no normalize!
     #console.log "#### after inverse rotate: #{JSON.stringify [x,y,t]}"
     result.pos = [x,y,t]
     result.delta = [dx,dy,period]
@@ -664,20 +691,17 @@ runCollider = ->
   console.log "Projected to null-space of free ort:"
   console.log " PV1=#{pv1}, PV2=#{pv2}"
   
-  s = area2d pv1, pv2
-  console.log "Area of non-free section: #{s}"
+  #s = area2d pv1, pv2
+  #console.log "Area of non-free section: #{s}"
   
   ecell = (restoreComponent(v,freeIndex) for v in elementaryCell(pv1, pv2))
-  console.log "Elementary cell size: #{ecell.length}"
-  for p, i in ecell
-    console.log "  #{i}: " + JSON.stringify(p)
+  #console.log "Elementary cell size: #{ecell.length}"
+  #for p, i in ecell
+  #  console.log "  #{i}: " + JSON.stringify(p)
   
   #now we are ready to perform collisions
   # free index changes unboundedly, other variables change inside the elementary cell
   
-  offsetRange = [-40, 30]
-  
-
   minimalTouchDistance = (pattern1.length + pattern2.length)*3
   console.log "#### Minimal touch distance is #{minimalTouchDistance}"
   for offset in ecell
