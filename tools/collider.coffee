@@ -1,5 +1,5 @@
 #!/usr/bin/env coffee
-
+"use strict"
 # Particle collider.
 # Make collision table
 
@@ -175,6 +175,27 @@ approachParameters = (pos0, delta0, pos1, delta1, approachDistance) ->
     tapp : tapp
   }
 
+#Give n position: [x,y,t] and delta: [dx,dy,dt],
+# Return position with biggest time <= t (inclusive).
+firstPositionBefore = (pos, delta, time) ->
+  # find integer i:
+  # t + i*dt < time
+  #
+  # i*dt < time - t
+  # i < (time-t)/dt
+  i0 = (time - pos[2]) / delta[2] #not integer.
+  #now find the nearest integer below
+  i = (Math.floor i0) |0
+  #and return the position
+  vecSum pos, vecScale delta, i
+  
+firstPositionAfter = (pos, delta, time) ->
+  i0 = (time - pos[2]) / delta[2] #not integer.
+  i = (Math.ceil i0) |0
+  vecSum pos, vecScale delta, i
+
+    
+#Normalize pattern and returns its rle.
 normalizedRle = (fld) ->
   ff = Cells.copy fld
   Cells.normalize ff
@@ -203,6 +224,8 @@ patternAtTime = (rule, pattern, posAndTime, t) ->
 #
 #  Returned value: object
 #    collision::bool true if collision
+#    patterns :: [p1, p2] two patterns
+#    offsets  :: [vec1, vec2] first position of each pattern before collision time
 #    timeStart::int first generation, where interaction has started
 #    products::[ ProductDesc ]  list of collision products (patterns with their positions and classification
 doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTreshold=20)->
@@ -229,42 +252,66 @@ doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTr
   #OK, collision prepared. Now simulate both spaceships separately and
   # together, waiting while interaction occurs
   timeGiveUp = params.tcoll + waitForCollision #when to stop waiting for some interaction
-  coll = simulateUntilCollision rule, fld1, fld2, time, timeGiveUp
+  coll = simulateUntilCollision rule, [fld1, fld2], time, timeGiveUp
   fld1 = fld2 = null #They are not needed anymore
   
   if not coll.collided
     #console.log "#### No interaction detected until T=#{timeGiveUp}. Give up."
     return collision
     
-  console.log "#### colliding:"
-  console.log "#### 1)  #{normalizedRle p1} at [0, 0, 0]"
-  console.log "#### 2)  #{normalizedRle p2} at #{JSON.stringify offset}"
-  console.log "####     collision at T=#{coll.time}  (give up at #{timeGiveUp})"
+  #console.log "#### colliding:"
+  #console.log "#### 1)  #{normalizedRle p1} at [0, 0, 0]"
+  #console.log "#### 2)  #{normalizedRle p2} at #{JSON.stringify offset}"
+  #console.log "####     collision at T=#{coll.time}  (give up at #{timeGiveUp})"
   collision.timeStart = coll.time
+  collision.patterns = [p1, p2]
+  collision.offsets = [
+    firstPositionBefore([0,0,0], v1, coll.time-1),
+    firstPositionBefore(offset,  v2, coll.time-1),
+  ]  
   collision.collision = true
   
   
   collision.products = finishCollision rule, coll.field, coll.time
-  for product, i in collision.products
-    console.log "####   #{i+1}) #{JSON.stringify product}"
+  #findEmergeTime = (rule, products, minimalTime) ->
+  collision.timeEnd = findEmergeTime rule, collision.products, collision.timeStart
+  #Update positions of products
+  for product in collision.products
+    product.pos = firstPositionAfter product.pos, product.delta, collision.timeEnd+1
 
+  #normalize relative to the first spaceship
+  translateCollision collision, vecScale(collision.offsets[0], -1)
+
+translateCollision = (collision, dpos) ->
+  [dx, dy, dt] = dpos
+  for o, i in collision.offsets
+    collision.offsets[i] = vecSum o, dpos
+  collision.timeStart += dt
+  collision.timeEnd += dt
+  for product in collision.products
+    product.pos = vecSum product.pos, dpos
   return collision
 
-#Simulate 2 patterns until they collide.
+#Simulate several patterns until they collide.
 # Return first oment of time, when patterns started interacting.
-simulateUntilCollision = (rule, fld1, fld2, time, timeGiveUp) ->
-  fld  = fld1.concat fld2  
+simulateUntilCollision = (rule, patterns, time, timeGiveUp) ->
+  if patterns.length < 2 then return {collided: false} # 1 pattern can't collide.
+  fld  = [].concat patterns ... #concatenate all patterns
   while time < timeGiveUp
     phase = mod2 time
-    fld1 = evaluateCellList rule, fld1, phase
-    fld2 = evaluateCellList rule, fld2, phase
+    #evaluate each pattern separately
+    #console.log "### patterns: #{JSON.stringify patterns}"
+    patterns = (evaluateCellList(rule, p, phase) for p in patterns)
+    #console.log "### after eval: #{JSON.stringify patterns}"
+    #And together
     fld  = evaluateCellList rule, fld,  phase
     time += 1
     #check if they are different
-    fld12 = fld1.concat fld2
+    mergedPatterns = [].concat patterns...
     Cells.sortXY fld
-    Cells.sortXY fld12
-    if not Cells.areEqual fld, fld12
+    Cells.sortXY mergedPatterns
+    if not Cells.areEqual fld, mergedPatterns
+      #console.log "#### Collision detected! T=#{time}, #{normalizedRle fld}"
       return {
         collided: true
         time: time
@@ -274,6 +321,31 @@ simulateUntilCollision = (rule, fld1, fld2, time, timeGiveUp) ->
     collided: false
   }
 
+### Given the rule and the list of collition products (with their positions)
+#   find a moment of time when they emerged.
+###
+findEmergeTime = (rule, products, minimalTime) ->
+  invRule = rule.reverse()
+  #Time position of the latest fragment
+  maxTime = Math.max (p.pos[2] for p in products)...
+  #Prepare all fragments, at time maxTime
+  patterns = for product in products
+    #console.log "#### Product: #{JSON.stringify product}"
+    #first, calculate first space-time point before the maxTime
+    initialPos = firstPositionBefore product.pos, product.delta, maxTime
+    #Put the pattern at this point
+    pattern = Cells.transform product.pattern, product.transform, false
+    patternAtTime rule, pattern, initialPos, maxTime
+
+  #console.log "#### Generated #{patterns.length} patterns at time #{maxTime}:"
+  #console.log "#### #{normalizedRle [].concat(patterns...)}"
+  
+  #Now simulate it inverse in time
+  invCollision = simulateUntilCollision invRule, patterns, -maxTime+1, -minimalTime
+  if not invCollision.collided
+    throw new Error "Something is wrong: patterns did not collided in inverse time"
+  return -invCollision.time    
+  
 #simulate patern until it decomposes into several simple patterns
 # Return list of collision products
 finishCollision = (rule, field, time) ->
@@ -291,9 +363,9 @@ finishCollision = (rule, field, time) ->
       break
   #now try to split result into several patterns
   parts = separatePatternParts field
-  console.log "#### Detected #{parts.length} parts"
+  #console.log "#### Detected #{parts.length} parts"
   if parts.length is 1
-    console.log "#### only one part, try more time"
+    #console.log "#### only one part, try more time"
     return finishCollision rule, field, time
     
   results = []
@@ -374,6 +446,7 @@ patternEvolution = (rule, pattern, time, callback)->
     time += 1
   return
 
+
 class Library
   constructor: (@rule) ->
     @rle2pattern = {}
@@ -389,7 +462,7 @@ class Library
     pattern = Cells.from_rle rle
     analysys = determinePeriod @rule, pattern, 0
     if not analysys.cycle then throw new Error "Pattern #{rle} is not periodic!"
-    console.log "#### add anal: #{JSON.stringify analysys}"
+    #console.log "#### add anal: #{JSON.stringify analysys}"
     [dx,dy,p]=delta=analysys.delta
     unless (dx>0 and dy>=0) or (dx is 0 and dy is 0)
       throw new Error "Pattern #{rle} moves in wrong direction: #{dx},#{dy}"
@@ -437,6 +510,7 @@ class Library
         #console.log "####      found! #{rle}"
         result.pos = [dx, dy, t]
         result.rle = rle
+        result.pattern = p
         result.found=true
         return false
       return (t-time) < period
@@ -447,6 +521,7 @@ class Library
       Cells.sortXY p
       result.pos = [dx, dy, time]
       result.rle = Cells.to_rle p
+      result.pattern = p
       result.found = false
       result.transform = [1,0,0,1]
     return result
@@ -498,59 +573,78 @@ separatePatternParts = (pattern, range=4) ->
 isValidOffset = ([dx, dy, dt]) -> ((dx+dt)%2 is 0) and ((dy+dt)%2 is 0)
 ############################
 
-#single rotate - for test
-rule = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
-
-#2-block
-pattern2 = Cells.from_rle "$2o2$2o"
-pattern1 = Cells.from_rle "2o"
-
-v2 = (determinePeriod rule, pattern2, 0).delta
-v1 = (determinePeriod rule, pattern1, 0).delta
-
-library = new Library rule
-library.addRle "$2o2$2o"
-library.addRle "bo$2b2o$3bo"
-library.addRle "2bobo$b2o"
-library.addRle "b2o2$2o"
-library.addRle "bo$bo$2o"
-library.addRle "o$o2$o$o"
-
-library.addRle "o"
-library.addRle "oo"
-
-console.log "Two velocities: #{v1}, #{v2}"
-[freeIndex, freeOrt] = opposingOrt v1, v2
-console.log "Free offset direction: #{freeOrt}, free index is #{freeIndex}"
-
-pv1 = removeComponent v1, freeIndex
-pv2 = removeComponent v2, freeIndex
-console.log "Projected to null-space of free ort:"
-console.log " PV1=#{pv1}, PV2=#{pv2}"
-
-s = area2d pv1, pv2
-console.log "Area of non-free section: #{s}"
-
-ecell = (restoreComponent(v,freeIndex) for v in elementaryCell(pv1, pv2))
-console.log "Elementary cell size: #{ecell.length}"
-for p, i in ecell
-  console.log "  #{i}: " + JSON.stringify(p)
-
-#now we are ready to perform collisions
-# free index changes unboundedly, other variables change inside the elementary cell
-
-offsetRange = [-40, 30]
-
-for xFree in [offsetRange[0] .. offsetRange[1]] by 1
-  for offset in ecell
-    offset = offset[..]
-    offset[freeIndex] = xFree
-    if isValidOffset offset
-      doCollision rule, pattern1, v1, pattern2, v2, offset
-
+showCollision = (collision)->
+  console.log "##########################################################"
+  for key, value of collision
+    switch key
+      when "collision"
+        null
+      when "products"
+        for p, i in value
+          console.log "####       -> #{i+1}: #{JSON.stringify p}"
+      when "patterns"
+        [p1,p2] = collision.patterns
+        console.log "####   patterns: #{Cells.to_rle p1}, #{Cells.to_rle p2}"
+      else
+        console.log "####   #{key}: #{JSON.stringify value}"
 
 #### colliding with offset [0,0,0]
 #### CP: {"dist":0,"npos0":[0,0,0],"npos1":[0,0,0],"tcoll":0}
 #### AP: {"approach":true,"npos0":[-30,0,-180],"npos1":[0,0,-180],"tapp":-180}
 #### Collision RLE: $1379bo22$2o2$2o
       
+
+runCollider = ->
+  #single rotate - for test
+  rule = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+  
+  #2-block
+  pattern1 = Cells.from_rle "$2o2$2o"
+  pattern2 = Cells.from_rle "o"
+  
+  v2 = (determinePeriod rule, pattern2, 0).delta
+  v1 = (determinePeriod rule, pattern1, 0).delta
+  
+  library = new Library rule
+  library.addRle "$2o2$2o"
+  library.addRle "bo$2b2o$3bo"
+  library.addRle "2bobo$b2o"
+  library.addRle "b2o2$2o"
+  library.addRle "bo$bo$2o"
+  library.addRle "o$o2$o$o"
+  
+  library.addRle "o"
+  library.addRle "oo"
+  
+  console.log "Two velocities: #{v1}, #{v2}"
+  [freeIndex, freeOrt] = opposingOrt v1, v2
+  console.log "Free offset direction: #{freeOrt}, free index is #{freeIndex}"
+  
+  pv1 = removeComponent v1, freeIndex
+  pv2 = removeComponent v2, freeIndex
+  console.log "Projected to null-space of free ort:"
+  console.log " PV1=#{pv1}, PV2=#{pv2}"
+  
+  s = area2d pv1, pv2
+  console.log "Area of non-free section: #{s}"
+  
+  ecell = (restoreComponent(v,freeIndex) for v in elementaryCell(pv1, pv2))
+  console.log "Elementary cell size: #{ecell.length}"
+  for p, i in ecell
+    console.log "  #{i}: " + JSON.stringify(p)
+  
+  #now we are ready to perform collisions
+  # free index changes unboundedly, other variables change inside the elementary cell
+  
+  offsetRange = [-40, 30]
+  
+  for xFree in [offsetRange[0] .. offsetRange[1]] by 1
+    for offset in ecell
+      offset = offset[..]
+      offset[freeIndex] = xFree
+      if isValidOffset offset
+        collision = doCollision rule, pattern1, v1, pattern2, v2, offset
+        showCollision collision if collision.collision
+
+
+runCollider()
