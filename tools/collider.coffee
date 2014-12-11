@@ -138,6 +138,45 @@ collisionParameters = (pos0, delta0, pos1, delta1) ->
     tcoll: tcoll  #when nearest approach occurs
   }
 
+#In what rande DX can change, if minimal distanec between 2 patterns is less than dmax?
+# This fucntion gives the answer.
+# Calculation is in the maxima sheet:
+# solve( d2 = dd^2, dx );
+dxRange = (dPos, v0, v1, dMax) ->
+  #dPos, v0, v1 :: vector3
+  #dMax :: integer
+  [_, dy, dt] = dPos #dx is ignored, because we will find its diapason
+  [vx0, vy0, p0] = v0
+  [vx1, vy1, p1] = v1
+
+  #Solution from Maxima:
+  # dx=-(dd*sqrt(p0^2*vy1^2-2*p0*p1*vy0*vy1+p1^2*vy0^2+p0^2*vx1^2-2*p0*p1*vx0*vx1+p1^2*vx0^2)-dt*vx0*vy1+dt*vx1*vy0-dy*p0*vx1+dy*p1*vx0)/(p0*vy1-p1*vy0)
+  # q = p0^2*vy1^2-2*p0*p1*vy0*vy1+p1^2*vy0^2+p0^2*vx1^2-2*p0*p1*vx0*vx1+p1^2*vx0^2
+  # 
+  # dx=(+-dd*sqrt(q)-dt*vx0*vy1+dt*vx1*vy0-dy*p0*vx1+dy*p1*vx0)/(p1*vy0 - p0*vy1)
+  num = p1*vy0 - p0*vy1
+  if num is 0 then throw new Error "Patterns are parallel and neveer touch"
+  dc = (-dt*vx0*vy1+dt*vx1*vy0-dy*p0*vx1+dy*p1*vx0) / num
+  #q = p0^2*vy1^2-2*p0*p1*vy0*vy1+p1^2*vy0^2  +  p0^2*vx1^2-2*p0*p1*vx0*vx1+p1^2*vx0^2
+  q = (p0*vy1-p1*vy0)**2 + (p0*vx1-p1*vx0)**2 #after small simplification
+
+  delta = Math.sqrt(q) * (dMax / num)
+
+  d0 = dc - delta
+  d1 = dc + delta
+  #return upper and lower limits
+  return [Math.floor(d0)|0, Math.ceil(d1)|0]
+
+#Same as dxRange, but for dy. Reuses dxRange
+dyRange = (dPos, v0, v1, dMax) ->
+  swapxy = ([x,y,t]) -> [y,x,t]
+  return dxRange swapxy(dPos), swapxy(v0), swapxy(v1), dMax
+
+#Chooses one of dxRange, dyRange.
+freeIndexRange = (dPos, v0, v1, dMax, index) ->
+  if index not in [0,1] then throw new Error "Unsupported index #{index}"
+  [dxRange, dyRange][index](dPos, v0, v1, dMax)
+
 #Calculate time, when 2 spaceship approach to the specified distance.
 approachParameters = (pos0, delta0, pos1, delta1, approachDistance) ->
   [dx, dy, dt] = vecDiff pos0, pos1
@@ -638,12 +677,20 @@ runCollider = ->
   
   offsetRange = [-40, 30]
   
-  for xFree in [offsetRange[0] .. offsetRange[1]] by 1
-    for offset in ecell
+
+  minimalTouchDistance = (pattern1.length + pattern2.length)*3
+  console.log "#### Minimal touch distance is #{minimalTouchDistance}"
+  for offset in ecell
+    #dPos, v0, v1, dMax, index
+    offsetRange = freeIndexRange offset, v1, v2, minimalTouchDistance, freeIndex
+    #console.log "#### FOr offset #{JSON.stringify offset}, index range is #{JSON.stringify offsetRange}"
+    
+    for xFree in [offsetRange[0] .. offsetRange[1]] by 1
       offset = offset[..]
       offset[freeIndex] = xFree
       if isValidOffset offset
-        collision = doCollision rule, pattern1, v1, pattern2, v2, offset
+        #console.log "####  valid offset: #{JSON.stringify offset}"
+        collision = doCollision rule, pattern1, v1, pattern2, v2, offset, minimalTouchDistance*2, minimalTouchDistance
         showCollision collision if collision.collision
 
 
