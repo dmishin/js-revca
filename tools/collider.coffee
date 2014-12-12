@@ -5,11 +5,9 @@
 
 fs = require "fs"
 {Cells, inverseTfm, evaluateCellList, getDualTransform, splitPattern} = require "../scripts-src/cells"
-{Rule, from_list_elem} = require "../scripts-src/rules"
+{from_list_elem, parseElementary} = require "../scripts-src/rules"
 stdio = require "stdio"
 {mod,mod2} = require "../scripts-src/math_util"
-
-library = null
 
 #GIven 2 3-vectors, return 3-ort, that forms full basis with both vectors
 opposingOrt = (v1, v2) ->
@@ -20,20 +18,22 @@ opposingOrt = (v1, v2) ->
       return [i, ort]
   throw new Error "Two vectors are collinear"  
 
-dot3 = (a,b) ->
+#Scalar product of 2 vectors
+dot = (a,b) ->
   s = 0
-  for i in [0...3]
-    s += a[i]*b[i]
+  for ai, i in a
+    s += ai*b[i]
   return s
   
 #project 3-vector vec to the null-space of ort
-projectToNullSpace = (ort, vec) ->
-  if dot3(ort,ort) isnt 1
-    throw new Error "Not an ort!"
-  p = dot3(ort,vec)
-  
-  return (vec[i] - ort[i]*p for i in [0...3] )
+#projectToNullSpace = (ort, vec) ->
+#  if dot(ort,ort) isnt 1
+#    throw new Error "Not an ort!"
+#  p = dot ort, vec
+#  
+#  return (vec[i] - ort[i]*p for i in [0...3] )
 
+#Remove component from a vector
 removeComponent =( vec, index) ->
   result = []
   for xi, i in vec
@@ -48,13 +48,12 @@ restoreComponent = (vec, index) ->
   return v  
 
 isCompleteBasis = (v1, v2, v3) ->
-  #determinant. copipe from maxima
+  #determinant of a matrix of 3 vectors. copipe from maxima
   det = v1[0]*(v2[1]*v3[2]-v3[1]*v2[2])-v1[1]*(v2[0]*v3[2]-v3[0]*v2[2])+(v2[0]*v3[1]-v3[0]*v2[1])*v1[2]
   return det isnt 0
 
-#Area of a tetragon, built on 2 vectors.
-area2d = ([x1,y1],[x2,y2])->
-  return x1*y2 - x2*y1
+#Area of a tetragon, built on 2 vectors. May be negative.
+area2d = ([x1,y1],[x2,y2]) ->  x1*y2 - x2*y1
 
 vecSum = (v1, v2) ->   (v1i+v2[i] for v1i, i in v1)
 vecDiff = (v1, v2) ->  (v1i-v2[i] for v1i, i in v1)
@@ -62,7 +61,7 @@ vecScale = (v1, k) ->  (v1i*k for v1i in v1)
 
 #Returns list of coordinates of points in elementary cell
 # both vectors must be 2d, nonzero, non-collinear
-elementaryCell = (v1, v2) ->
+elementaryCell2d = (v1, v2) ->
   #vertices
   [x1,y1] = v1
   [x2,y2] = v2
@@ -155,26 +154,27 @@ dxRange = (dPos, v0, v1, dMax) ->
   # 
   # dx=(+-dd*sqrt(q)-dt*vx0*vy1+dt*vx1*vy0-dy*p0*vx1+dy*p1*vx0)/(p1*vy0 - p0*vy1)
   num = p1*vy0 - p0*vy1
-  if num is 0 then throw new Error "Patterns are parallel and neveer touch"
+  if num is 0
+    #throw new Error "Patterns are parallel and neveer touch"
+    return [0, -1]
+    
   dc = (-dt*vx0*vy1+dt*vx1*vy0-dy*p0*vx1+dy*p1*vx0) / num
   #q = p0^2*vy1^2-2*p0*p1*vy0*vy1+p1^2*vy0^2  +  p0^2*vx1^2-2*p0*p1*vx0*vx1+p1^2*vx0^2
   q = (p0*vy1-p1*vy0)**2 + (p0*vx1-p1*vx0)**2 #after small simplification
 
-  delta = Math.sqrt(q) * (dMax / num)
+  delta = Math.abs(Math.sqrt(q) * (dMax / num))
 
-  d0 = dc - delta
-  d1 = dc + delta
-  #return upper and lower limits
-  return [Math.floor(d0)|0, Math.ceil(d1)|0]
+  #return upper and lower limits, rounded to integers
+  return [Math.floor(dc - delta)|0, Math.ceil(dc + delta)|0]
 
 #Same as dxRange, but for dy. Reuses dxRange
 dyRange = (dPos, v0, v1, dMax) ->
   swapxy = ([x,y,t]) -> [y,x,t]
-  return dxRange swapxy(dPos), swapxy(v0), swapxy(v1), dMax
+  dxRange swapxy(dPos), swapxy(v0), swapxy(v1), dMax
 
 #Chooses one of dxRange, dyRange.
 freeIndexRange = (dPos, v0, v1, dMax, index) ->
-  if index not in [0,1] then throw new Error "Unsupported index #{index}"
+  if index not in [0..1] then throw new Error "Unsupported index #{index}"
   [dxRange, dyRange][index](dPos, v0, v1, dMax)
 
 #Calculate time, when 2 spaceship approach to the specified distance.
@@ -187,7 +187,7 @@ approachParameters = (pos0, delta0, pos1, delta1, approachDistance) ->
   #solve( [deltax^2 + deltay^2 = dd^2, deltat=0], [a,b] );
   dd = approachDistance
   D = (p0**2*vy1**2-2*p0*p1*vy0*vy1+p1**2*vy0**2+p0**2*vx1**2-2*p0*p1*vx0*vx1+p1**2*vx0**2)
-  #thanks maxima. 
+  #thanks maxima. The formula is not well optimized, but I don't care.
   Q2 = (-dt**2*vx0**2+2*dt*dx*p0*vx0+(dd**2-dx**2)*p0**2)*vy1**2+(((2*dt**2*vx0-2*dt*dx*p0)*vx1-2*dt*dx*p1*vx0+(2*dx**2-2*dd**2)*p0*p1)*vy0+(2*dx*dy*p0**2-2*dt*dy*p0*vx0)*vx1+2*dt*dy*p1*vx0**2-2*dx*dy*p0*p1*vx0)*vy1+(-dt**2*vx1**2+2*dt*dx*p1*vx1+(dd**2-dx**2)*p1**2)*vy0**2+(2*dt*dy*p0*vx1**2+(-2*dt*dy*p1*vx0-2*dx*dy*p0*p1)*vx1+2*dx*dy*p1**2*vx0)*vy0+(dd**2-dy**2)*p0**2*vx1**2+(2*dy**2-2*dd**2)*p0*p1*vx0*vx1+(dd**2-dy**2)*p1**2*vx0**2
 
   if Q2 < 0
@@ -227,7 +227,8 @@ firstPositionBefore = (pos, delta, time) ->
   i = (Math.floor i0) |0
   #and return the position
   vecSum pos, vecScale delta, i
-  
+
+#Given spaceship trajectory, returns first it position before the given moment of time (inclusive)    
 firstPositionAfter = (pos, delta, time) ->
   i0 = (time - pos[2]) / delta[2] #not integer.
   i = (Math.ceil i0) |0
@@ -239,7 +240,6 @@ normalizedRle = (fld) ->
   ff = Cells.copy fld
   Cells.normalize ff
   Cells.to_rle ff
-  
 
 evalToTime = (rule, fld, t0, tend) ->
   if t > tend then throw new Error "assert: bad time"
@@ -248,7 +248,7 @@ evalToTime = (rule, fld, t0, tend) ->
   return fld
 
 #put the pattern to the specified time and position, and return its state at time t
-patternAtTime = (rule, pattern, posAndTime, t) ->
+patternAt = (rule, pattern, posAndTime, t) ->
   pattern = Cells.copy pattern
   [x0,y0,t0] = posAndTime
   Cells.offset pattern, x0, y0
@@ -267,7 +267,7 @@ patternAtTime = (rule, pattern, posAndTime, t) ->
 #    offsets  :: [vec1, vec2] first position of each pattern before collision time
 #    timeStart::int first generation, where interaction has started
 #    products::[ ProductDesc ]  list of collision products (patterns with their positions and classification
-doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTreshold=20)->
+doCollision = (rule, library, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTreshold=20)->
   waitForCollision = v1[2] + v2[2] #sum of periods
   params = collisionParameters [0,0,0], v1, offset, v2  
   ap = approachParameters [0,0,0], v1, offset, v2, initialSeparation
@@ -285,8 +285,8 @@ doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTr
   #Create the initial field. Put 2 patterns: p1 and p2 at initial time 
   #nwo promote them to the same time, using list evaluation
   time = Math.max ap.npos0[2], ap.npos1[2]
-  fld1 = patternAtTime rule, p1, ap.npos0, time
-  fld2 = patternAtTime rule, p2, ap.npos1, time
+  fld1 = patternAt rule, p1, ap.npos0, time
+  fld2 = patternAt rule, p2, ap.npos1, time
   
   #OK, collision prepared. Now simulate both spaceships separately and
   # together, waiting while interaction occurs
@@ -311,7 +311,7 @@ doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTr
   collision.collision = true
   
   
-  {products, verifyTime, verifyField} = finishCollision rule, coll.field, coll.time
+  {products, verifyTime, verifyField} = finishCollision rule, library, coll.field, coll.time
   collision.products = products
   #findEmergeTime = (rule, products, minimalTime) ->
   collision.timeEnd = findEmergeTime rule, collision.products, collision.timeStart, verifyField, verifyTime
@@ -322,6 +322,7 @@ doCollision = (rule, p1, v1, p2, v2, offset, initialSeparation = 30, collisionTr
   #normalize relative to the first spaceship
   translateCollision collision, vecScale(collision.offsets[0], -1)
 
+#Offser collision information record by the given amount, in time and space
 translateCollision = (collision, dpos) ->
   [dx, dy, dt] = dpos
   for o, i in collision.offsets
@@ -378,15 +379,15 @@ findEmergeTime = (rule, products, minimalTime, verifyField, verifyTime) ->
     initialPos = firstPositionBefore product.pos, product.delta, maxTime
     #Put the pattern at this point
     pattern = Cells.transform product.pattern, product.transform, false
-    patternAtTime rule, pattern, initialPos, maxTime
+    patternAt rule, pattern, initialPos, maxTime
 
   if verifyTime?
     allPatterns = [].concat(patterns...)
     patternEvolution invRule, allPatterns, 1-maxTime, (p, t)->
       if t is (1 - verifyTime)
-        console.log "#### verifying. At time #{1-t} "
-        console.log "####    Expected: #{normalizedRle verifyField}"
-        console.log "####    Got     : #{normalizedRle p}"
+        #console.log "#### verifying. At time #{1-t} "
+        #console.log "####    Expected: #{normalizedRle verifyField}"
+        #console.log "####    Got     : #{normalizedRle p}"
         Cells.sortXY p
         Cells.sortXY verifyField
         if not Cells.areEqual verifyField, p
@@ -395,8 +396,8 @@ findEmergeTime = (rule, products, minimalTime, verifyField, verifyTime) ->
       else
         return true
 
-  console.log "#### Generated #{patterns.length} patterns at time #{maxTime}:"
-  console.log "#### #{normalizedRle [].concat(patterns...)}"
+  #console.log "#### Generated #{patterns.length} patterns at time #{maxTime}:"
+  #console.log "#### #{normalizedRle [].concat(patterns...)}"
   
   #Now simulate it inverse in time
   invCollision = simulateUntilCollision invRule, patterns, -maxTime+1, -minimalTime
@@ -406,7 +407,7 @@ findEmergeTime = (rule, products, minimalTime, verifyField, verifyTime) ->
   
 #simulate patern until it decomposes into several simple patterns
 # Return list of collision products
-finishCollision = (rule, field, time) ->
+finishCollision = (rule, library, field, time) ->
   #console.log "#### Collision RLE: #{normalizedRle field}"
   growthLimit = field.length*3 + 8  #when to try to separate pattern
 
@@ -417,7 +418,7 @@ finishCollision = (rule, field, time) ->
     size = Math.max (x1-x0), (y1-y0)
     #console.log "####    T:#{time}, s:#{size}, R:#{normalizedRle field}"
     if size > growthLimit
-      console.log "#### At time #{time}, pattern grew to #{size}: #{normalizedRle field}"
+      #console.log "#### At time #{time}, pattern grew to #{size}: #{normalizedRle field}"
       verifyTime = time
       verifyField = field
       break
@@ -427,21 +428,22 @@ finishCollision = (rule, field, time) ->
   if parts.length is 1
     #TODO: increase growth limit?
     #console.log "#### only one part, try more time"
-    return finishCollision rule, field, time
+    return finishCollision rule, library, field, time
     
   results = []
   for part, i in parts
     #now analyze this part
-    res = analyzeFragment rule, part, time
+    res = analyzeFragment rule, library, part, time
     for r in res
       results.push r
       
   return{
     products: results
     verifyTime: verifyTime
-    verifyField: field}
+    verifyField: field
+  }
 
-analyzeFragment = (rule, pattern, time, options={})->
+analyzeFragment = (rule, library, pattern, time, options={})->
   analysys = determinePeriod rule, pattern, time, options
   if analysys.cycle
     #console.log "####      Pattern analysys: #{JSON.stringify analysys}"
@@ -449,13 +451,13 @@ analyzeFragment = (rule, pattern, time, options={})->
     [res]
   else
     console.log "####      Pattern not decomposed completely: #{normalizedRle pattern} #{time}"
-    finishCollision(rule, pattern, time).products
+    finishCollision(rule, library, pattern, time).products
       
 #detect periodicity in pattern
 # Returns :
 #   cycle::bool - is cycle found
-#   error::str - if not cycle, says error
-#   delta::[dx, dy, dt] - velocity and period, if cycle
+#   error::str - if not cycle, says error details. Otherwise - udefined.
+#   delta::[dx, dy, dt] - velocity and period, if cycle is found.
 determinePeriod = (rule, pattern, time, options={})->
     pattern = Cells.copy pattern
     Cells.sortXY pattern
@@ -518,13 +520,13 @@ class Library
     @rle2pattern = {}
      
   #Assumes that pattern is in its canonical form
-  addPattern: (pattern, delta) ->
+  addPattern: (pattern, data) ->
     rle = Cells.to_rle pattern
     if @rle2pattern.hasOwnProperty rle
       throw new Error "Pattern already present: #{rle}"
-    @rle2pattern[rle] = delta
+    @rle2pattern[rle] = data
     
-  addRle: (rle) ->
+  addRle: (rle, data) ->
     pattern = Cells.from_rle rle
     analysys = determinePeriod @rule, pattern, 0
     if not analysys.cycle then throw new Error "Pattern #{rle} is not periodic!"
@@ -532,7 +534,7 @@ class Library
     [dx,dy,p]=delta=analysys.delta
     unless (dx>0 and dy>=0) or (dx is 0 and dy is 0)
       throw new Error "Pattern #{rle} moves in wrong direction: #{dx},#{dy}"
-    @addPattern pattern, delta
+    @addPattern pattern, data ? {delta: delta}
       
   classifyPattern: (pattern, time, dx, dy, period) ->
     #determine canonical ofrm ofthe pattern, present in the library;
@@ -572,12 +574,13 @@ class Library
       Cells.sortXY p
       rle = Cells.to_rle p
       #console.log "####    T:#{t}, rle:#{rle}"
-      if self.rle2pattern.hasOwnProperty rle
+      if rle of self.rle2pattern 
         #console.log "####      found! #{rle}"
         result.pos = [dx, dy, t]
         result.rle = rle
         result.pattern = p
         result.found=true
+        result.info = self.rle2pattern[rle]
         return false
       return (t-time) < period
       
@@ -592,53 +595,66 @@ class Library
       result.transform = [1,0,0,1]
     return result
     
-
-#geometrically separate pattern into several parts
+  #load library from the simple JSON file.
+  # Library format is simplified: "rle": data, where data is arbitrary object
+  load: (file) ->
+    fs = require "fs"
+    libData = JSON.parse fs.readFileSync file, "utf8"
+    #re-parse library data to ensure its correctness
+    n = 0
+    for rle, data of libData
+      @addPattern Cells.from_rle(rle), data
+      n += 1
+    console.log "#### Loaded #{n} patterns from library #{file}"
+    return
+  
+# geometrically separate pattern into several disconnected parts
 # returns: list of sub-patterns
 separatePatternParts = (pattern, range=4) ->
   
-    mpattern = {} #set of visited coordinates
-    key = (x,y) -> ""+x+"#"+y
-    has_cell = (x,y) -> mpattern.hasOwnProperty key x, y
-    erase = (x,y) -> delete mpattern[ key x, y ]
-    
-    #convert pattern to map-based repersentation
-    for xy in pattern
-      mpattern[key xy...] = xy
-      
-    cells = []
-    
-    #return true, if max size reached.
-    do_pick_at = (x,y)->
-      erase x, y
-      cells.push [x,y]
-      for dy in [-range..range] by 1
-        y1 = y+dy
-        for dx in [-range..range] by 1
-          continue if dy is 0 and dx is 0
-          x1 = x+dx
-          if has_cell x1, y1
-            do_pick_at x1, y1
-      return
-      
-    parts = []
-    while true
-      hadPattern = false
-      for _k, xy of mpattern
-        hadPattern = true #found at least one non-picked cell
-        do_pick_at xy ...
-        break
-      if hadPattern
-        parts.push cells
-        cells = []
-      else
-        break
-    return parts
+  mpattern = {} #set of visited coordinates
+  key = (x,y) -> ""+x+"#"+y
+  has_cell = (x,y) -> mpattern.hasOwnProperty key x, y
+  erase = (x,y) -> delete mpattern[ key x, y ]
+
+  #convert pattern to map-based repersentation
+  for xy in pattern
+    mpattern[key xy...] = xy
+
+  cells = []
+
+  #return true, if max size reached.
+  do_pick_at = (x,y)->
+    erase x, y
+    cells.push [x,y]
+    for dy in [-range..range] by 1
+      y1 = y+dy
+      for dx in [-range..range] by 1
+        continue if dy is 0 and dx is 0
+        x1 = x+dx
+        if has_cell x1, y1
+          do_pick_at x1, y1
+    return
+
+  parts = []
+  while true
+    hadPattern = false
+    for _k, xy of mpattern
+      hadPattern = true #found at least one non-picked cell
+      do_pick_at xy ...
+      break
+    if hadPattern
+      parts.push cells
+      cells = []
+    else
+      break
+  return parts
     
 #in margolus neighborhood, not all offsets produce the same pattern
 isValidOffset = ([dx, dy, dt]) -> ((dx+dt)%2 is 0) and ((dy+dt)%2 is 0)
 ############################
 
+#Mostly for debug: display cllision indormation
 showCollision = (collision)->
   console.log "##########################################################"
   for key, value of collision
@@ -660,51 +676,47 @@ showCollision = (collision)->
 #### Collision RLE: $1379bo22$2o2$2o
       
 
-runCollider = ->
-  #single rotate - for test
-  rule = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
-  
-  #2-block
-  pattern1 = Cells.from_rle "$2o2$2o"
-  pattern2 = Cells.from_rle "oo"
-  
-  v2 = (determinePeriod rule, pattern2, 0).delta
-  v1 = (determinePeriod rule, pattern1, 0).delta
-  
-  library = new Library rule
-  library.addRle "$2o2$2o"
-  library.addRle "bo$2b2o$3bo"
-  library.addRle "2bobo$b2o"
-  library.addRle "b2o2$2o"
-  library.addRle "bo$bo$2o"
-  library.addRle "o$o2$o$o"
-  
-  library.addRle "o"
-  library.addRle "oo"
-  
-  console.log "Two velocities: #{v1}, #{v2}"
+### Calculate the space of all principially different relative positions of 2 patterns
+#  Returns:
+#     elementaryCell: list of 3-vectors of relative positions
+#     freeIndex: index of the coordinate, that changes freely. 0 or 1 for valid patterns
+###
+determinePatternRelativePositionsSpace = (v1, v2) ->
   [freeIndex, freeOrt] = opposingOrt v1, v2
-  console.log "Free offset direction: #{freeOrt}, free index is #{freeIndex}"
+  #console.log "Free offset direction: #{freeOrt}, free index is #{freeIndex}"
   
   pv1 = removeComponent v1, freeIndex
   pv2 = removeComponent v2, freeIndex
-  console.log "Projected to null-space of free ort:"
-  console.log " PV1=#{pv1}, PV2=#{pv2}"
+  #console.log "Projected to null-space of free ort:"
+  #console.log " PV1=#{pv1}, PV2=#{pv2}"
   
   #s = area2d pv1, pv2
   #console.log "Area of non-free section: #{s}"
   
-  ecell = (restoreComponent(v,freeIndex) for v in elementaryCell(pv1, pv2))
-  #console.log "Elementary cell size: #{ecell.length}"
-  #for p, i in ecell
-  #  console.log "  #{i}: " + JSON.stringify(p)
+  ecell = (restoreComponent(v,freeIndex) for v in elementaryCell2d(pv1, pv2))
+  if ecell.length isnt Math.abs area2d pv1, pv2
+    throw new Error "elementary cell size is wrong"
+    
+  return{
+    elementaryCell: ecell
+    freeIndex: freeIndex
+    }
+
+### Call the callback for all collisions between these 2 patterns
+###
+allCollisions = (rule, library, pattern1, pattern2, onCollision) ->
+  v2 = (determinePeriod rule, pattern2, 0).delta
+  v1 = (determinePeriod rule, pattern1, 0).delta
+  console.log "Two velocities: #{v1}, #{v2}"
+  {elementaryCell, freeIndex} = determinePatternRelativePositionsSpace v1, v2
   
   #now we are ready to perform collisions
   # free index changes unboundedly, other variables change inside the elementary cell
   
-  minimalTouchDistance = (pattern1.length + pattern2.length)*3
-  console.log "#### Minimal touch distance is #{minimalTouchDistance}"
-  for offset in ecell
+  minimalTouchDistance = (pattern1.length + pattern2.length + 1)*3
+  #console.log "#### Minimal touch distance is #{minimalTouchDistance}"
+
+  for offset in elementaryCell
     #dPos, v0, v1, dMax, index
     offsetRange = freeIndexRange offset, v1, v2, minimalTouchDistance, freeIndex
     #console.log "#### FOr offset #{JSON.stringify offset}, index range is #{JSON.stringify offsetRange}"
@@ -713,9 +725,108 @@ runCollider = ->
       offset = offset[..]
       offset[freeIndex] = xFree
       if isValidOffset offset
-        #console.log "####  valid offset: #{JSON.stringify offset}"
-        collision = doCollision rule, pattern1, v1, pattern2, v2, offset, minimalTouchDistance*2, minimalTouchDistance
-        showCollision collision if collision.collision
+        collision = doCollision rule, library, pattern1, v1, pattern2, v2, offset, minimalTouchDistance*2, minimalTouchDistance
+        if collision.collision
+          onCollision collision
+  return
 
+        
+runCollider = ->
+  #single rotate - for test
+  rule = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+  library = new Library rule
+  library.load "./singlerot-simple.lib.json"
+  
+  #2-block
+  pattern2 = Cells.from_rle "$2o2$2o"
+  pattern1 = Cells.from_rle "o"
 
-runCollider()
+  allCollisions rule, library, pattern1, pattern2, (collision) ->
+    showCollision collision
+
+makeCollisionCatalog = (rule, library, pattern1, pattern2) ->
+  catalog = []
+  allCollisions rule, library, pattern1, pattern2, (collision) ->
+    #showCollision collision
+    catalog.push collision
+  return catalog
+
+# Main fgunctons, that reads command line parameters and generates collision catalog
+mainCatalog = ->
+  stdio = require "stdio"
+  opts = stdio.getopt {
+    output:
+      key: 'o'
+      args: 1
+      description: "Output file. Default is collisions-[p1]-[p2]-rule.json"
+    rule:
+      key:'r'
+      args: 1
+      description: "Rule (16 integers). Default is SingleRotation"
+    libs:
+      key:"L"
+      args: 1
+      description: "List of libraries to load. Use : to separate files"
+    }, "pattern1 pattern2"
+
+  ################# Parsing options #######################
+  unless opts.args? and opts.args.length in [2..2]
+    process.stderr.write "Not enough arguments\n"
+    process.exit 1
+    
+  [rle1, rle2] = opts.args    
+  pattern1 = Cells.from_rle rle1
+  pattern2 = Cells.from_rle rle2
+  console.log "#### RLEs: #{rle1}, #{rle2}"
+  console.log "Colliding 2 patterns:"
+  console.log pattern2string pattern1
+  console.log "--------"
+  console.log pattern2string pattern2
+
+  rule = if opts.rule?
+    parseElementary opts.rule
+  else
+    from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+    
+  unless rule.is_vacuum_stable()
+    throw new Error "Rule is not vacuum-stable. Not supported currently."
+  unless rule.is_invertible()
+    throw new Error "Rule is not invertible. Not supported currently."
+    
+  outputFile = if opts.output?
+    opts.output
+  else
+     "collisions-#{normalizedRle pattern1}-#{normalizedRle pattern2}-#{rule.stringify()}.json"
+    
+  libFiles = if opts.libs?
+    opts.libs.split ":"
+  else
+    []
+  ############### Running the collisions ###################
+  library = new Library rule
+  for libFile in libFiles
+    library.load libFile
+      
+  czs = makeCollisionCatalog rule, library, pattern1, pattern2
+  console.log "Found #{czs.length} collisions, stored in #{outputFile}"
+  
+  fs = require "fs"
+  fs.writeFileSync outputFile, JSON.stringify(czs, undefined, 2), {encoding:"utf8"}
+
+pattern2string = (pattern, signs = ['.', '#']) ->
+  [x0, y0, x1, y1] = Cells.bounds pattern
+  x0 -= mod2 x0
+  y0 -= mod2 y0
+  x1 += 1
+  y1 += 1
+  x1 += mod2 x1
+  y1 += mod2 y1
+  w = x1 - x0
+  h = y1 - y0
+  fld = ((signs[0] for i in [0...w]) for j in [0...h])
+  for [x,y] in pattern
+    fld[y-y0][x-x0] = signs[1]
+  return (row.join("") for row in fld).join("\n")
+  
+#runCollider()
+mainCatalog()
