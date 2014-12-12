@@ -8,10 +8,16 @@ path = require "path"
 mustache = require "mustache"
 {from_list_elem} = require "../scripts-src/rules"
 {Cells} = require "../scripts-src/cells"
+{collider} = require "./libcollider"
 
-
-tfmMatrix2Angle = ([t00,t01,t10,t11]) ->
-  return 0
+tfmMatrix2Angle = (tfm) ->
+  code = tfm.join " "
+  switch code
+    when "1 0 0 1" then 0
+    when "0 1 -1 0" then 90
+    when "-1 0 0 -1" then 180
+    when "0 -1 1 0" then 270
+    else null
   
 main = ()->
   opts = stdio.getopt {}, "report.json output.html"
