@@ -8,6 +8,7 @@ fs = require "fs"
 {from_list_elem, parseElementary} = require "../scripts-src/rules"
 stdio = require "stdio"
 {mod,mod2} = require "../scripts-src/math_util"
+{patternAt} = require "./libcollider"
 
 #GIven 2 3-vectors, return 3-ort, that forms full basis with both vectors
 opposingOrt = (v1, v2) ->
@@ -236,23 +237,14 @@ firstPositionAfter = (pos, delta, time) ->
 
     
 #Normalize pattern and returns its rle.
-normalizedRle = (fld) ->
+normalizedRle = (fld, time=0) ->
   ff = Cells.copy fld
+  phase = mod2 time
+  Cells.offset ff, phase, phase
   Cells.normalize ff
   Cells.to_rle ff
 
-evalToTime = (rule, fld, t0, tend) ->
-  if t > tend then throw new Error "assert: bad time"
-  for t in [t0 ... tend] by 1
-    fld = evaluateCellList rule, fld, mod2(t)
-  return fld
 
-#put the pattern to the specified time and position, and return its state at time t
-patternAt = (rule, pattern, posAndTime, t) ->
-  pattern = Cells.copy pattern
-  [x0,y0,t0] = posAndTime
-  Cells.offset pattern, x0, y0
-  evalToTime rule, pattern, t0, t
   
 # Collide 2 patterns: p1 and p2,
 #    p1 at [0,0,0] and p2 at `offset`.
@@ -321,6 +313,7 @@ doCollision = (rule, library, p1, v1, p2, v2, offset, initialSeparation = 30, co
 
   #normalize relative to the first spaceship
   translateCollision collision, vecScale(collision.offsets[0], -1)
+  #return collision
 
 #Offser collision information record by the given amount, in time and space
 translateCollision = (collision, dpos) ->
@@ -353,6 +346,7 @@ simulateUntilCollision = (rule, patterns, time, timeGiveUp) ->
     Cells.sortXY mergedPatterns
     if not Cells.areEqual fld, mergedPatterns
       #console.log "#### Collision detected! T=#{time}, #{normalizedRle fld}"
+      #console.log "#### collision RLE: #{normalizedRle fld, time}"
       return {
         collided: true
         time: time
