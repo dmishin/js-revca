@@ -811,7 +811,11 @@ mainCatalog = ->
   console.log "Found #{czs.length} collisions, stored in #{outputFile}"
   
   fs = require "fs"
-  fs.writeFileSync outputFile, JSON.stringify(czs, undefined, 2), {encoding:"utf8"}
+  czsData =
+    rule: rule.to_list()
+    patterns: [pattern1, pattern2]
+    collisions: czs
+  fs.writeFileSync outputFile, JSON.stringify(czsData), {encoding:"utf8"}
 
 pattern2string = (pattern, signs = ['.', '#']) ->
   [x0, y0, x1, y1] = Cells.bounds pattern
