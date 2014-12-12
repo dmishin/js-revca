@@ -9,6 +9,29 @@
   Rule is: <span class="rule">[{{rule}}]</span>.
 
   <table>
+    <tr>
+      <th>#</th>
+      <th>Offset {{RLE1}}</th>
+      <th>Offset {{RLE2}}</th>
+      <th>Interaction time</th>
+      <th>Products</th>
+    </tr>
+    {{#collisions}}
+    <tr>
+      <td>{{index}}</td>
+      <td>{{offset1}}</td>
+      <td>{{offset2}}</td>
+      <td>{{timeStart}} ... {{timeEnd}}</td>
+      <td>
+	<ul>
+	  {{#products}}
+	  <li>{{name}}: <span class="rle">{{rle}}</span> at {{aa}}{{offset}}, {{angle}}&deg;
+	  </li>
+	  {{/products}}
+	</ul>
+      </td>
+    </tr>
+    {{/collisions}}
   </table>
 </body
 </html>

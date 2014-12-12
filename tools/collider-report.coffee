@@ -10,6 +10,9 @@ mustache = require "mustache"
 {Cells} = require "../scripts-src/cells"
 
 
+tfmMatrix2Angle = ([t00,t01,t10,t11]) ->
+  return 0
+  
 main = ()->
   opts = stdio.getopt {}, "report.json output.html"
 
@@ -38,6 +41,19 @@ main = ()->
     RLE1: Cells.to_rle p1
     RLE2: Cells.to_rle p2
     rule: rule.stringify()
+    collisions:
+      for cz, i in data.collisions
+        offset1: JSON.stringify cz.offsets[0]
+        offset2: JSON.stringify cz.offsets[1]
+        timeStart : cz.timeStart
+        timeEnd: cz.timeEnd
+        index: i + 1
+        products:
+          for p in cz.products
+            name: if (p.info? and p.info.name?) then p.info.name else "?"
+            rle:  Cells.to_rle p.pattern
+            offset: JSON.stringify p.pos
+            angle: tfmMatrix2Angle p.transform
   rendered = mustache.render template, view
   #Rendering data
 
