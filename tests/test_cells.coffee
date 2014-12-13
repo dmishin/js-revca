@@ -1,6 +1,6 @@
 assert = require "assert"
 module_cells = require "../scripts-src/cells"
-{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = module_cells
+{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern, inverseTfm} = module_cells
 {NamedRules, from_list, from_list_elem, Bits} = require "../scripts-src/rules"
 # mocha tests/test-math-utils.coffee --compilers coffee:coffee-script
 
@@ -14,6 +14,29 @@ describe "Cells.areEqual(f1, f2)", ->
     assert.ok not Cells.areEqual([[0,1]], [])
     assert.ok not Cells.areEqual [[1,1],[2,3]], [[1,1],[2,4]]
     assert.ok not Cells.areEqual [[1,1],[2,3]], [[1,1],[3,3]]
+
+describe "Cells.shiftEqual(f1, f2)", ->
+  it "must be true, when cell lists are equal", ->
+    assert.deepEqual Cells.shiftEqual([], [], 0), [0,0]
+    assert.deepEqual Cells.shiftEqual([], [], 1), [1,1]
+  it "must work for 1-cell", ->
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[1,1]], 0), [0,0]
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[1,1]], 1), null
+
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[3,3]], 0), [2,2]
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[3,3]], 1), null
+
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[0,0]], 0), null
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[0,0]], 1), [-1,-1]
+
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[3,5]], 0), [2,4]
+    assert.deepEqual Cells.shiftEqual([[1,1]], [[3,5]], 1), null
+                
+  it "must work for 2-cell", ->
+    assert.deepEqual Cells.shiftEqual([[1,1],[2,3]], [[3,3],[4,5]], 0), [2,2]
+    assert.deepEqual Cells.shiftEqual([[1,1],[2,3]], [[3,-1],[4,1]], 0), [2,-2]
+    assert.deepEqual Cells.shiftEqual([[1,1],[2,3]], [[3,3],[4,5]], 1), null
+    assert.deepEqual Cells.shiftEqual([[1,1],[2,3]], [[3,-1],[4,1]], 1), null
 
 describe "Cells.sortXY(fig)", ->
   it "must inplace sort cell list, first by y, then by x", ->
@@ -68,9 +91,17 @@ describe "Cells.transform(fig, tfm): transform cell coordinates relative to poin
     expected = [[3,0],[1,1]]
     assert.deepEqual  (Cells.transform cells, t), expected
 
+describe "inverseTfm(tfm): inverse transform matrix", ->
+  assert.deepEqual inverseTfm([1,0,0,1]), [1,0,0,1]
+  assert.deepEqual inverseTfm([-1,0,0,1]), [-1,0,0,1]
+  assert.deepEqual inverseTfm([1,0,0,-1]), [1,0,0,-1]
+  assert.deepEqual inverseTfm([-1,0,0,-1]), [-1,0,0,-1]
+  
+  assert.deepEqual inverseTfm([0,1,1,0]), [0,1,1,0]
+  assert.deepEqual inverseTfm([0,-1,1,0]), [0,1,-1,0]
+  
 
-
-describe "Cells.parse_rle( rle_string ) parse standard RLE string into list of cells", ->
+describe "Cells.from_rle( rle_string ) parse standard RLE string into list of cells", ->
   it "must tolerate empty RLE", ->
     assert.deepEqual (Cells.from_rle ""), []
   it "must decode simple RLEs", ->
@@ -85,7 +116,7 @@ describe "Cells.parse_rle( rle_string ) parse standard RLE string into list of c
     rle = "$bo"
     assert.deepEqual (Cells.from_rle rle), [[1,1]]
 
-  it "must ignore trailing whitespaces", ->
+  it "must ignore trailing empty cells", ->
     rle = "$"
     assert.deepEqual (Cells.from_rle rle), []
     rle = "b"
@@ -101,10 +132,18 @@ describe "Cells.parse_rle( rle_string ) parse standard RLE string into list of c
     rle = "2o$obo$o"
     glider = [[0,0],[1,0],[0,1],[2,1],[0,2]]
     assert.deepEqual (Cells.from_rle rle), glider
-
+    
   it "must repeat counts, bigger than 10", ->
     rle = "20$30bo"
     assert.deepEqual (Cells.from_rle rle), [[30, 20]]
+  it "must ignore everything after !", ->
+    rle = "$bo!oo"
+    assert.deepEqual (Cells.from_rle rle), [[1,1]]
+  it "must ignore whitespaces", ->
+    # original: 2o$obo$o
+    rle = "  2\n\ro  $ o\t\t\tbo$o   "
+    glider = [[0,0],[1,0],[0,1],[2,1],[0,2]]
+    assert.deepEqual (Cells.from_rle rle), glider
 
 describe "Cells.to_rle( cells_list ): convert *sorted* list of cells to RLE code", ->
   it "must tolerate empty data", ->

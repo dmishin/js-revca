@@ -76,11 +76,23 @@ def imageMaker(folder, folderName):
             tree.write(ofile, encoding="utf-8", xml_declaration=True)
         return folderName + "/" + name
     return getter
+
+builtinTemplate = """<html>
+<head><script src="{scriptName}"></script></head>
+<link rel="stylesheet" type="text/css" href="{cssName}"/>
+<body>
+<p>Rule: [{rule:s}]. Different patterns: {patterns:d}. Total patterns collected in the random reaction: {total_caught:d}.</p>
+{spaceships_table}
+</body></html>
+"""
         
 if __name__=="__main__":
     parser = OptionParser(usage = "%prog [options] library.json\nConvert library to html file")
     parser.add_option("-o", "--output", dest="output", default=None,
                       help="write HTML to FILE, default is name of input", metavar="FILE")
+
+    parser.add_option("-t", "--template", dest="template", default=None,
+                      help="Use given template for generating HTML. Default is a simple built-in one. Tempalte may use variables: {total_spaceships}, {spaceships_table}", metavar="FILE")
 
 
     parser.add_option("-r", "--rule", dest="rule", default='0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15', 
@@ -154,7 +166,9 @@ if __name__=="__main__":
         Parameter('Velocity value', (lambda r: '%0.3g'%(max(r['result']['dx'], r['result']['dy']) / r['result']['period'])), header_class='sorttable_numeric'),
         Parameter('Type', lambda r: gliderType(r['result']['dx'], r['result']['dy'])),
         Parameter('Count', lambda r: r['count']),
-        Parameter('Probability', lambda r: '%0.3g'%(r['count'] / totalCount), header_class='sorttable_numeric' )
+        Parameter('Probability', 
+                  lambda r: ('%0.3g'%(r['count'] / totalCount)) if totalCount else "--",
+                  header_class='sorttable_numeric' )
     ]        
 
     scriptPath = os.path.join(outdir, 'sorttable.js')
@@ -166,28 +180,38 @@ if __name__=="__main__":
     cssName = outdir + '/' + 'style.css'
     cssSource = os.path.join(os.path.dirname(__file__), '../table.css')
     shutil.copyfile(cssSource, cssPath)
-    
+
+    #read the tempalte
+    if options.template:
+      with open(options.template, "r") as templateFile:
+        template = templateFile.read()
+    else:
+      template = builtinTemplate
+
+
+    tableParts = []
+    tableParts.append('<table class="sortable"><thead><tr>')
+    for param in parameters:
+        tableParts.append (param.header())
+
+    tableParts.append('</tr></thead>')
+    tableParts.append('<tbody>')
+
+    for record in data:
+        tableParts.append ('<tr>')
+        tableParts.append (''.join(param.value(record) for param in parameters))
+        tableParts.append ('</tr>')
+    tableParts.append('</tbody>')
+    tableParts.append('</table>')
+
     with open(ofileName,'w') as ofile:
+      ofile.write( template.format( 
+        rule=srule, 
+        patterns=len(data), 
+        total_caught=totalCount,
+        scriptName = scriptName,
+        cssName = cssName,
+        spaceships_table = "".join(tableParts)
+      ))
+      
 
-        ofile.write('<html>')
-        ofile.write('<head><script src="%s"></script></head>'%(scriptName))
-        ofile.write('<link rel="stylesheet" type="text/css" href="%s"/>'%(cssName))
-        ofile.write('<body>\n')
-        ofile.write('<p>Rule: [{rule:s}]. Different patterns: {patterns:d}. Total patterns collected: {total:d}.</p>\n'.format(
-          rule=srule, patterns=len(data), total=totalCount
-        ))
-        ofile.write('<table class="sortable"><thead><tr>')
-        for param in parameters:
-            ofile.write (param.header())
-
-        ofile.write('</tr></thead>')
-        ofile.write('<tbody>\n')
-
-        for record in data:
-            ofile.write ('<tr>')
-            ofile.write (''.join(param.value(record) for param in parameters))
-            ofile.write ('</tr>\n')
-        ofile.write('</tbody>')
-        ofile.write('</table>')
-
-        ofile.write('</body></html>')
