@@ -73,16 +73,19 @@ exports.createField = createField = (cells, cols, rows, cell_size, styles = defa
             "xlink:href": "#cell_image"
             "transform": "translate(#{xx} #{yy})"}
     return svg
-    
-exports.rle2svg = (rle, size) ->
-  cells = Cells.from_rle rle
+
+exports.pattern2svg = pattern2svg = (cells, size, styles) ->
   [xmin, ymin, xmax, ymax] = Cells.bounds cells
   xmax += 1
   ymax += 1
   xmax += xmax % 2
   ymax += ymax % 2
-  createField(cells, xmax, ymax, size).end()
-
+  createField(cells, xmax, ymax, size, styles)
+  
+exports.rle2svg = (rle, size, styles) ->
+  cells = Cells.from_rle rle
+  pattern2svg cells, size
+  
 main = (field_size)->
   x0 = 0
   y0 = 0
@@ -105,8 +108,8 @@ main = (field_size)->
     fs_y = ymax
 
   tree = createField cells, fs_x, fs_y, size
-  console.log tree.end {pretty: true}    
-
+  #console.log tree.end {pretty: true}    
+  console.log tree.toString {pretty: true}
 
 #main()
 #convert to PNG:

@@ -10,6 +10,7 @@ mustache = require "mustache"
 {Cells} = require "../scripts-src/cells"
 {mod2} = require "../scripts-src/math_util"
 {patternAt} = require "./libcollider"
+rle2svg = require "./rle2svg"
 
 tfmMatrix2Angle = (tfm) ->
   code = tfm.join " "
@@ -36,7 +37,7 @@ collisionUrl = (patternPosList, rule) ->
   p1 = Cells.copy pattern
   Cells.offset p1, mod2(time), mod2(time)
   Cells.normalize p1
-  console.log "#### RLE: #{Cells.to_rle p1}"
+  #console.log "#### RLE: #{Cells.to_rle p1}"
   
   [x0, y0, x1, y1] = Cells.bounds pattern
 
@@ -68,7 +69,13 @@ collisionUrl = (patternPosList, rule) ->
         "&cell_size=#{cellSize},#{grid}"+\
         "&phase=#{mod2 time}"
   return url
-  
+
+svgStyles = 
+  cell: "fill:black;stroke:black"
+  bg: "stroke:none;fill:rgb(240,255,255)"
+  grid2: "stroke:none;stroke-width:0"
+  grid1: "stroke:black;stroke-width:1;stroke-dasharray:1,2"
+          
 main = ()->
   opts = stdio.getopt {}, "report.json output.html"
 
@@ -94,9 +101,12 @@ main = ()->
   templateFile = path.resolve __dirname, "collider-report-template.mustache.html"
   template = fs.readFileSync templateFile, {encoding: "utf-8"}
 
+
   view =
     RLE1: Cells.to_rle p1
     RLE2: Cells.to_rle p2
+    svg1: rle2svg.pattern2svg(p1, 12, svgStyles).toString pretty:true
+    svg2: rle2svg.pattern2svg(p2, 12, svgStyles).toString pretty:true
     rule: rule.stringify()
     collisions:
       for cz, idx in data.collisions
@@ -108,9 +118,10 @@ main = ()->
         index: idx + 1
         url: collisionUrl patternPosList, rule
         products:
-          for p in cz.products
-            name: if (p.info? and p.info.name?) then p.info.name else "?"
+          for p in cz.products.sort((pr1,pr2) -> pr1.pattern.length - pr2.pattern.length)
+            name: p.info?.name ? "?"
             rle:  Cells.to_rle p.pattern
+            svg:  rle2svg.pattern2svg(p.pattern, 12, svgStyles).toString pretty:true
             offset: JSON.stringify p.pos
             angle: tfmMatrix2Angle p.transform
   rendered = mustache.render template, view

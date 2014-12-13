@@ -11,8 +11,8 @@
     
     table{
     border-collapse:collapse;
-    margin-left: auto;
-    margin-right: auto;
+    //margin-left: auto;
+    //margin-right: auto;
     }
     
     table,
@@ -49,10 +49,18 @@
   </style>
 </head>
 <body>
-  Collider report for 2 patterns:
-  <span class="rle">{{RLE1}}</span>, <span class="rle">{{RLE2}}</span>.
-  Rule is: <span class="rule">[{{rule}}]</span>.
-
+  Collider report for rule <span class="rule">[{{rule}}]</span>.
+  <table>
+    <tr>
+      <th>Pattern 1: <span class="rle">{{RLE1}}</span></th>
+      <th>Pattern 2: <span class="rle">{{RLE2}}</span></th>
+    </tr>
+    <tr>
+      <td>{{{svg1}}}</td>
+      <td>{{{svg2}}}</td>
+    </tr>
+  </table>
+  Collisions:
   <table>
     <tr>
       <th>#</th>
@@ -75,6 +83,7 @@
 	    <td><span class="rle">{{rle}}</span></td>
 	    <td> at {{offset}},</td>
 	    <td>{{angle}}&deg;</td>
+	    <td>{{{svg}}}</td>
 	  </tr>
 	  {{/products}}
 	</table>
@@ -82,5 +91,5 @@
     </tr>
     {{/collisions}}
   </table>
-</body
+</body>
 </html>
