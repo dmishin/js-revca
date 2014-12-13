@@ -8,7 +8,7 @@ fs = require "fs"
 {from_list_elem, parseElementary} = require "../scripts-src/rules"
 stdio = require "stdio"
 {mod,mod2} = require "../scripts-src/math_util"
-{patternAt} = require "./libcollider"
+{patternAt, evalToTime} = require "./libcollider"
 
 #GIven 2 3-vectors, return 3-ort, that forms full basis with both vectors
 opposingOrt = (v1, v2) ->
@@ -306,7 +306,8 @@ doCollision = (rule, library, p1, v1, p2, v2, offset, initialSeparation = 30, co
   {products, verifyTime, verifyField} = finishCollision rule, library, coll.field, coll.time
   collision.products = products
   #findEmergeTime = (rule, products, minimalTime) ->
-  collision.timeEnd = findEmergeTime rule, collision.products, collision.timeStart, verifyField, verifyTime
+  emergeGapTime = Math.max v1[2], v2[2] #it is possible that emerge time is *smaller* than collision! 
+  collision.timeEnd = findEmergeTime rule, collision.products, collision.timeStart-emergeGapTime, verifyField, verifyTime
   #Update positions of products
   for product in collision.products
     product.pos = firstPositionAfter product.pos, product.delta, collision.timeEnd+1
@@ -380,8 +381,8 @@ findEmergeTime = (rule, products, minimalTime, verifyField, verifyTime) ->
     patternEvolution invRule, allPatterns, 1-maxTime, (p, t)->
       if t is (1 - verifyTime)
         #console.log "#### verifying. At time #{1-t} "
-        #console.log "####    Expected: #{normalizedRle verifyField}"
-        #console.log "####    Got     : #{normalizedRle p}"
+        #console.log "####    Expected: #{normalizedRle verifyField, (1-t)}"
+        #console.log "####    Got     : #{normalizedRle p, (1-t)}"
         Cells.sortXY p
         Cells.sortXY verifyField
         if not Cells.areEqual verifyField, p
@@ -394,8 +395,15 @@ findEmergeTime = (rule, products, minimalTime, verifyField, verifyTime) ->
   #console.log "#### #{normalizedRle [].concat(patterns...)}"
   
   #Now simulate it inverse in time
-  invCollision = simulateUntilCollision invRule, patterns, -maxTime+1, -minimalTime
+  #backPattern = evalToTime invRule, [].concat(patterns...), 1-maxTime, 1-minimalTime
+  #console.log "#### rle before invcoll is: #{normalizedRle backPattern, (1-minimalTime)} at #{minimalTime}"
+  
+  invCollision = simulateUntilCollision invRule, patterns, 1-maxTime, 1-minimalTime+15
   if not invCollision.collided
+    #console.log "#### collision info: #{JSON.stringify invCollision}"
+    #console.log "#### patterns did not collided in backward time..."
+    #backPattern = evalToTime invRule, [].concat(patterns...), 1-maxTime, 1-minimalTime
+    #console.log "#### rle is: #{normalizedRle backPattern, (1-minimalTime)} at #{minimalTime}"
     throw new Error "Something is wrong: patterns did not collided in inverse time"
   return 1-invCollision.time    
   
