@@ -6,35 +6,46 @@
 
     .rle{
       font-family: monospace;
-      background-color: rgb(249, 249, 249);
+      background-color: #EEE;
     }
-table{
+    
+    table{
     border-collapse:collapse;
     margin-left: auto;
     margin-right: auto;
-}
-
-table,
-td,
-th{
+    }
+    
+    table,
+    td,
+    th{
     border: 1px solid rgb(170, 170, 170);
-}
-
-th{
+    }
+    
+    th{
     background-color: rgb(249, 249, 249);
-}
-
-td, th{
+    }
+    
+    td, th{
     padding: 0.1em 0.5em;
-}
-
-td{
+    }
+    
+    td{
     text-align: left;
-}
-ol, ul
-{
+    }
+    ol, ul
+    {
     margin: 0 0;
-}
+    }
+    
+    table.inner-table{
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    }
+    table.inner-table, .inner-table td, .inner-table tr{
+    border-width: 0;
+    }
+    
   </style>
 </head>
 <body>
@@ -57,12 +68,16 @@ ol, ul
       <td>{{offset2}}</td>
       <td>{{timeStart}} ... {{timeEnd}}</td>
       <td>
-	<ul>
+	<table class="inner-table">
 	  {{#products}}
-	  <li>{{name}}: <span class="rle">{{rle}}</span> at {{aa}}{{offset}}, {{angle}}&deg;
-	  </li>
+	  <tr>
+	    <td>{{name}}</td>
+	    <td><span class="rle">{{rle}}</span></td>
+	    <td> at {{offset}},</td>
+	    <td>{{angle}}&deg;</td>
+	  </tr>
 	  {{/products}}
-	</ul>
+	</table>
       </td>
     </tr>
     {{/collisions}}
