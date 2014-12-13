@@ -1,41 +1,13 @@
 #!/usr/bin/env python
 from xml.etree.ElementTree import ElementTree, Element, SubElement, Comment, tostring
 from optparse import OptionParser
+from rle import parse_rle, rle2cell_list
 import sys
 
 cell_style = "fill:blue;stroke:black"
 bg_style = "stroke:none;fill:rgb(240,255,255)"
 grid1_style = "stroke:black;stroke-width:1"
 grid2_style = "stroke:black;stroke-width:1;stroke-dasharray:2,4"
-
-def parse_rle(rle_string, put_cell):
-    """based on the CoffeScritp code"""
-    x = 0
-    y = 0
-    curCount = 0
-    for i in range(0, len(rle_string)):
-        c = rle_string[i]
-        if "0" <= c and c <= "9":
-            curCount = curCount * 10 + int(c)
-        else:
-            count = max(curCount, 1)
-            curCount = 0
-            if c == "b":
-                x += count
-            elif c == "$":
-                y += count
-                x = 0
-            elif c == "o":
-                for j in range(0,count):
-                    put_cell(x, y)
-                    x+=1
-            else:
-                raise ValueError( "Unexpected character '%s' at position %d"%(c, i))
-
-def rle2cell_list(rle, dx=0, dy=0):
-    cells = []
-    parse_rle(rle, lambda x,y: cells.append((x+dx,y+dy)))
-    return cells
 
 def CreateField(cells, cols, rows, cell_size = 20):
 

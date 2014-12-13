@@ -21,10 +21,11 @@ def total(data):
     return sum(r['count'] for r in data)
 
 class Parameter:
-    def __init__(self, title, getter, header_class=None):
+    def __init__(self, title, getter, header_class=None, cell_class=None):
         self.title = title
         self.getter = getter
         self.header_class = header_class
+        self.cell_class = cell_class
     def header(self):
         if self.header_class:
             args = ' class="%s"'%(self.header_class)
@@ -32,7 +33,11 @@ class Parameter:
             args = ''
         return "<th%s>%s</th>"%(args, self.title)
     def value(self, record):
-        return '<td>%s</td>'%(self.getter(record))
+        if self.cell_class:
+            args = ' class="%s"'%(self.cell_class)
+        else:
+            args = ''
+        return '<td%s>%s</td>'%(args,self.getter(record))
 
 def gcd(a,b):
     "Greatest common divisor"
@@ -139,7 +144,7 @@ if __name__=="__main__":
 
     mkImage = imageMaker(outdir, outdirName)
     parameters = [
-        Parameter('Image', lambda r: '<a target="_blank" href="%s" title="Try in the simulator"><img src="%s"/></a>'%(makeUrl(r), mkImage(r)), header_class='sorttable_nosort'),
+        Parameter('Image', lambda r: '<a target="_blank" href="%s" title="Try in the simulator"><img src="%s"/></a>'%(makeUrl(r), mkImage(r)), header_class='sorttable_nosort', cell_class="figure"),
         Parameter('RLE', lambda r: '<a target="_blank" href="%s" title="Try in the simulator">%s</a>'%(makeUrl(r), r['key'])),
         Parameter('Size', lambda r: len(r['result']['cells'])),
         Parameter('Period', lambda r: r['result']['period']),
@@ -167,8 +172,8 @@ if __name__=="__main__":
         ofile.write('<html>')
         ofile.write('<head><script src="%s"></script></head>'%(scriptName))
         ofile.write('<link rel="stylesheet" type="text/css" href="%s"/>'%(cssName))
-        ofile.write('<body>')
-        ofile.write('<p>Rule: [{rule:s}]. Different patterns: {patterns:d}. Total patterns collected: {total:d}.</p>'.format(
+        ofile.write('<body>\n')
+        ofile.write('<p>Rule: [{rule:s}]. Different patterns: {patterns:d}. Total patterns collected: {total:d}.</p>\n'.format(
           rule=srule, patterns=len(data), total=totalCount
         ))
         ofile.write('<table class="sortable"><thead><tr>')
@@ -176,12 +181,12 @@ if __name__=="__main__":
             ofile.write (param.header())
 
         ofile.write('</tr></thead>')
-        ofile.write('<tbody>')
+        ofile.write('<tbody>\n')
 
         for record in data:
             ofile.write ('<tr>')
             ofile.write (''.join(param.value(record) for param in parameters))
-            ofile.write ('</tr>')
+            ofile.write ('</tr>\n')
         ofile.write('</tbody>')
         ofile.write('</table>')
 
