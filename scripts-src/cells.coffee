@@ -1,16 +1,11 @@
 #//////////////////////////////////////////////////////////////////////////////
-# Configuration analysis
+# Patterns
 #//////////////////////////////////////////////////////////////////////////////
 #Import section
-module_rle = require "./rle"
-module_rules = require "./rules"
-module_math_util = require "./math_util"
-module_reversible_ca = require "./reversible_ca"
-
-{parse_rle} = module_rle
-{Rule, Bits} = module_rules
-{Maximizer, mod2} = module_math_util
-{MargolusNeighborehoodField, Array2d} = module_reversible_ca
+{parse_rle, to_rle} = require "./rle"
+{Rule, Bits} = require "./rules"
+{Maximizer, mod2} = require "./math_util"
+{MargolusNeighborehoodField, Array2d} = require "./reversible_ca"
 
 exports.Cells = Cells =
   #Collection of methodw for working with cell lists
@@ -22,6 +17,24 @@ exports.Cells = Cells =
       return false if xy1[0] isnt xy2[0] or xy1[1] isnt xy2[1]
     true
 
+  shiftEqual: (p1, p2, oddity) ->
+    return null if p1.length isnt p2.length
+    return [oddity, oddity] if p1.length is 0
+    [x0, y0] = p1[0]
+    [x1, y1] = p2[0]
+    dx = x1-x0
+    dy = y1-y0
+    if (mod2(dx+oddity) isnt 0) or mod2(dy+oddity) isnt 0
+      return null #wrong oddity
+    
+    for i in [1...p1.length] by 1
+      [x0, y0] = p1[i]
+      [x1, y1] = p2[i]
+      if (x1-x0 isnt dx) or (y1-y0 isnt dy)
+        return null
+    return [dx,dy]
+    
+  copy: (lst) -> ( xy[..] for xy in lst )
   #Sort list of cells, first by X then by Y
   sortXY: (lst) ->
     lst.sort ([x1,y1],[x2,y2]) -> (y1-y2) or (x1-x2)
@@ -94,47 +107,12 @@ exports.Cells = Cells =
     for [xi, yi], i in lst
       if xi is x and yi is y
         return i
-    return null
+    return
+    
   ###
   Convert list of alive cells to RLE. List of cells must be sorted by Y, then by X, and coordinates of origin must be at (0,0)
   ###
-  to_rle: (cells) ->
-    #COnvert sorted (by y) list of alive cells to RLE encoding
-    rle = ""
-    count = 0
-    
-    appendNumber = (n, c) ->
-      rle += n  if n > 1
-      rle += c
-
-    endWritingBlock = ->
-      if count > 0
-        appendNumber count, "o"
-        count = 0
-
-    x = -1
-    y = 0
- 
-    for [xi, yi], i in cells
-      dy = yi - y
-      throw new Error "Cell list are not sorted by Y"  if dy < 0
-      
-      if dy > 0 #different row
-        endWritingBlock()
-        appendNumber dy, "$"
-        x = -1
-        y = yi
-      dx = xi - x
-      throw new Error "Cell list is not sorted by X"  if dx <= 0
-      if dx is 1
-        count++ #continue current horizontal line
-      else if dx > 1 #line broken
-        endWritingBlock()
-        appendNumber dx - 1, "b"  #write whitespace before next block
-        count = 1 #and remember the current cell
-      x = xi
-    endWritingBlock()
-    rle
+  to_rle: to_rle
 
   ###
   Convert RLE-encoded configutaion back to cell list
@@ -143,20 +121,6 @@ exports.Cells = Cells =
     cells = []
     parse_rle rle, (x, y) -> cells.push [x, y]
     cells
-
-  #
-  #var cc=[[1,0],[2,0],[2,1],[2,2]];
-  #//   0123
-  #// 0  ##
-  #// 1   #
-  #// 2   #
-  #var rle_=cellList2Rle(cc);
-  #var rle_expect="b2o$2bo$2bo";
-  #if (rle_ !== rle_expect){
-  #    alert("RLE wrong:"+rle_+"\nExpected:"+rle_expect);
-  #}
-  #
-  #
 
   #Energy fucntion to calculate canonical form
   # Energy is bigger for the more compact configurations.
@@ -233,15 +197,19 @@ exports.Cells = Cells =
     return -(e + (30000)/(symmetries + 1)) #10000 is the weight of a symmetry factor
 
   _rotations: [[1, 0, 0, 1], [0, 1, -1, 0], [-1, 0, 0, -1], [0, -1, 1, 0]] #Different rotations
-  
+
+  transformVector: ([dx,dy], t) ->
+    [dx * t[0] + dy * t[1],
+     dx * t[2] + dy * t[3]]
+    
   _find_normalizing_rotation: (dx, dy) ->
     for t in @_rotations
-      dx1 = dx * t[0] + dy * t[1]
-      dy1 = dx * t[2] + dy * t[3]
+      [dx1, dy1] = @transformVector [dx, dy], t
       if dx1 > 0 and dy1 >= 0 #important: different comparisions
         return [dx1, dy1, t]
     throw new Error "Impossible to rotate vector (#{dx},#{dy}) to the positive direction"
 
+  
   analyze: (pattern, rule, options={}) ->
     throw new Error ("Pattern undefined")  unless pattern
     throw new Error ("Rule undefined")  unless rule
@@ -443,6 +411,13 @@ transforms = [
   tfmRecord("flipy",  [1,0,0,-1]),
   tfmRecord("flipxy", [0,1,1,0]),
   tfmRecord("flipixy",[0,-1,-1,0])]
+
+exports.inverseTfm = inverseTfm = (tfm) ->
+  [a00,a01, a10,a11] = tfm
+  d = a00*a11 - a01*a10
+  if d is 0 then throw new Error "Singular matrix"
+  id = 1/d
+  return [a11*id, -a01*id, -a10*id, a00*id]
 
 #Returns dual transformation matrix, or none, if dual transform does not exists
 # Matrix is returned as array of 4 elements, [t00, t01, t10, t11]

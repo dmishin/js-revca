@@ -92,11 +92,11 @@
       else
         @selected = null
         
-      @handlers = {"change": []}
+      @handlers = change: []
 
       for btn in containerElem.getElementsByTagName tag
         btn.addEventListener "click", @_btnClickListener btn
-      null
+      return
     
     _btnClickListener: (newBtn) -> (e) =>
       #newBtn = (e.target ? e.srcElement)
@@ -109,7 +109,7 @@
         @selected = newBtn
         for handler in @handlers.change
           handler( e, newId, oldId )
-        null
+        return
           
     addEventListener: (name, handler)->
       unless (handlers = @handlers[name])?
@@ -434,7 +434,7 @@
         controls = []
         for i in [0...n] by 1
           dom.tag("tr")
-            .tag("td").text(i+1).end()
+            .tag("td").text("#{i+1})").end()
             .tag("td")
               .tag("input").CLASS("rule-input").store("subrule_input").end()
             .end()
@@ -445,27 +445,25 @@
           if n > 1 
             dom.tag("button").store("subrule_delete").text("-").a("title","Remove sub-rule").end()
           dom.tag("select").store("subrule_select").end()
-          dom.end().end() #td, tr
+             .end().end() #td, tr
           #assign event handlers
           do (i) =>
-            #warning: mind ?, button can be absent
-            dom.vars.subrule_delete?.addEventListener "click", (e) => @_removeSubRule i
-            dom.vars.subrule_duplicate.addEventListener "click", (e) => @_duplicateSubRule i
-            dom.vars.subrule_reverse.addEventListener "click", (e) => @_reverseSubRule i
-            dom.vars.subrule_input.addEventListener "change", (e) => @setRuleFromControls()
+            #warning: mind `?`, button can be absent
+            vars = dom.vars
+            vars.subrule_delete?.addEventListener "click", (e) => @_removeSubRule i
+            vars.subrule_duplicate.addEventListener "click", (e) => @_duplicateSubRule i
+            vars.subrule_reverse.addEventListener "click", (e) => @_reverseSubRule i
+            vars.subrule_input.addEventListener "change", (e) => @setRuleFromControls()
             fill_rules dom.vars.subrule_select, predefinedRules
-            dom.vars.subrule_select.addEventListener "change", (e) =>
-              sel = e.target or e.srcElement
-              if sel.value isnt ""
-                r = parse sel.value
-                @rule.rules[i] = r.rules[0]
+            vars.subrule_select.addEventListener "change", (e) =>
+              value = (e.target or e.srcElement).value
+              if value isnt ""
+                @rule.rules[i] = parse(value).rules[0]
                 @set_rule @rule
-
           #store controls
           controls.push
             input: dom.vars.subrule_input
             select: dom.vars.subrule_select
-            delete_button: dom.vars.subrule_delete #can be undefined
         dom.end()
         container.innerHTML = ""
         container.appendChild dom.finalize()
@@ -483,14 +481,12 @@
         @updateCanvas()
         @stable_enabled = enabled
           
-      showRulesetPhase: ->
-        phase = @rule_phase
-        E("vacuum-phase").innerHTML = phase
+      showRulesetPhase: -> E("vacuum-phase").innerHTML = @rule_phase
     
       show_rule_stabilization: ->
         dom = new DomBuilder
         dom.tag("table").CLASS("library-table")
-        dom.tag("thead")
+          .tag("thead")
           .tag("th").text("Phase").end()
           .tag("th").text("Vacuum").end()
           .tag("th").text("Rule").end()
@@ -1239,7 +1235,7 @@
 
     if invertible
       dom.tag "p"
-      if vacuum_cycle.length == 1
+      if rule.is_vacuum_stable()
         dom.text "Rule has stable vacuum."
       else
         dom.text "Rule has periodic vacuum with period #{vacuum_cycle.length}. The period is:"
@@ -1593,11 +1589,6 @@
     E("reset-timer").onclick = -> golApp.reset_time()
     E("nullify-phase").onclick = -> golApp.nullifyRulesetPhase()
 
-    #Rule set manually
-    E("set_rule").onclick = ->
-      golApp.setRuleFromControls()
-      
-      
     #RUle set from the editor
     E("select-style").onchange = ->
       sz = parseInt E("select-style").value, 10

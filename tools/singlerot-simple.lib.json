@@ -1,0 +1,12 @@
+{
+    "$2o2$2o": {"name": "A"},
+    "obo$2bo$2bo": {"name": "B"},
+    "2bo2$b2o$bo": {"name": "C"},
+    "2bo$obo$o": {"name": "D"},
+    "b3o$bo": {"name": "E"},
+    "o$o2$o$o": {"name": "F"},
+    
+    "o": {"name": "1-cell"},
+    "oo": {"name": "2-cell"},
+    "b2o$b2o": {"name": "4-block"}
+}
