@@ -1,6 +1,8 @@
 #!/usr/bin/env coffee
 fs = require "fs"
-{Cells, evaluateCellList, getDualTransform, splitPattern} = require "../scripts-src/cells"
+{Cells, getDualTransform} = require "../scripts-src/cells"
+{evaluateCellList, splitPattern, canonicalize_spaceship} = require "../scripts-src/analyser"
+
 rules = require "../scripts-src/rules"
 stdio = require "stdio"
 {mod} = require "../scripts-src/math_util"
@@ -58,7 +60,7 @@ makeDualSpaceship = (spaceship, rule, dualTransform, dx, dy) ->
   dx1 = -dx1
   dy1 = -dy1
   #Rotate spaceship to the right position
-  [g1,dx1, dy1] = Cells.canonicalize_spaceship g1, rule, dx1, dy1
+  [g1,dx1, dy1] = canonicalize_spaceship g1, rule, dx1, dy1
   if (dx1 isnt dx) or (dy1 isnt dy)
     throw new Error "New spaceship moves in the different direction, that's wrong for rotational rule"
   Cells.normalize g1

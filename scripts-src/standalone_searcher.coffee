@@ -1,9 +1,7 @@
 #!/usr/bin/env coffee
 fs = require "fs"
-{Cells, evaluateCellList, getDualTransform, splitPattern} = require "./cells"
 {parse, NamedRules} = require "./rules"
 stdio = require "stdio"
-{mod, div} = require "./math_util"
 {Array2d, MargolusNeighborehoodField} = require "./reversible_ca"
 
 #{SpaceshipCatcher} = require "./application"
@@ -37,7 +35,7 @@ onPattern = (rule, maxSteps, outfile, maxLength) -> (pattern) ->
   fs.write outfile, JSON.stringify(pattern)+"\n"
   console.log pattern.length
 ###
-  if result=Cells.analyze(pattern, rule, {max_iters:maxSteps})
+  if result=analyze(pattern, rule, {max_iters:maxSteps})
     #console.log JSON.stringify result
     if result.period?
       if result.dx isnt 0 or result.dy isnt 0

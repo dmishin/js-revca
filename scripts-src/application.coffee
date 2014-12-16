@@ -2,7 +2,8 @@
 # This applicaiton module will only work in the browser
   ##### Imports #####
   {parse, NamedRules, Rule2Name} = require "./rules"
-  {Cells, Point, splitPattern, getDualTransform, evaluateCellList} = require "./cells"
+  {Cells, Point, getDualTransform} = require "./cells"
+  {analyze, splitPattern, evaluateCellList, getDualSpaceship} = require "./analyser"
   {MargolusNeighborehoodField, Array2d} = require "./reversible_ca"
   {div, mod, line_pixels, rational2str, getReadableFileSizeString, cap} = require "./math_util"
   {FieldView} = require "./field_view"
@@ -690,7 +691,7 @@
           on_spaceship = (pattern)  =>
             rule = @rule
             pattern = @_promoteToZeroPhase pattern
-            if result=Cells.analyze(pattern, rule, {max_iters:maxSteps})
+            if result=analyze(pattern, rule, {max_iters:maxSteps})
               if result.period?
                 if result.dx isnt 0 or result.dy isnt 0
                   @library.put result, rule
@@ -772,7 +773,7 @@
 
         #Delay analysis
         window.setTimeout (=>
-          @analysis_result = result = Cells.analyze(cells, @rule, {max_iters:@_getAnalyzerMaxSteps()})
+          @analysis_result = result = analyze(cells, @rule, {max_iters:@_getAnalyzerMaxSteps()})
 
           makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
           canv = drawPatternOnCanvas makeCanvas, result.cells, [128, 96], [1, 24], 1
@@ -1324,7 +1325,7 @@
 
       unless rle of @key2result
         if result.dx!=0 or result.dy!=0
-          [dual_pattern, dx1, dy1] = Cells.getDualSpaceship result.cells, rule, result.dx, result.dy
+          [dual_pattern, dx1, dy1] = getDualSpaceship result.cells, rule, result.dx, result.dy
           if dual_pattern?
             dual_rle = Cells.to_rle dual_pattern
             if dual_rle of @key2result
@@ -1353,7 +1354,7 @@
       
     hasDual: (result, rule)->
       if result.dx?
-        [dual_pattern, dx1, dy1] = Cells.getDualSpaceship result.cells, rule, result.dx, result.dy
+        [dual_pattern, dx1, dy1] = getDualSpaceship result.cells, rule, result.dx, result.dy
         if dual_pattern?
           (Cells.to_rle dual_pattern) of @key2result
       false
