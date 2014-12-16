@@ -4,7 +4,8 @@
 # Each pattern is an array of [x,y] pairs
 {Maximizer, mod, div} = require "./math_util"
 {Bits} = require "./rules"
-{Cells, evaluateCellList, transformMatrix2BitBlockMap} = require "./cells"
+{Cells, transformMatrix2BitBlockMap} = require "./cells"
+{evaluateCellList, canonicalize_spaceship} = require "./analyser"
 #Creates a string for the pattern.
 patternKey = (pattern) -> JSON.stringify pattern  
 
@@ -171,7 +172,7 @@ exports.MemoAnalyser = class MemoAnalyser
   makePeriodFoundResult: (dx, dy, period, bestPattern)->
     #console.log "#### period found"
     [bestPattern, dx0, dy0] =
-         Cells.canonicalize_spaceship bestPattern, @rule, dx, dy
+         canonicalize_spaceship bestPattern, @rule, dx, dy
     return {
       resolution: Resolution.HAS_PERIOD
       dx: dx0

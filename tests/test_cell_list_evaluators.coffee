@@ -1,7 +1,7 @@
 assert = require "assert"
-{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern} = require "../scripts-src/cells"
+{Cells} = require "../scripts-src/cells"
 {from_list, from_list_elem} = require "../scripts-src/rules"
-
+{evaluateCellList, evaluateLabelledCellList, splitPattern} = require "../scripts-src/analyser"
 
 
 describe "splitPattern( rule, pattern, steps): separate non-interacting sub-patterns", ->

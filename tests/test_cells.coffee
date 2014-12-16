@@ -1,6 +1,7 @@
 assert = require "assert"
 module_cells = require "../scripts-src/cells"
-{Cells, evaluateCellList, evaluateLabelledCellList, splitPattern, inverseTfm} = module_cells
+{Cells, inverseTfm} = module_cells
+{getDualSpaceship} = require "../scripts-src/analyser"
 {NamedRules, from_list, from_list_elem, Bits} = require "../scripts-src/rules"
 # mocha tests/test-math-utils.coffee --compilers coffee:coffee-script
 
@@ -222,13 +223,13 @@ describe "getDualTransform( rule )", ->
     assert.deepEqual tfm, [1,0,0,1]
     assert.deepEqual blockTfm, [0..15]
 
-describe "Cells.getDualSpaceship( sship, rule, dx, dy) -> (sship', dx', dy')", ->
+describe "getDualSpaceship( sship, rule, dx, dy) -> (sship', dx', dy')", ->
   it "must work for the single-rotation rule", ->
     rule = NamedRules.singleRotate
     pattern = Cells.from_rle "3o$o$bo" #Conway glider
     expectedDualRle = "2bo$obo$b2o"
     dx = dy = 1
-    [dualPattern, dx1, dy1] = Cells.getDualSpaceship pattern, rule, dx, dy
+    [dualPattern, dx1, dy1] = getDualSpaceship pattern, rule, dx, dy
     assert.equal dx1, 1
     assert.equal dy1, 1
     assert.equal Cells.to_rle(dualPattern), expectedDualRle
