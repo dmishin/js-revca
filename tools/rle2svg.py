@@ -84,6 +84,15 @@ if __name__=="__main__":
     parser.add_option("-x", "--put-at", dest="put_at",
                       help="put figure at position X:Y")
 
+    parser.add_option("--style-cell", dest="style_cell",
+                      help="SVG style for cells, defauls is '{}'".format(cell_style))
+    parser.add_option("--style-bg", dest="style_bg",
+                      help="SVG style for the background, defauls is '{}'".format(bg_style))
+    parser.add_option("--style-grid1", dest="style_grid1",
+                      help="SVG style for the main grid lines, defauls is '{}'".format(grid1_style))
+    parser.add_option("--style-grid2", dest="style_grid2",
+                      help="SVG style for the secondarygrid lines, defauls is '{}'".format(grid2_style))
+    
     (options, args) = parser.parse_args()
     
     if len(args) < 1:
@@ -95,7 +104,12 @@ if __name__=="__main__":
 
     if options.size <= 0:
         parser.error("Cell size must be positive")
-    
+
+    cell_style = options.style_cell or cell_style
+    bg_style = options.style_bg or bg_style
+    grid1_style = options.style_grid1 or grid1_style
+    grid2_style = options.style_grid2 or grid2_style
+        
     if options.put_at:
         try:
             [x0,y0] = map(int, options.put_at.split(":"))
