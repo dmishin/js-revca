@@ -159,7 +159,7 @@ exports.Rule = class Rule
       unless r.is_vacuum_stable()
         return false
     return true
-
+  
 
 exports.ElementaryRule = class ElementaryRule
   constructor: (table) ->
@@ -245,7 +245,7 @@ exports.ElementaryRule = class ElementaryRule
   # (vacuum cycle is [0])
   is_vacuum_stable: -> @table[0] is 0
 
-    
+  negated: -> new ElementaryRule (15 ^ ti for ti in @table)    
 
 ###
 # Create rule object from list
@@ -374,3 +374,26 @@ exports.Rule2Name = (->
   r2n
 )()
     
+
+### Parse cycle-based notation of the elementary rule
+#   Examples:
+#    Single rotation: "(1,2,8,4)"
+#    Tron:            "(0,15)"
+#    Double rotatio:  "(1,2,8,4),(14,13,7,11)"
+###
+exports.parseElementaryCycleNotation = (ruleStr) ->
+  bracedRe = /\((.+?)\)/
+  groups = []
+  for part, i in ruleStr.split bracedRe
+    if i%2 is 0
+      if part.trim() not in ["", ","]
+        throw new Error "Unexpected string: #{part}"
+    else
+      groups.push (parseInt(n,10) for n in part.split(","))
+      
+  table = [0..15]
+  for grp in groups
+    for gi, i in grp
+      table[gi] = grp[(i+1) % grp.length]
+      
+  new ElementaryRule table
