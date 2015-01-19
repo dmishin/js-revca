@@ -45,7 +45,7 @@ addClass = (e, c) ->
     else
       classes + " " + c
   null
- selectValue2Option = (elem) ->
+selectValue2Option = (elem) ->
   val2opt = {}
   for opt in elem.options
     val2opt[opt.value] = opt
@@ -210,26 +210,26 @@ class GolApplication
             when -1 then => @doReverseStep()
             else throw new Error("Bad direction:" + direction)
         @field_player = window.setInterval(@field_player_proc, @step_delay)
-     isPlaying: -> @field_player?
-     stopPlayer: ->
+    isPlaying: -> @field_player?
+    stopPlayer: ->
         if @field_player
           window.clearInterval @field_player
           @field_player = null
-     updateCanvas: -> @view.draw @canvas.getContext("2d")
-     updateCanvasBox: (x0, y0, x1, y1) ->
+    updateCanvas: -> @view.draw @canvas.getContext("2d")
+    updateCanvasBox: (x0, y0, x1, y1) ->
         @view.draw_box @canvas.getContext("2d"), x0, y0, x1, y1
-     parseCellSize: (sel_style) ->
+    parseCellSize: (sel_style) ->
         [sw, sh] = st = sel_style.split(",")
         throw new Error "Value is incorrect: #{sel_style}" unless st.length is 2
         [parseInt(sw, 10), parseInt(sh, 10)]
-     adjustCanvasSize: ->
+    adjustCanvasSize: ->
         w = @gol.field.width * @view.cell_size
         h = @gol.field.height * @view.cell_size
         @canvas_container.style.width = "#{w}px"
         @canvas_container.style.height = "#{h}px"
         @canvas_overlay.width = @canvas.width = w
         @canvas_overlay.height = @canvas.height = h
-     setCellSize: (size) ->
+    setCellSize: (size) ->
         @view.cell_size = size
         @adjustCanvasSize()
         ctx = @canvas.getContext("2d")
@@ -241,7 +241,7 @@ class GolApplication
       ctx = @canvas.getContext("2d")
       @view.invalidate()
       @view.draw ctx
-      doStepImpl: (rule, step_size) ->
+    doStepImpl: (rule, step_size) ->
       phase = @rule_phase
       for i in [0...step_size]
         @gol.transform rule.rules[phase]
@@ -249,7 +249,7 @@ class GolApplication
         @onStep phase
       @generation += step_size
       
-     getActiveRule: ->
+    getActiveRule: ->
       if @stable_enabled
         @stable_rule
       else
@@ -275,14 +275,14 @@ class GolApplication
         @updateCanvas()
         @update_time()
         @recordFrame()
-     doReverseStepImpl: (irule, step_size)->
+    doReverseStepImpl: (irule, step_size)->
       phase = @rule_phase
       for i in [0...step_size]
         phase = mod (phase-1), irule.size()
         @gol.untransform irule.rules[phase]
       @rule_phase = phase
       @generation -= @step_size
-     getActiveRuleInv: ->
+    getActiveRuleInv: ->
       if @stable_enabled
         @inverse_stable_rule
       else
@@ -298,7 +298,7 @@ class GolApplication
       @updateCanvas()
       @update_time()
       @recordFrame()
-     recordFrame: ->
+    recordFrame: ->
       return unless @encoder?
       @encoder.addFrame @canvas.getContext("2d")
       sizeElem = document.getElementById("gif-size")
@@ -309,16 +309,16 @@ class GolApplication
         @mouse_tool.on_disable() if  @mouse_tool
         @mouse_tool = tool
         tool.on_enable() if tool
-     setDelay: (delay) ->
+    setDelay: (delay) ->
         if delay? and delay <=0 then throw new Error "Bad delay value: "+delay
         return if delay is @step_delay
         @step_delay = delay
         if @isPlaying()
           window.clearInterval @field_player
           @field_player = window.setInterval(@field_player_proc, @step_delay)
-     update_time: ->
+    update_time: ->
         @time_display.innerHTML = "" + @generation  if @time_display
-     reset_time: ->
+    reset_time: ->
         @generation = mod(@generation, 2) #Never try to change oddity of the generation
         @update_time()
      #Play forward until rule phase is 0
@@ -363,7 +363,7 @@ class GolApplication
       catch e
         @inverse_stable_rule = null
       #Updating GUI according to the rule
-       @_updateRuleControls()
+      @_updateRuleControls()
         
       selectOption E("select-rule"), rule.stringify(), ""
       #console.log "Selection rule #{rule.stringify()}"
@@ -371,7 +371,7 @@ class GolApplication
       show_rule_diagram rule, E("function_display")
       show_rule_properties rule, E("function_properties")
       #console.log "Showed rule diagram for rule #{rule.stringify()}"
-       #By default, enable rulesets, if it makes any difference
+      #By default, enable rulesets, if it makes any difference
       if not @rule_is_stable
         E("stablize-rule").checked = true
         @stable_enabled = true
@@ -478,7 +478,7 @@ class GolApplication
         @gol.clear()
         @updateCanvas()
         @update_time()
-     attach_listeners: ->
+    attach_listeners: ->
         widget = @canvas_container
         self = this
         widget.addEventListener "mousedown", nodefault ((e) ->
@@ -628,14 +628,14 @@ class GolApplication
         if sel = @selection
             @gol.field.fill_box sel[0], sel[1], sel[2], sel[3], 0
             @updateCanvasBox sel ...
-     random_fill_selection: (p) ->
+    random_fill_selection: (p) ->
         if p < 0 or p > 1 or isNaN(p)
           alert "Wrong percentage: #{p}"
           return
         if sel = @selection
           @gol.field.random_fill sel[0], sel[1], sel[2]+1, sel[3]+1, p
           @updateCanvasBox sel ...
-      _getAnalyzerMaxSteps: ->
+    _getAnalyzerMaxSteps: ->
       maxSteps = parseInt E("analysis-max-steps").value, 10
       if isNaN maxSteps
         maxSteps = 2048
@@ -837,7 +837,7 @@ class GolApplication
       unless Point.equal xy, xy0
         @on_cell_change e, xy
         @last_xy = xy
-   getOverlayContext: -> @golApp.canvas_overlay.getContext("2d")
+  getOverlayContext: -> @golApp.canvas_overlay.getContext("2d")
   on_mouse_down: (e) ->
     @dragging = true
     @last_xy = xy = @get_xy e, @snapping
@@ -853,7 +853,7 @@ class GolApplication
       @clear_old_rect @getOverlayContext()
       @golApp.showOverlay false
       
-   on_cell_change: ->
+  on_cell_change: ->
   on_click_cell: ->
   on_mouse_out: ->
     
@@ -889,7 +889,7 @@ class GhostClickDetector
       @timerHandle=null
     @_onTouch = =>
       @onTouch()
-   onTouch: ->
+  onTouch: ->
     @stopTimer()
     @isGhost = true
     @timerHandle = window.setTimeout @_onTimer, @ghostInterval
@@ -898,7 +898,7 @@ class GhostClickDetector
     if (handle = @timerHandle)
       window.clearTimeout handle
       @timerHandle = null
-   addListeners: (element)->
+  addListeners: (element)->
     for evtName in ["touchstart", "touchend"]
       element.addEventListener evtName, @_onTouch, false
       
@@ -909,7 +909,7 @@ class ToolEraser extends BaseMouseTool
   constructor: (golApp, @size=3) ->
     super golApp, false, true #no snapping, show overlay
     @preview_color = "rgba(255,20,0,0.4)"
-   _drawPreview: ([x0,y0])->
+  _drawPreview: ([x0,y0])->
     cell_size = @golApp.view.cell_size
     sz = @size*cell_size  #Size of an erased block
     dc = (@size/2)|0
@@ -940,7 +940,7 @@ class ToolStamp extends BaseMouseTool
   constructor: (golApp) ->
     super golApp, true, true #snapping, show overlay
     @preview_color = "rgba(255,255,0,0.4)"
-   _drawPreview: ([x0,y0])->
+  _drawPreview: ([x0,y0])->
     fig = @golApp.buffer.pattern
     return if fig.length is 0
     size = @golApp.view.cell_size
@@ -958,7 +958,7 @@ class ToolStamp extends BaseMouseTool
     null
     
   on_cell_change: (e, xy) -> @_drawPreview xy
-   on_click_cell: (e, xy) ->
+  on_click_cell: (e, xy) ->
     app = @golApp
     buffer = app.buffer
     extent = buffer.patternExtent
@@ -974,10 +974,10 @@ class ToolDraw extends BaseMouseTool
     super golApp, false, false #no snapping, no overlay
     @dragging = false
     @value = null
-   update_box: (xy_a, xy_b) ->
+  update_box: (xy_a, xy_b) ->
     @golApp.updateCanvasBox Point.boundBox(xy_a, xy_b) ...
-   draw_at: (x, y) -> @golApp.gol.field.set x, y, @value
-   on_cell_change: (e, xy) ->
+  draw_at: (x, y) -> @golApp.gol.field.set x, y, @value
+  on_cell_change: (e, xy) ->
     if @dragging
       dxy = Point.subtract xy, @last_xy
       [xx,yy] = line_pixels dxy ...
@@ -985,7 +985,7 @@ class ToolDraw extends BaseMouseTool
       for i in [1 ... xx.length]
         @draw_at x0 + xx[i], y0 + yy[i]
       @update_box last_xy, xy
-   on_click_cell: (e, xy) ->
+  on_click_cell: (e, xy) ->
     [x,y] = xy
     @value = 1 ^ @golApp.gol.field.get(x,y)
     @draw_at x, y
@@ -1501,11 +1501,11 @@ class SpaceshipCatcher
   fastButton "stop", -> golApp.stopPlayer()
   E("reset-timer").onclick = -> golApp.reset_time()
   E("nullify-phase").onclick = -> golApp.nullifyRulesetPhase()
-   #RUle set from the editor
+  #RUle set from the editor
   E("select-style").onchange = ->
     sz = parseInt E("select-style").value, 10
     golApp.setCellSize sz
-    fastButton "clear-selection", -> golApp.clear_selection()
+  fastButton "clear-selection", -> golApp.clear_selection()
   fastButton "clear-nonselection", -> golApp.clear_nonselection()
   fastButton "selection-random", -> golApp.random_fill_selection (parseFloat(E("random-fill-percent").value)*0.01)
   fastButton "selection-analyze", -> golApp.analyzeSelection()
@@ -1521,7 +1521,7 @@ class SpaceshipCatcher
   E("show-grid").onchange = -> golApp.setShowGrid E("show-grid").checked
   E("stablize-rule").onchange = ->      
     golApp.enableRuleset E("stablize-rule").checked
-    btnGroupTools= new ButtonGroup E("btn-group-tools"), "a", "btn-tool-draw"
+  btnGroupTools= new ButtonGroup E("btn-group-tools"), "a", "btn-tool-draw"
   btnGroupTools.addEventListener "change", (e, id)->
     tool = switch id
       when "btn-tool-draw" then "draw"
@@ -1530,7 +1530,7 @@ class SpaceshipCatcher
       when "btn-tool-erase" then "eraser"
     e.preventDefault()
     golApp.setMouseTool golApp.mouse_tools[tool]
-    btnGroupFeatures= new ButtonGroup E("btn-group-features"), "a", "feature-rule-details"
+  btnGroupFeatures= new ButtonGroup E("btn-group-features"), "a", "feature-rule-details"
   button2panel = {
       "feature-rule-details":"rule-info-pane"
       "feature-gif-recorder":"gif-recorder-pane"
@@ -1592,7 +1592,7 @@ class SpaceshipCatcher
   E("analysis-result-close").onclick= ->
   E("analysis-result").onclick = E("analysis-result-close").onclick = ->
     E("analysis-result").style.display="none"
-   fastButton "pattern-rotate-cw", -> golApp.buffer.transform [0,-1,1,0]
+  fastButton "pattern-rotate-cw", -> golApp.buffer.transform [0,-1,1,0]
   fastButton "pattern-rotate-ccw", -> golApp.buffer.transform [0,1,-1,0]
   fastButton "pattern-flip-h", -> golApp.buffer.transform [-1,0,0,1]
   fastButton "pattern-flip-v", -> golApp.buffer.transform [1,0,0,-1]
@@ -1601,7 +1601,7 @@ class SpaceshipCatcher
   E("app-create-link").onclick = -> E("url-output").value = golApp.encode_state_in_url()
   E("url-output").onfocus = ->
     window.setTimeout (=>@select()), 100
-   #Applicaiton initialization
+  #Applicaiton initialization
   golApp.step_size = parseInt E("speed-show-every").value
   golApp.step_delay = parseInt E("speed-frame-delay").value
   
