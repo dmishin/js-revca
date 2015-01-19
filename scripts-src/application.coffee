@@ -92,7 +92,7 @@ spaceshipType = (dx, dy) ->
       @selected = null
       
     @handlers = change: []
-     for btn in containerElem.getElementsByTagName tag
+    for btn in containerElem.getElementsByTagName tag
       btn.addEventListener "click", @_btnClickListener btn
     return
   
@@ -157,7 +157,7 @@ class GolApplication
       @stable_rule = null
       @rule_phase = 0        
       @stable_enabled = false
-       @gol = new MargolusNeighborehoodField(new Array2d(field_size ...))
+      @gol = new MargolusNeighborehoodField(new Array2d(field_size ...))
       @generation = 0
       @gol.clear()
       @view = new FieldView(@gol.field)
@@ -178,7 +178,7 @@ class GolApplication
       @selection = null
       @encoder = null
       @spaceship_catcher = null
-       @library = new LibraryPane(E("pattern-report"), E("library-size"), this)
+      @library = new LibraryPane(E("pattern-report"), E("library-size"), this)
       @buffer = new BufferPane(E("active-pattern-canvas"))
       @subRuleControls = []
       @set_rule parse rule_string
@@ -367,7 +367,7 @@ class GolApplication
         
       selectOption E("select-rule"), rule.stringify(), ""
       #console.log "Selection rule #{rule.stringify()}"
-       E("stable-sub-rules").innerHTML = ""
+      E("stable-sub-rules").innerHTML = ""
       show_rule_diagram rule, E("function_display")
       show_rule_properties rule, E("function_properties")
       #console.log "Showed rule diagram for rule #{rule.stringify()}"
@@ -463,7 +463,7 @@ class GolApplication
         .tag("th").text("Vacuum").end()
         .tag("th").text("Rule").end()
       .end()
-       dom.tag("tbody")
+      dom.tag("tbody")
       vacuum_cycle = @rule.vacuum_cycle()
       for srule, i in @stable_rule.rules
          dom.tag("tr")
@@ -491,7 +491,7 @@ class GolApplication
           ), false
         widget.addEventListener "mousemove", nodefault((e) -> self.mouse_tool.on_mouse_move e), false
         widget.addEventListener "mouseout", nodefault((e) -> self.mouse_tool.on_mouse_out e), false
-         widget.addEventListener "touchstart", ((e) -> self.mouse_tool.on_touch_start e ), false
+        widget.addEventListener "touchstart", ((e) -> self.mouse_tool.on_touch_start e ), false
         widget.addEventListener "touchend", ((e) -> self.mouse_tool.on_touch_end e ), false
         widget.addEventListener "touchmove", ((e) -> self.mouse_tool.on_touch_move e ), false
         widget.addEventListener "touchleave",  ((e) -> self.mouse_tool.on_touch_leave e ), false
@@ -577,7 +577,7 @@ class GolApplication
             alert e
     encode_state_in_url: ->
       urlArgs = []
-       srule = @rule.stringify()
+      srule = @rule.stringify()
       urlArgs.push "rule=#{srule}"
       
       fld = @gol.field
@@ -595,13 +595,12 @@ class GolApplication
       urlArgs.push "phase=#{@gol.phase}"
       if @stable_enabled
         urlArgs.push "ruleset_phase=#{@rule_phase}"
-       loc = ""+window.location
+      loc = ""+window.location
       if (anchorStartsAt = loc.indexOf "#") isnt -1
         loc = loc.substr 0, anchorStartsAt
       argsStartAt = loc.indexOf "?"
-      baseUrl = 
-        if argsStartAt is -1 then loc else loc.substr 0, argsStartAt
-       return baseUrl + "?" + (urlArgs.join "&")
+      baseUrl = if argsStartAt is -1 then loc else loc.substr 0, argsStartAt
+      return baseUrl + "?" + (urlArgs.join "&")
       
         
     initialize: ->
@@ -615,7 +614,7 @@ class GolApplication
     update_controls: ->
         #Update GUI controls
         @_updateRuleControls()
-         selectOrAddOption E("speed-show-every"), @step_size
+        selectOrAddOption E("speed-show-every"), @step_size
         selectOrAddOption E("speed-frame-delay"), @step_delay, "#{@step_delay}ms"
             
         sz = @gol.field.size()
@@ -731,13 +730,13 @@ class GolApplication
        #Delay analysis
       window.setTimeout (=>
         @analysis_result = result = analyze(cells, @rule, {max_iters:@_getAnalyzerMaxSteps()})
-         makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
+        makeCanvas = (imgW, imgH) -> makeElement "canvas", [["width", imgW], ["height", imgH]]
         canv = drawPatternOnCanvas makeCanvas, result.cells, [128, 96], [1, 24], 1
         try
           in_library = (@library.has result) or (@library.hasDual result, @rule)
         catch e
           alert "Library lookup failed: #{e}"
-         dom = new DomBuilder
+        dom = new DomBuilder
         dom.tag("div").CLASS("pattern-background").append(canv).end()
         dom.tag("ul")
         dom.tag("li").text("Result: ").text(result.resolution).end()            
@@ -1093,7 +1092,7 @@ show_rule_diagram = (ruleObj, element) ->
       [("1100"), ("0101"), ("0011"), ("1010")],
       [("1001"), ("0110")],
       [("0111"), ("1011"), ("1110"), ("1101")]]
-     ruleObj.validate()
+    ruleObj.validate()
     dom.tag("table").CLASS("library-table")
        .tag("thead")
        .tag("tr").tag("th").text("Phase").end().tag("th").text("Diagram").end()
@@ -1124,14 +1123,14 @@ show_rule_diagram = (ruleObj, element) ->
     element.appendChild dom.finalize()
  show_rule_properties = (rule, element) ->
   ######## Analysis part #########
-   symmetries = rule.find_symmetries()
+  symmetries = rule.find_symmetries()
   population_invariance = rule.invariance_type()
   invertible = rule.is_invertible()
   dualTransform = getDualTransform rule
   vacuum_cycle =  rule.vacuum_cycle()
   ######### Report generatio part ############
   dom = new DomBuilder
-   dom.tag("p").text("Rule is ").tag("span")
+  dom.tag("p").text("Rule is ").tag("span")
      .CLASS(if invertible then "green-text" else "red-text")
      .text(if invertible then "invertible" else "non-invertible")
      .end().text(". ")
@@ -1162,7 +1161,7 @@ show_rule_diagram = (ruleObj, element) ->
     else
       dom.text("Rule has dual transform: ").text(Transforms.getDescription dualTransform[0])
   dom.end()
-    if invertible
+  if invertible
     dom.tag "p"
     if rule.is_vacuum_stable()
       dom.text "Rule has stable vacuum."
@@ -1190,7 +1189,7 @@ show_rule_diagram = (ruleObj, element) ->
   negate: "negation of cells"
   flipx_neg: "horizontal flip with negation"
   flipy_neg: "vertical flip with negation"
-   getDescription: (name)->
+  getDescription: (name)->
     if (txt=this[name])?
       txt
     else
@@ -1210,7 +1209,7 @@ drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid
       
       cellSize = cap cell_min, cell_max, Math.min( DESIRED_W/cols, DESIRED_H/rows) |0
       if cellSize <= 2 then grid_width = 0
-       fld = new Array2d cols, rows
+      fld = new Array2d cols, rows
       fld.fill 0
       fld.put_cells cells, 0, 0
       view = new FieldView fld
@@ -1245,7 +1244,7 @@ drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid
   put: (result, rule)->
     return unless result?
     rle = Cells.to_rle result.cells
-     unless rle of @key2result
+    unless rle of @key2result
       if result.dx!=0 or result.dy!=0
         [dual_pattern, dx1, dy1] = getDualSpaceship result.cells, rule, result.dx, result.dy
         if dual_pattern?
@@ -1492,7 +1491,7 @@ class SpaceshipCatcher
       e.preventDefault()
       golApp.ghost_click_detector.onTouch()
       handler e
-   fill_rules E("select-rule"), predefinedRules
+  fill_rules E("select-rule"), predefinedRules
    
   fastButton "clear_field", -> golApp.do_clear()
   fastButton "go-next", -> golApp.doStep()
@@ -1513,13 +1512,13 @@ class SpaceshipCatcher
     
   E("speed-show-every").onchange = ->
     golApp.step_size = parseInt(E("speed-show-every").value)
-   E("speed-frame-delay").onchange = (e) ->
+  E("speed-frame-delay").onchange = (e) ->
     golApp.setDelay parseInt(E("speed-frame-delay").value)
-   E("select-rule").onchange = ->
+  E("select-rule").onchange = ->
     if (rule = E("select-rule").value) isnt ""
       golApp.set_rule_str rule
       
-   E("show-grid").onchange = -> golApp.setShowGrid E("show-grid").checked
+  E("show-grid").onchange = -> golApp.setShowGrid E("show-grid").checked
   E("stablize-rule").onchange = ->      
     golApp.enableRuleset E("stablize-rule").checked
     btnGroupTools= new ButtonGroup E("btn-group-tools"), "a", "btn-tool-draw"
@@ -1547,10 +1546,10 @@ class SpaceshipCatcher
     E(button2panel[id]).style.display = "block"
     e.preventDefault()
   
-   E("gif-start").onclick = nodefault -> golApp.start_gif_recorder()
+  E("gif-start").onclick = nodefault -> golApp.start_gif_recorder()
   E("gif-stop").onclick = nodefault ->  golApp.stopGifRecorder true
   E("gif-clear").onclick = nodefault -> golApp.gifRecorderClear()
-   E("lib-save").onclick = -> golApp.saveLibrary(false)
+  E("lib-save").onclick = -> golApp.saveLibrary(false)
   E("lib-save-as").onclick = -> golApp.saveLibrary(true)
   E("lib-export-json").onclick = -> golApp.library.showStoredData()
   E("lib-import-json").onclick = -> golApp.library.importData()
@@ -1599,7 +1598,7 @@ class SpaceshipCatcher
   fastButton "pattern-flip-v", -> golApp.buffer.transform [1,0,0,-1]
   fastButton "pattern-toggle-phase", -> golApp.buffer.togglePhase()
   fastButton "pattern-from-selection", -> golApp.copyToBuffer()
-   E("app-create-link").onclick = -> E("url-output").value = golApp.encode_state_in_url()
+  E("app-create-link").onclick = -> E("url-output").value = golApp.encode_state_in_url()
   E("url-output").onfocus = ->
     window.setTimeout (=>@select()), 100
    #Applicaiton initialization
