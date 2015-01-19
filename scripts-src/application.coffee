@@ -1572,7 +1572,7 @@ class SpaceshipCatcher
       alert "Error:"+e
   E("lib-load-default").onclick = ->
     golApp.library.load localStorage, golApp.library.defaultLibraryForRule golApp.rule
-   E("select-size").onchange = ->
+  E("select-size").onchange = ->
     try
       [cols, rows] = JSON.parse E("select-size").value
       golApp.setSize cols, rows
@@ -1586,10 +1586,9 @@ class SpaceshipCatcher
     else
       golApp.enable_spaceship_catcher()
       
-   E("library-json-data").onfocus = E("rle-encoded").onfocus = ->
+  E("library-json-data").onfocus = E("rle-encoded").onfocus = ->
     window.setTimeout (=>@select()), 100
-    E("analysis-result-to-library").onclick = -> golApp.analysisResultToLibrary()
-  E("analysis-result-close").onclick= ->
+  E("analysis-result-to-library").onclick = -> golApp.analysisResultToLibrary()
   E("analysis-result").onclick = E("analysis-result-close").onclick = ->
     E("analysis-result").style.display="none"
   fastButton "pattern-rotate-cw", -> golApp.buffer.transform [0,-1,1,0]
