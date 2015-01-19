@@ -72,3 +72,9 @@
    git add images *.html scripts scripts-src *.css LICENSE README.md
    git commit -m "Automatically generated commit"
 
+
+* TOols
+** Collider
+   COllider: autoatically catalogize all possible collision outcomes for 2 given patterns
+   
+*** TODO

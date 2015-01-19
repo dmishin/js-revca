@@ -2,7 +2,7 @@ assert = require "assert"
 #module_cells = require "../scripts-src/cells"
 #{Cells, evaluateCellList, evaluateLabelledCellList, splitFigure} = module_cells
 module_rules = require "../scripts-src/rules"
-{xor_transposition, compose_transpositions, Rule, from_list, from_list_elem, parse, Bits,
+{xor_transposition, compose_transpositions, Rule, from_list, from_list_elem, parse, Bits, parseElementaryCycleNotation
  NamedRules} = module_rules
 {Array2d, MargolusNeighborehoodField} = require "../scripts-src/reversible_ca"
 
@@ -29,6 +29,12 @@ describe "ElementaryRule.equals", ->
         if i isnt j
           assert.ok not rules[i].equals rules[j]
           
+describe "ElementaryRule.negated", ->
+  it "must return negated rule", ->
+    rule = from_list_elem [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0]
+    nrule = from_list_elem [14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15]
+    assert.deepEqual rule.negated(), nrule
+    
 describe "ElementaryRule.reverse", ->
   it "must leave identity rule unchanged", ->
     id_rule = from_list_elem [0..15]
@@ -193,3 +199,15 @@ describe "Rule.vacuum_cycle(rule)", ->
     cycle = rule.vacuum_cycle()
     assert.deepEqual cycle, [0,8,9,5,6,14]
 
+
+describe "rules.parseElementaryCycleNotation(str)", ->
+  it "must correctly parse empty string", ->
+    assert.deepEqual parseElementaryCycleNotation(""), from_list_elem([0..15])
+  it "must parse nontrivial case (single rot)", ->
+    srot = from_list_elem [0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15]
+    assert.deepEqual parseElementaryCycleNotation("(1,2,8,4)"), srot
+    
+  it "must parse nontrivial case (double rot)", ->
+    dblRot = from_list_elem [0,2,8,3,1,5,6,13,4,9,10,7,12,14,11,15]
+    assert.deepEqual parseElementaryCycleNotation("(1,2,8,4)(14,11,7,13)"), dblRot
+    
