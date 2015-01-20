@@ -35,8 +35,8 @@ removeClass = (e, c) ->
     if c isnt ci
       classes.push ci
   e.className = classes.join " "
+  return
   
-  null
 addClass = (e, c) ->
   classes = e.className
   e.className =
@@ -44,7 +44,8 @@ addClass = (e, c) ->
       c
     else
       classes + " " + c
-  null
+  return
+  
 selectValue2Option = (elem) ->
   val2opt = {}
   for opt in elem.options
@@ -127,13 +128,16 @@ class DelayedHandler
     if (t=@timerId) isnt null
       clearTimeout t
       @timerId = null
- addDelayedListener = ( element, eventNames, delayMs, listener ) ->
+      
+addDelayedListener = ( element, eventNames, delayMs, listener ) ->
   delayedListener = new DelayedHandler delayMs, listener
   handler = (e) -> delayedListener.fireEvent e
   for eName in eventNames
     element.addEventListener eName, handler
-  null
+  return
+  
 predefinedRules = [
+    ["Single Rotate", NamedRules.singleRotate],
     ["Billiard Ball Machine", parse("0,8,4,3,2,5,9,7,1,6,10,11,12,13,14,15") ]
     ["Bounce gas", parse("0,8,4,3,2,5,9,14, 1,6,10,13,12,11,7,15")],
     ["HPP Gas", parse("0,8,4,12,2,10,9, 14,1,6,5,13,3,11,7,15")],
@@ -146,12 +150,13 @@ predefinedRules = [
     ["Swap On Diag", parse("0,8,4,12,2,10,6,14, 1,9,5,13,3,11,7,15")],
     ["Critters", NamedRules.critters],
     ["Tron", NamedRules.tron],
-    ["Double Rotate", NamedRules.doubleRotate],
-    ["Single Rotate", NamedRules.singleRotate]]      
+    ["Double Rotate", NamedRules.doubleRotate] ]
 # Main application class
 class GolApplication
-    constructor: (field_size, rule_string, container_id, canvas_id, overlay_id, time_display_id) ->
-  
+    constructor: (field_size, rule) ->
+
+      [container_id, canvas_id, overlay_id, time_display_id] = ["overlay-container", "canvas", "overlay", "time"]
+      
       #Application state and initialization
       @rule = null
       @stable_rule = null
@@ -167,6 +172,8 @@ class GolApplication
       @field_player_proc = null
       @canvas = E(canvas_id)
       @canvas_overlay = E(overlay_id)
+      @canvas_context = @canvas.getContext "2d"
+      
       @canvas_container = E(container_id)
       @time_display = time_display_id and E(time_display_id)
       @mouse_tools =
@@ -181,7 +188,7 @@ class GolApplication
       @library = new LibraryPane(E("pattern-report"), E("library-size"), this)
       @buffer = new BufferPane(E("active-pattern-canvas"))
       @subRuleControls = []
-      @set_rule parse rule_string
+      @set_rule rule
       @ghost_click_detector = new GhostClickDetector()
       
     setSize: (cols, rows) ->
@@ -198,9 +205,8 @@ class GolApplication
           if max_cell_size <= 2
             @view.grid_width = 0 #disable grid.
         @adjustCanvasSize()
-        ctx = @canvas.getContext("2d")
         @view.invalidate()
-        @view.draw ctx
+        @view.draw @canvas_context
          
     startPlayer: (direction) ->
         @stopPlayer() if @field_player
@@ -215,9 +221,9 @@ class GolApplication
         if @field_player
           window.clearInterval @field_player
           @field_player = null
-    updateCanvas: -> @view.draw @canvas.getContext("2d")
+    updateCanvas: -> @view.draw @canvas_context
     updateCanvasBox: (x0, y0, x1, y1) ->
-        @view.draw_box @canvas.getContext("2d"), x0, y0, x1, y1
+        @view.draw_box @canvas_context, x0, y0, x1, y1
     parseCellSize: (sel_style) ->
         [sw, sh] = st = sel_style.split(",")
         throw new Error "Value is incorrect: #{sel_style}" unless st.length is 2
@@ -232,15 +238,13 @@ class GolApplication
     setCellSize: (size) ->
         @view.cell_size = size
         @adjustCanvasSize()
-        ctx = @canvas.getContext("2d")
         @view.invalidate()
-        @view.draw ctx
+        @view.draw @canvas_context
         
     setShowGrid: (show) ->
       @view.grid_width = if show then 1 else 0
-      ctx = @canvas.getContext("2d")
       @view.invalidate()
-      @view.draw ctx
+      @view.draw @canvas_context
     doStepImpl: (rule, step_size) ->
       phase = @rule_phase
       for i in [0...step_size]
@@ -300,8 +304,8 @@ class GolApplication
       @recordFrame()
     recordFrame: ->
       return unless @encoder?
-      @encoder.addFrame @canvas.getContext("2d")
-      sizeElem = document.getElementById("gif-size")
+      @encoder.addFrame @canvas_context
+      sizeElem = E("gif-size")
       if sizeElem?
         sizeElem.innerHTML = getReadableFileSizeString(@encoder.stream().getSize())
         
@@ -321,7 +325,7 @@ class GolApplication
     reset_time: ->
         @generation = mod(@generation, 2) #Never try to change oddity of the generation
         @update_time()
-     #Play forward until rule phase is 0
+    #Play forward until rule phase is 0
     # Does nothing, if already 0
     nullifyRulesetPhase: ->
       old_step = @step_size
@@ -680,7 +684,7 @@ class GolApplication
         if sel = @selection
           @gol.field.fill_outside_box sel[0], sel[1], sel[2], sel[3], 0
           @updateCanvas()
-     start_gif_recorder: ->
+    start_gif_recorder: ->
       return if @encoder
       @encoder = encoder = new GIFEncoder()
       encoder.setPalette exactPalette
@@ -803,7 +807,7 @@ class GolApplication
         
     showOverlay: (visible) ->
       @canvas_overlay.style.visibility = if visible then "visible" else "hidden"
- class BaseMouseTool
+class BaseMouseTool
   constructor: (@golApp, @snapping=false, @show_overlay=true) ->
     @dragging = false
     @last_xy = null
@@ -874,7 +878,7 @@ class GolApplication
     if @dragging
       e.preventDefault()
       @on_mouse_move(e)
- ###
+###
 # In some mobile browsers, ghost clicks can not be prevented. So here easy solution: every mouse event,
 # coming after some interval after a touch event is ghost
 ###
@@ -1001,7 +1005,7 @@ class ToolSelect extends BaseMouseTool
     @selection_color = "rgba(0,0,255,0.3)"
     @xy0 = null
     @xy1 = null
-   on_mouse_up: (e) ->
+  on_mouse_up: (e) ->
     super e
     @golApp.selection = @selection()
   
@@ -1009,17 +1013,17 @@ class ToolSelect extends BaseMouseTool
     if @dragging
       @xy1 = xy
       @draw_box()
-   on_click_cell: (e, xy) ->
+  on_click_cell: (e, xy) ->
     @xy0 = @xy1 = xy
     @draw_box()
-   selection: ->
+  selection: ->
     if @xy0 and @xy1
       [x0,y0,x1,y1] = Point.boundBox @xy0, @xy1
       d = if @snapping then 1 else 0
       return [x0,y0,x1+d, y1+d]
     else
       return [0, 0, 0, 0]
-   draw_box: ->
+  draw_box: ->
     ctx = @getOverlayContext()
     size = @golApp.view.cell_size
     ctx.fillStyle = @selection_color
@@ -1072,7 +1076,7 @@ class BufferPane
         messageBoxElt.style.visibility = "visible"
   _bindEvents: ->
     addDelayedListener E("rle-encoded"), ["keypress", "blur", "change"], 200, => @fromRle()
- fill_rules = (select, predefined_rules) ->
+fill_rules = (select, predefined_rules) ->
   opts = select.options
   for [name, rule], i in predefined_rules
     opts[i] = new Option(name, rule.stringify())
@@ -1121,7 +1125,7 @@ show_rule_diagram = (ruleObj, element) ->
     dom.end().end() #tbody/table
     element.innerHTML = ""
     element.appendChild dom.finalize()
- show_rule_properties = (rule, element) ->
+show_rule_properties = (rule, element) ->
   ######## Analysis part #########
   symmetries = rule.find_symmetries()
   population_invariance = rule.invariance_type()
@@ -1177,7 +1181,7 @@ show_rule_diagram = (ruleObj, element) ->
   
   element.innerHTML = ""
   element.appendChild dom.finalize()
- Transforms =
+Transforms =
   iden:  "identity transform"
   rot90:  "rotation by 90°"
   rot180:  "rotation by 180°"
@@ -1230,7 +1234,7 @@ drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid
     @modified = false
     @updateLibrarySize()
     @updateLibraryName()
-   _createTable: ->
+  _createTable: ->
     dom = new DomBuilder "table"
     dom.a("class", "library-table")
        .tag("thead").tag("tr")
@@ -1308,7 +1312,7 @@ drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid
     result: rec.result
     count: rec.count
     key: rec.key
-   dumpToStorage: (storage, name)->
+  dumpToStorage: (storage, name)->
     throw new Error "No storage" unless storage?
     storage[name] =  @data2string()
     @name = name
@@ -1317,7 +1321,7 @@ drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid
   data2string: ->
     s = (@copyRecord @key2result[key] for key of @key2result)
     JSON.stringify s
-   showStoredData: ->
+  showStoredData: ->
     E("library-json-data").value = @data2string()
     
   importData: ->
@@ -1343,7 +1347,7 @@ drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid
       if rec.key not in @key2result
         @_putRecord rec
     @updateLibrarySize()
-    null
+
   _libraryKey: (name) -> "library-"+name
   
   load: (storage, name) ->
@@ -1359,7 +1363,7 @@ drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid
     @modified = false
     @updateLibrarySize()
     @updateLibraryName()
-   save: (storage, newName=false)->
+  save: (storage, newName=false)->
     if (not newName) and (not @modified)
       return
     name=@name
@@ -1465,7 +1469,7 @@ class SpaceshipCatcher
         if f.get(x,y) isnt 0 then pick x, y
     null
       
- loadExternalCSS = (cssHref) ->
+loadExternalCSS = (cssHref) ->
   link = document.createElement "link"
   link.rel = "stylesheet"
   link.type = "text/css"
@@ -1479,7 +1483,7 @@ class SpaceshipCatcher
 #//////////////////////////////////////////////////////////////////////////////
   unless document.implementation.hasFeature "http://www.w3.org/TR/SVG11/feature#Image", "1.1"
     loadExternalCSS "icons-png.css"
-  golApp = new GolApplication([64, 64], "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15", "overlay-container", "canvas", "overlay", "time")
+  golApp = new GolApplication([64, 64], parse("0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15") )
   
   fastButton = (id, handler) ->
     e = E id
