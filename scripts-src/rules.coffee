@@ -397,3 +397,19 @@ exports.parseElementaryCycleNotation = (ruleStr) ->
       table[gi] = grp[(i+1) % grp.length]
       
   new ElementaryRule table
+
+ruleSpatialSymmetries = (rule)-> #list of matrices, except identity matrix
+  #dumb algorithm: just check every transform. Who cares - it is called once.
+  symmetries = []
+  first = true
+  for s1 in [1 .. -1] by -2
+    for s2 in [1 .. -1] by -2
+      for tfm in  [[s1,0,0,s2], [0,s1,s2,0]]
+        if first
+          first = false
+        else
+          blockTfm = transformMatrix2BitBlockMap tfm
+          if rule.is_transposable_with ((x) -> blockTfm[x])
+            symmetries.push tfm
+  return symmetries
+  
