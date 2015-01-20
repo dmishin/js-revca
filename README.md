@@ -39,13 +39,34 @@ Most of the code is written in CoffeeScript.
 Requirements
 ------------
 To build minified code, following NPM tools are required:
+
 1. *coffee-script*: compile coffescript code
 2. *browserify*: prepare application code for using in browser
 2. *uglify-js*: minification of the JS
 3. *mocha*: required for running tests
 
-These tools are nto included, and must be installed separately.
+These tools are not included, and must be installed separately.
+Additionally, *GNU Make* is required, because build system uses it.
 
+Compiling
+---------
+Build system for this applicaiton uses GNU Make. To compile app using this system, first run:
+
+    $ coffee configure.coffee
+
+and then:
+
+    $ make
+
+After modifying files, you only need to run ```make```, configure is only needed after adding new files.
+
+Alternatively, if you don't want to bother with this idiosyncratic build ssytem, you can compile everythign manually:
+
+    $ coffee -o scripts scripts-src
+    $ browserify scripts/application.js -o scripts/bundle.js
+    $ uglifyjs --screw-ie8 scripts/bundle.js > scripts/minified.js﻿
+
+To run application, open index.html. You can skip the last (minification) step, if replace "minified.js" with "bundle.js" in the index.html.
 
 Credits
 -------
