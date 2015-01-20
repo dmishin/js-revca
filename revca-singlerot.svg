@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="0 0 400 400" onload="startup(evt)">
-<script type="text/javascript" xlink:href="scripts/svg_revca.js"/>
+<script type="text/javascript" xlink:href="scripts/revca_svg.js"/>
 
 <defs>
   <!-- Cell image, fill is defined by the script  -->
