@@ -85,7 +85,7 @@ spaceshipType = (dx, dy) ->
     "diagonal spaceship"
   else
     "slant spaceship"
- class ButtonGroup
+class ButtonGroup
   constructor: (containerElem, tag, selectedId=null, @selectedClass="btn-selected")->
     if selectedId isnt null
       addClass (@selected = E selectedId), @selectedClass
@@ -1224,7 +1224,7 @@ drawPatternOnCanvas = (canvasGetter, cells, desired_size, cell_size_limits, grid
       ctx = canv.getContext "2d"
       view.draw ctx
       return canv
- class LibraryPane
+class LibraryPane
   constructor: (@div, @librarySizeElement, @golApp)->
     @key2result = {}
     @librarySize = 0
