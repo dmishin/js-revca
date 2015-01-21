@@ -1421,7 +1421,7 @@ class LibraryPane
       dom.vars.closebtn.addEventListener "click", (e) =>
         @._removeItem record.key
         e.preventDefault()
-       dom.vars.aSelect.addEventListener "click", (e)=>
+      dom.vars.aSelect.addEventListener "click", (e)=>
         @golApp.buffer.set result.cells
         
       #Insert new row before the end
