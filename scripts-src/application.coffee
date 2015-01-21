@@ -5,7 +5,7 @@
 {Cells, Point, getDualTransform} = require "./cells"
 {analyze, splitPattern, evaluateCellList, getDualSpaceship} = require "./analyser"
 {MargolusNeighborehoodField, Array2d} = require "./reversible_ca"
-{div, mod, line_pixels, rational2str, getReadableFileSizeString, cap} = require "./math_util"
+{div, mod, mod2, line_pixels, rational2str, getReadableFileSizeString, cap} = require "./math_util"
 {FieldView} = require "./field_view"
 {getCanvasCursorPosition} = require "./canvas_util"
 {DomBuilder} = require "./dom_builder"
@@ -16,9 +16,14 @@
 ###################
 # Utils
 E = (id) -> document.getElementById(id)
+
+#Parse decimal value
+parseDec = (s) -> parseInt s, 10
+
 nodefault = (handler) -> (e) ->
   e.preventDefault()
   handler e
+  
 makeElement = (tag, attrs, text) ->
   elem = document.createElement(tag)
   if attrs?
@@ -27,15 +32,11 @@ makeElement = (tag, attrs, text) ->
   if text?
     elem.appendChild document.createTextNode text
   elem
+
 #I am learning JS and want to implement this functionality by hand
 # Remove class from the element
 removeClass = (e, c) ->
-  classes = []
-  for ci in e.className.split " "
-    if c isnt ci
-      classes.push ci
-  e.className = classes.join " "
-  return
+  e.className = (ci for ci in e.className.split " " when ci isnt c).join " "
   
 addClass = (e, c) ->
   classes = e.className
@@ -44,7 +45,6 @@ addClass = (e, c) ->
       c
     else
       classes + " " + c
-  return
   
 selectValue2Option = (elem) ->
   val2opt = {}
@@ -173,6 +173,7 @@ class GolApplication
     @canvas = E(canvas_id)
     @canvas_overlay = E(overlay_id)
     @canvas_context = @canvas.getContext "2d"
+    @desiredCanvasSize = [800, 600]
     
     @canvas_container = E(container_id)
     @time_display = time_display_id and E(time_display_id)
@@ -192,14 +193,14 @@ class GolApplication
     @ghost_click_detector = new GhostClickDetector()
     
   setSize: (cols, rows) ->
-    RECOMMENDED_WIDTH = 800
-    RECOMMENDED_HEIGHT = 600
+    [optimalWidth, optimalHeight] = @desiredCanvasSize
+
     unless cols is @gol.field.width and rows is @gol.field.height
       @gol = new MargolusNeighborehoodField(new Array2d(cols, rows))
       @gol.clear()
       @view.field = @gol.field
       #Update cell size, if needed
-      max_cell_size = Math.min( RECOMMENDED_WIDTH/cols, RECOMMENDED_HEIGHT/rows) | 0
+      max_cell_size = Math.min( optimalWidth/cols, optimalHeight/rows) | 0
       if max_cell_size < @view.cell_size
         @view.cell_size = max_cell_size
         if max_cell_size <= 2
@@ -227,7 +228,7 @@ class GolApplication
   parseCellSize: (sel_style) ->
     [sw, sh] = st = sel_style.split(",")
     throw new Error "Value is incorrect: #{sel_style}" unless st.length is 2
-    [parseInt(sw, 10), parseInt(sh, 10)]
+    [parseDec(sw), parseDec(sh)]
   adjustCanvasSize: ->
     w = @gol.field.width * @view.cell_size
     h = @gol.field.height * @view.cell_size
@@ -323,7 +324,7 @@ class GolApplication
   update_time: ->
     @time_display.innerHTML = "" + @generation  if @time_display
   reset_time: ->
-    @generation = mod(@generation, 2) #Never try to change oddity of the generation
+    @generation = mod2 @generation #Never try to change oddity of the generation
     @update_time()
   #Play forward until rule phase is 0
   # Does nothing, if already 0
@@ -511,8 +512,8 @@ class GolApplication
     if keys.size?
       sz = keys.size.split 'x'
       throw new Error "Size must have form WIDTHxHEIGHT" unless sz.length is 2
-      c = parseInt sz[0], 10
-      r = parseInt sz[1], 10
+      c = parseDec sz[0]
+      r = parseDec sz[1]
       throw new Error "Width and height must be even"  if r % 2 isnt 0 or c % 2 isnt 0
       @gol = new MargolusNeighborehoodField(new Array2d(c, r))
       @gol.clear()
@@ -533,14 +534,14 @@ class GolApplication
       
       
     if keys.rle?
-      x0 = if keys.rle_x0 then parseInt(keys.rle_x0, 10) else 0
-      y0 = if keys.rle_y0 then parseInt(keys.rle_y0, 10) else 0
+      x0 = if keys.rle_x0 then parseDec(keys.rle_x0) else 0
+      y0 = if keys.rle_y0 then parseDec(keys.rle_y0) else 0
       parse_rle keys.rle, (x,y) =>
         @gol.field.set_wrapped x0+x, y0+y, 1
         
     #console.log "Put RLE"
     if keys.phase?
-      phase = parseInt keys.phase, 10
+      phase = parseDec keys.phase
       unless phase in [0,1]
         alert "Incorrect phase value #{phase}, must be 0 or 1"
       @gol.phase = phase
@@ -559,7 +560,7 @@ class GolApplication
       if not keys.rule?
         alert "Rule must be specified, when using ruleset_phase"
       else
-        phase = parseInt keys.ruleset_phase
+        phase = parseDec keys.ruleset_phase
         unless phase >=0 and phase < @stable_rule.size()
           alert "Ruleset phase #{phase} is outside of allowed region"
         else
@@ -569,12 +570,12 @@ class GolApplication
           
     if keys.frame_delay?
       try
-        @setDelay parseInt keys.frame_delay, 10
+        @setDelay parseDec keys.frame_delay
       catch e
         alert e
     if keys.step?
       try
-        s = parseInt keys.step, 10
+        s = parseDec keys.step
         if not s? or s<=0 then throw new Error "Incorrect step value:"+s
         @step_size = s
       catch e
@@ -640,7 +641,7 @@ class GolApplication
       @gol.field.random_fill sel[0], sel[1], sel[2]+1, sel[3]+1, p
       @updateCanvasBox sel ...
   _getAnalyzerMaxSteps: ->
-    maxSteps = parseInt E("analysis-max-steps").value, 10
+    maxSteps = parseDec E("analysis-max-steps").value
     if isNaN maxSteps
       maxSteps = 2048
       alert "Incorrect value of the analysis depth, will use #{maxSteps}"
@@ -662,8 +663,8 @@ class GolApplication
         # console.log "#### Added ss: dx=#{result.dx} dy=#{result.dy}"
         null
       try
-        reseed_period = parseInt E("catcher-reseed-period").value, 10
-        max_spaceship_sz = parseInt E("catcher-max-spaceship-size").value, 10
+        reseed_period = parseDec E("catcher-reseed-period").value
+        max_spaceship_sz = parseDec E("catcher-max-spaceship-size").value
         if isNaN reseed_period or reseed_period <= 0 then throw new Error "Reseed period negative"
         if (not max_spaceship_sz?) or (isNaN max_spaceship_sz) then throw new Error "Bad max spaceship value"
         @spaceship_catcher = new SpaceshipCatcher on_spaceship, max_spaceship_sz, reseed_period
@@ -1507,7 +1508,7 @@ loadExternalCSS = (cssHref) ->
   E("nullify-phase").onclick = -> golApp.nullifyRulesetPhase()
   #RUle set from the editor
   E("select-style").onchange = ->
-    sz = parseInt E("select-style").value, 10
+    sz = parseDec E("select-style").value
     golApp.setCellSize sz
   fastButton "clear-selection", -> golApp.clear_selection()
   fastButton "clear-nonselection", -> golApp.clear_nonselection()
@@ -1515,9 +1516,9 @@ loadExternalCSS = (cssHref) ->
   fastButton "selection-analyze", -> golApp.analyzeSelection()
   
   E("speed-show-every").onchange = ->
-    golApp.step_size = parseInt(E("speed-show-every").value)
+    golApp.step_size = parseDec(E("speed-show-every").value)
   E("speed-frame-delay").onchange = (e) ->
-    golApp.setDelay parseInt(E("speed-frame-delay").value)
+    golApp.setDelay parseDec(E("speed-frame-delay").value)
   E("select-rule").onchange = ->
     if (rule = E("select-rule").value) isnt ""
       golApp.set_rule_str rule
@@ -1605,8 +1606,8 @@ loadExternalCSS = (cssHref) ->
   E("url-output").onfocus = ->
     window.setTimeout (=>@select()), 100
   #Applicaiton initialization
-  golApp.step_size = parseInt E("speed-show-every").value
-  golApp.step_delay = parseInt E("speed-frame-delay").value
+  golApp.step_size = parseDec E("speed-show-every").value
+  golApp.step_delay = parseDec E("speed-frame-delay").value
   
   golApp.initialize()
   
