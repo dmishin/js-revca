@@ -398,7 +398,7 @@ exports.parseElementaryCycleNotation = (ruleStr) ->
       
   new ElementaryRule table
 
-ruleSpatialSymmetries = (rule)-> #list of matrices, except identity matrix
+exports.ruleSpatialSymmetries = (rule)-> #list of matrices, except identity matrix
   #dumb algorithm: just check every transform. Who cares - it is called once.
   symmetries = []
   first = true
@@ -412,4 +412,19 @@ ruleSpatialSymmetries = (rule)-> #list of matrices, except identity matrix
           if rule.is_transposable_with ((x) -> blockTfm[x])
             symmetries.push tfm
   return symmetries
+  
+exports.randomElemRule = (stableVacuum=true)->
+  table = []
+  values = [0..15]
+  put = (idx) ->
+    table.push values[idx]
+    values.splice idx, 1
+    return
+
+  if stableVacuum then put 0
+
+  while values.length > 0
+    put Math.floor (Math.random()*values.length)
+
+  new ElementaryRule table
   

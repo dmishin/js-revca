@@ -3,7 +3,7 @@ assert = require "assert"
 #{Cells, evaluateCellList, evaluateLabelledCellList, splitFigure} = module_cells
 module_rules = require "../scripts-src/rules"
 {xor_transposition, compose_transpositions, Rule, from_list, from_list_elem, parse, Bits, parseElementaryCycleNotation
- NamedRules} = module_rules
+ NamedRules, randomElemRule} = module_rules
 {Array2d, MargolusNeighborehoodField} = require "../scripts-src/reversible_ca"
 
 
@@ -210,4 +210,24 @@ describe "rules.parseElementaryCycleNotation(str)", ->
   it "must parse nontrivial case (double rot)", ->
     dblRot = from_list_elem [0,2,8,3,1,5,6,13,4,9,10,7,12,14,11,15]
     assert.deepEqual parseElementaryCycleNotation("(1,2,8,4)(14,11,7,13)"), dblRot
+    
+
+describe "randomElemRule", ->
+  iden = from_list_elem [0..15]
+  
+  it "must return some invertible rule", ->
+    for i in [0...1000]
+      r = randomElemRule()
+      assert.ok r
+      assert.ok r.is_invertible()
+    
+  it "must return non-identity rule at least once in 1000 tries", ->
+    found = false
+    for i in [0...1000]
+      r = randomElemRule()
+      if r.stringify() isnt iden.stringify()
+        found = true
+        break
+    assert.ok found
+
     
