@@ -145,7 +145,7 @@ A field with Margolus neighborehood
 ###
 exports.MargolusNeighborehoodField = class MargolusNeighborehoodField
   constructor: (@field) ->
-    throw "Field size must be even, not " + field.width + "x" + field.height  if field.width % 2 isnt 0 or field.height % 2 isnt 0
+    throw "Field size must be even, not " + @field.width + "x" + @field.height  if @field.width % 2 isnt 0 or @field.height % 2 isnt 0
     @phase = 0
 
   #implementation of the transform. Does not changes phase.
