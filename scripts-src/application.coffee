@@ -249,6 +249,8 @@ class GolApplication
   doStepImpl: (rule, step_size) ->
     phase = @rule_phase
     for i in [0...step_size]
+      #unless rule.rules[phase]?
+      #  alert "Bad phase! #{phase}, ruels are #{rule.rules.length}"
       @gol.transform rule.rules[phase]
       @rule_phase = phase = (phase+1) % rule.size()
       @onStep phase
@@ -256,6 +258,8 @@ class GolApplication
     
   getActiveRule: ->
     if @stable_enabled
+      unless @stable_rule.rules?
+        throw new Error "Bad stable ruel"
       @stable_rule
     else
       @rule
@@ -1484,7 +1488,7 @@ loadExternalCSS = (cssHref) ->
   #//////////////////////////////////////////////////////////////////////////////
   unless document.implementation.hasFeature "http://www.w3.org/TR/SVG11/feature#Image", "1.1"
     loadExternalCSS "icons-png.css"
-  golApp = new GolApplication([64, 64], parse("0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15") )
+  golApp = new GolApplication([64, 64], parse("0,2,8,3,1,5,6,7,4,9,10,11,12,13,14,15") )
   
   fastButton = (id, handler) ->
     e = E id
