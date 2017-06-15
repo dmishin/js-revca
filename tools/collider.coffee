@@ -4,7 +4,8 @@
 # Make collision table
 
 fs = require "fs"
-{Cells, inverseTfm, evaluateCellList, getDualTransform, splitPattern} = require "../scripts-src/cells"
+{Cells, inverseTfm, getDualTransform} = require "../scripts-src/cells"
+{evaluateCellList, splitPattern} = require "../scripts-src/analyser"
 {from_list_elem, parseElementary} = require "../scripts-src/rules"
 stdio = require "stdio"
 {mod,mod2} = require "../scripts-src/math_util"

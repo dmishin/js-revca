@@ -1,5 +1,6 @@
 "use strict"
-{Cells, inverseTfm, evaluateCellList} = require "../scripts-src/cells"
+{Cells, inverseTfm} = require "../scripts-src/cells"
+{evaluateCellList} = require "../scripts-src/analyser"
 {mod,mod2} = require "../scripts-src/math_util"
 
 ### Implementation of the collider code
